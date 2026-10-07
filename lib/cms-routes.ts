@@ -39,5 +39,5 @@ export function isPageCategory(categorySlug: string): boolean {
 }
 
 export function isLocationService(slug: string): boolean {
-  return /^(luxury-rehabilitation-centre-|rehab-centre-female-|best-rehabilitation-cent(er|re)-in-|best-rehabilitations?-in-|best-rehab-centre-in-|get-the-best-(rehabilitation|alcohol-addiction)-|alcohol-addiction-treatment-centre-in-|drug-rehabilitation-center-in-|opioid-addiction-treatment-|rehab-center-in-india)/.test(slug);
+  return /^(luxury-rehabilitation-centre-|rehab-centre-female-|best-rehabilitation-cent(er|re)-in-|best-rehabilitations?-in-|best-rehab-centre-in-|get-the-best-(rehabilitation|alcohol-addiction)-|alcohol-addiction-treatment-centre(?:-in-.*)?$|alcohol-rehabilitation-centre$|charas-deaddiction$|drug-alcohol-treatment-facility-delhi-india$|drug-rehabilitation-center-in-|opioid-addiction-treatment-|rehab-center-in-india)/.test(slug);
 }
