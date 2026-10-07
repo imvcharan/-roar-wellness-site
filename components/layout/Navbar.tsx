@@ -130,7 +130,7 @@ export function Navbar() {
   const closeMobileMenu = () => { setIsOpen(false); setActiveMenu(null); };
 
   return (
-    <nav className="site-nav" aria-label="Main navigation">
+    <nav className={`site-nav${isOpen ? " is-mobile-open" : ""}`} aria-label="Main navigation">
       <div className="header-bar">
         <div className="header-desktop-links">
           <Link href="/#top" className="nav-link">Home</Link>
