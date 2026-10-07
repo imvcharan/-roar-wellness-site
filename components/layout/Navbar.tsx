@@ -18,7 +18,7 @@ interface MenuItem {
   reload?: boolean;
 }
 
-type MenuId = "about" | "therapy" | "treatments" | "mental-health" | "blog" | "faqs";
+type MenuId = "about" | "locations" | "therapy" | "treatments" | "mental-health" | "news";
 
 const treatmentMenuSlugs = [
   "alcohol-addiction",
@@ -37,20 +37,34 @@ const treatmentMenuSlugs = [
   "marijuana-treatment-in-delhi",
 ];
 
-export function faqAnchorId(question: string): string {
-  return `faq-${question.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
-}
+const aboutPageSlugs = [
+  "about-substance-abuse",
+  "12-step-program-delhi",
+  "rehab-centre-female-delhi",
+];
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<MenuId | null>(null);
   const [cmsEntries, setCmsEntries] = useState<CmsPageLink[]>([]);
+  const [newsPosts, setNewsPosts] = useState<CmsPageLink[]>([]);
+  const [newsLoaded, setNewsLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     cmsRequest<{ data: CmsPageLink[] }>("/api/cms/content")
       .then(({ data }) => { if (mounted) setCmsEntries(data); })
       .catch((error: unknown) => console.error("Unable to load published CMS navigation items.", error));
+    cmsRequest<{ data: CmsPageLink[] }>("/api/content/blog")
+      .then(({ data }) => {
+        if (!mounted) return;
+        setNewsPosts(data);
+        setNewsLoaded(true);
+      })
+      .catch((error: unknown) => {
+        console.error("Unable to load published news posts.", error);
+        if (mounted) setNewsLoaded(true);
+      });
     return () => { mounted = false; };
   }, []);
 
@@ -66,39 +80,46 @@ export function Navbar() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [activeMenu, isOpen]);
 
-  const locationPages = cmsEntries.filter((page) => isLocationService(page.slug));
+  const locationPages = cmsEntries.filter((page) =>
+    isLocationService(page.slug) && page.slug !== "rehab-centre-female-delhi"
+  );
   const therapyPages = cmsEntries.filter((page) => page.category_slug === "therapy");
   const mentalHealthPages = cmsEntries.filter((page) => page.category_slug === "mental-healthcare");
   const treatmentPages = treatmentMenuSlugs
     .map((slug) => cmsEntries.find((page) => page.slug === slug && page.category_slug === "treatments"))
     .filter((page): page is CmsPageLink => Boolean(page));
-  const blogPosts = cmsEntries.filter((page) => page.category_slug === "blog");
+  const aboutPages = aboutPageSlugs
+    .map((slug) => cmsEntries.find((page) => page.slug === slug))
+    .filter((page): page is CmsPageLink => Boolean(page));
   const menuItems: Record<MenuId, MenuItem[]> = {
     about: [
       { label: "About Roar Wellness", href: "/about-roarwellness/" },
       { label: "Our approach", href: "/#about" },
       { label: "Our Team", href: "/drug-alcohol-rehabilitation-experts/" },
+      { label: "Facility", href: "/facility/" },
+      { label: "Gallery", href: "/gallery/" },
       { label: "Videos", href: "/videos/" },
+      ...aboutPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     ],
+    locations: locationPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     therapy: therapyPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     treatments: [
       ...treatmentPages.map((item) => ({ label: item.title.trim(), href: getCmsContentHref(item.slug, item.category_slug) })),
     ],
     "mental-health": mentalHealthPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
-    blog: [
-      { label: "All Blog Posts", href: "/blog" },
-      ...blogPosts.map((post) => ({ label: post.title.trim(), href: getCmsContentHref(post.slug, post.category_slug) })),
+    news: [
+      { label: "All News", href: "/blog/" },
+      ...newsPosts.map((post) => ({ label: post.title.trim(), href: getCmsContentHref(post.slug, post.category_slug) })),
     ],
-    faqs: [{ label: "Frequently asked questions", href: "/#faq" }],
   };
 
   const menuLabels: Record<MenuId, string> = {
     about: "About Us",
+    locations: "Locations",
     therapy: "Therapy",
     treatments: "Treatments",
     "mental-health": "Mental Healthcare",
-    blog: "Blog",
-    faqs: "FAQs",
+    news: "Blog",
   };
 
   const renderDropdown = (id: MenuId, mobile = false) => {
@@ -127,19 +148,11 @@ export function Navbar() {
         >
           {menuLabels[id]} <ChevronDown size={14} aria-hidden="true" className={isActive ? "is-rotated" : ""} />
         </button>
-        {isActive && <div id={`${mobile ? "mobile" : "desktop"}-${id}-menu`} className={`header-dropdown-panel ${id === "about" ? "header-dropdown-panel-about" : ""}`}>
-          {id === "about" ? <div className="header-dropdown-columns">
-            <section className="header-dropdown-column">
-              <h2 className="header-dropdown-heading">Main pages</h2>
-              {items.map(renderItem)}
-            </section>
-            <section className="header-dropdown-column">
-              <h2 className="header-dropdown-heading">Locations</h2>
-              {locationPages.length
-                ? locationPages.map((page) => renderItem({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) }))
-                : <span className="header-dropdown-empty">No locations have been published</span>}
-            </section>
-          </div> : items.length ? items.map(renderItem) : <span className="header-dropdown-empty">Content will appear when published</span>}
+        {isActive && <div id={`${mobile ? "mobile" : "desktop"}-${id}-menu`} className="header-dropdown-panel">
+          {items.map(renderItem)}
+          {id === "locations" && !items.length && <span className="header-dropdown-empty">No locations have been published</span>}
+          {id === "news" && !newsPosts.length && <span className="header-dropdown-empty">{newsLoaded ? "No news posts have been published" : "Loading published news..."}</span>}
+          {!items.length && id !== "locations" && id !== "news" && <span className="header-dropdown-empty">Content will appear when published</span>}
         </div>}
       </div>
     );
@@ -157,10 +170,9 @@ export function Navbar() {
           {renderDropdown("treatments")}
           <Link href="/" aria-label="Roar Wellness home" className="header-brand"><img src="/images/logo.png" alt="Roar Wellness" className="header-logo" /></Link>
           {renderDropdown("mental-health")}
-          <Link href="/facility/" className="nav-link">Facility</Link>
-          <Link href="/gallery/" className="nav-link">Gallery</Link>
-          {renderDropdown("blog")}
-          {renderDropdown("faqs")}
+          {renderDropdown("locations")}
+          {renderDropdown("news")}
+          <Link href="/faqs/" className="nav-link">FAQs</Link>
           <Link href="/contact-us/" className="nav-link">Contact</Link>
         </div>
         <div className="header-mobile-row">
@@ -175,10 +187,9 @@ export function Navbar() {
           {renderDropdown("therapy", true)}
           {renderDropdown("treatments", true)}
           {renderDropdown("mental-health", true)}
-          <Link href="/facility/" className="nav-link" onClick={closeMobileMenu}>Facility</Link>
-          <Link href="/gallery/" className="nav-link" onClick={closeMobileMenu}>Gallery</Link>
-          {renderDropdown("blog", true)}
-          {renderDropdown("faqs", true)}
+          {renderDropdown("locations", true)}
+          {renderDropdown("news", true)}
+          <Link href="/faqs/" className="nav-link" onClick={closeMobileMenu}>FAQs</Link>
           <Link href="/contact-us/" className="nav-link" onClick={closeMobileMenu}>Contact</Link>
         </div>}
       </div>

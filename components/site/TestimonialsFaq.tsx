@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { faqAnchorId } from "@/components/layout/Navbar";
+import { faqAnchorId } from "@/lib/faq";
 import { cmsRequest } from "@/services/cms-api";
 
 export type Review = [name: string, quote: string, avatar: string];

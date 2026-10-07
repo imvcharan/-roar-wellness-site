@@ -128,7 +128,13 @@ function CmsPageContent({ html, slug }: { html: string; slug: string }) {
     toggleFaq(title as HTMLElement);
   };
 
-  return <div ref={contentRef} className="cms-page-content" onClickCapture={onClickCapture} onKeyDownCapture={onKeyDownCapture} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div
+    ref={contentRef}
+    className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}`}
+    onClickCapture={onClickCapture}
+    onKeyDownCapture={onKeyDownCapture}
+    dangerouslySetInnerHTML={{ __html: html }}
+  />;
 }
 
 type DetailKind = "service" | "blog" | "page";
@@ -282,9 +288,12 @@ export default function InnerPagesPage({
 
   if (selectedSlug) {
     const isVideosPage = selectedItem?.slug === "videos";
-    const summary = !isVideosPage && (selectedItem?.excerpt || selectedItem?.summary)
-      ? normalizeCmsPlainText(selectedItem.excerpt || selectedItem.summary || "")
-      : null;
+    const isExpertsPage = selectedSlug.toLowerCase() === "drug-alcohol-rehabilitation-experts";
+    const summary = isExpertsPage
+      ? "Meet the experienced clinicians and recovery professionals who guide care at Roar Wellness."
+      : !isVideosPage && (selectedItem?.excerpt || selectedItem?.summary)
+        ? normalizeCmsPlainText(selectedItem.excerpt || selectedItem.summary || "")
+        : null;
     const pageVideos = isVideosPage
       ? getYouTubeVideos(selectedItem?.excerpt, selectedItem?.summary, selectedItem?.content, selectedItem?.description)
       : [];
@@ -340,7 +349,7 @@ export default function InnerPagesPage({
             <div className="site-container px-5">
               <div className={image ? "detail-hero" : "detail-hero detail-hero-no-media"}>
               <div className="detail-hero-copy">
-                <p className="detail-hero-kicker">{selectedKind === "blog" ? "From the Roar Wellness journal" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
+                <p className="detail-hero-kicker">{isExpertsPage ? "Meet the people behind your care" : selectedKind === "blog" ? "From the Roar Wellness journal" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
                 <h1 id="treatment-detail-title" className="detail-hero-title">{selectedItem.title}</h1>
                 {summary && <p className="detail-hero-summary">{summary}</p>}
                 {selectedKind === "service" && <a className="detail-hero-cta" href="tel:+919319977207">Speak with our team <span aria-hidden="true">›</span></a>}
@@ -353,7 +362,7 @@ export default function InnerPagesPage({
           </section>
 
           <div className="site-container px-5">
-            <div className={`detail-layout ${selectedKind === "service" ? "" : "detail-layout-full"} mt-10 md:mt-14`}>
+            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"} mt-10 md:mt-14`}>
               <article className="detail-article">
                 {isVideosPage
                   ? pageVideos.length
@@ -386,7 +395,7 @@ export default function InnerPagesPage({
 
           </div>
 
-          <DetailTestimonialsFaq />
+          {!isExpertsPage && <DetailTestimonialsFaq />}
 
           <ContactSection
             contactEmail={contactEmail}

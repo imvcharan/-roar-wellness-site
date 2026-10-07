@@ -35,10 +35,11 @@ const mainPageSlugs = new Set([
   "gallery", "12-step-program-delhi", "aa-20-questions", "facility",
   "drug-rehabilitation-experts", "drug-alcohol-rehabilitation-experts", "home-2", "news",
 ]);
-const servicePostSlugs = new Set([
+export const servicePostSlugs = new Set([
   "addiction-treatment-and-rehab-centers",
   "alcohol-addiction-treatment-centre",
   "alcohol-addiction-treatment-centre-in-delhi",
+  "alcohol-rehabilitation-centre",
   "alcohol-rehabilitation-centre",
   "best-rehab-centre-in-delhi-ncr-india-for-drugs-and-alcohol",
   "best-rehabilitation-center-in-punjabi-bagh-delhi",

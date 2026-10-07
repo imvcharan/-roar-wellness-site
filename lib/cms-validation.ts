@@ -1,7 +1,7 @@
 import sanitizeHtml from "sanitize-html";
 
 const homepageGroups = new Set(["team", "reviews", "facility", "approach"]);
-const reservedPageSlugs = new Set(["admin", "admin-login", "api", "blog", "gallery", "inner-pages", "services", "_next", "uploads"]);
+const reservedPageSlugs = new Set(["admin", "admin-login", "api", "blog", "faqs", "gallery", "inner-pages", "services", "_next", "uploads"]);
 
 export type CmsStatus = "draft" | "published" | "archived";
 
