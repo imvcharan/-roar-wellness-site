@@ -27,8 +27,8 @@
   --color-cms-success: #15803d;
   --color-cms-accent: #75477a;
 
-  --font-display: "Inter Display", "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-display: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-body: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-serif: "Lora", "Georgia", serif;
 }
 

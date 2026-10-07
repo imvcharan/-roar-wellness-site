@@ -54,6 +54,8 @@ SQLite and local media storage are suitable only for a single Node.js instance w
 
 Use a GitHub repository as the deployment source and select Node.js 24 or newer. The application build command is `npm ci && npm run build`; the start command is `npm start` (Next.js serves on the port supplied by the hosting platform). Configure these server-side environment variables in Hostinger before starting the app:
 
+Inter is bundled with the application, so production builds do not need to download fonts from Google.
+
 - `CMS_ADMIN_EMAIL` — initial admin email (optional; defaults to `admin@roarwellness.org`).
 - `CMS_ADMIN_PASSWORD` — strong initial admin password; required when initializing a new CMS database.
 - `CMS_SESSION_SECRET` — independent random secret of at least 32 characters.
