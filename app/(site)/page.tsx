@@ -38,6 +38,8 @@ export default function Home() {
   const [treatmentIndex, setTreatmentIndex] = useState(0);
   const [treatmentAutoplayPaused, setTreatmentAutoplayPaused] = useState(false);
   const [treatmentReducedMotion, setTreatmentReducedMotion] = useState(false);
+  const [approachIndex, setApproachIndex] = useState(0);
+  const [approachAutoplayPaused, setApproachAutoplayPaused] = useState(false);
   const [facilityIndex, setFacilityIndex] = useState(0);
   const [cmsTreatments, setCmsTreatments] = useState<CmsTreatment[]>([]);
   const [cmsTreatmentsLoaded, setCmsTreatmentsLoaded] = useState(false);
@@ -272,6 +274,21 @@ export default function Home() {
     ? (cmsHome.approach || []).map((item) => ({ title: item.heading, description: item.body, image: item.image_url, position: "center center" }))
     : approachItems;
 
+  useEffect(() => {
+    setApproachIndex((current) => activeApproachItems.length ? current % activeApproachItems.length : 0);
+  }, [activeApproachItems.length]);
+
+  useEffect(() => {
+    if (treatmentReducedMotion || approachAutoplayPaused || activeApproachItems.length <= 1) return;
+
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      setApproachIndex((current) => (current + 1) % activeApproachItems.length);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [activeApproachItems.length, approachAutoplayPaused, treatmentReducedMotion]);
+
   return (
     <main id="top" className="overflow-hidden">
       <section className="relative flex min-h-[92vh] items-end bg-brown px-6 pb-12 pt-40 text-cream md:px-12 md:pb-16">
@@ -301,17 +318,31 @@ export default function Home() {
             <a href="tel:+919319977207" className="approach-action">Call Us Now <span>→</span></a>
           </div>
 
-          <div className="approach-steps">
-            {activeApproachItems.map(({ title, description, image, position }, index) => (
-              <article key={title} className="approach-item" style={{ backgroundImage: `url(${image})`, backgroundPosition: position }}>
-                <div className="approach-item-overlay" />
-                <span className="approach-number">{index + 1}</span>
-                <div className="approach-copy">
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </div>
-              </article>
-            ))}
+          <div
+            className="approach-steps"
+            role="region"
+            aria-label="Our approach"
+            aria-live="off"
+            onMouseEnter={() => setApproachAutoplayPaused(true)}
+            onMouseLeave={() => setApproachAutoplayPaused(false)}
+          >
+            <div
+              className="approach-track"
+              style={{
+                transform: `translateY(-${approachIndex * (100 / Math.max(activeApproachItems.length, 1))}%)`,
+              }}
+            >
+              {activeApproachItems.map(({ title, description, image, position }, index) => (
+                <article key={`${title}-${index}`} className="approach-item" style={{ backgroundImage: `url(${image})`, backgroundPosition: position }}>
+                  <div className="approach-item-overlay" />
+                  <span className="approach-number">{index + 1}</span>
+                  <div className="approach-copy">
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
