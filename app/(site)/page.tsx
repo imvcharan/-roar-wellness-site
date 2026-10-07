@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { BriefcaseBusiness, Camera, Globe, Mail, MapPin, MessageCircle, Pause, Phone, Play } from "lucide-react";
+import { BriefcaseBusiness, Camera, ChevronLeft, ChevronRight, Globe, Mail, MapPin, MessageCircle, Pause, Phone, Play } from "lucide-react";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImages } from "@/lib/gallery-images";
 import { getCmsContentHref } from "@/lib/cms-routes";
@@ -328,9 +328,7 @@ export default function Home() {
           >
             <div
               className="approach-track"
-              style={{
-                transform: `translateY(-${approachIndex * (100 / Math.max(activeApproachItems.length, 1))}%)`,
-              }}
+              style={{ transform: `translateX(-${approachIndex * 100}%)` }}
             >
               {activeApproachItems.map(({ title, description, image, position }, index) => (
                 <article key={`${title}-${index}`} className="approach-item" style={{ backgroundImage: `url(${image})`, backgroundPosition: position }}>
@@ -343,6 +341,17 @@ export default function Home() {
                 </article>
               ))}
             </div>
+            {activeApproachItems.length > 1 && (
+              <div className="approach-carousel-controls" role="group" aria-label="Approach slides">
+                <span aria-live="polite">{approachIndex + 1} / {activeApproachItems.length}</span>
+                <button type="button" aria-label="Previous approach card" onClick={() => setApproachIndex((current) => (current - 1 + activeApproachItems.length) % activeApproachItems.length)}>
+                  <ChevronLeft size={18} aria-hidden="true" />
+                </button>
+                <button type="button" aria-label="Next approach card" onClick={() => setApproachIndex((current) => (current + 1) % activeApproachItems.length)}>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
