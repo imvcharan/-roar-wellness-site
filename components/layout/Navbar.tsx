@@ -20,6 +20,23 @@ interface MenuItem {
 
 type MenuId = "about" | "therapy" | "treatments" | "mental-health" | "blog" | "faqs";
 
+const treatmentMenuSlugs = [
+  "alcohol-addiction",
+  "opioid-treatment",
+  "heroin-addiction",
+  "cocaine-addiction",
+  "cannabis-treatment",
+  "poly-substance-abuse",
+  "benzodiazepine-treatment",
+  "morphine-addiction",
+  "gambling-treatment",
+  "internet-addiction",
+  "sex-addiction",
+  "drugs-addiction",
+  "de-addiction-treatment",
+  "marijuana-treatment-in-delhi",
+];
+
 export function faqAnchorId(question: string): string {
   return `faq-${question.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
@@ -52,7 +69,9 @@ export function Navbar() {
   const locationPages = cmsEntries.filter((page) => isLocationService(page.slug));
   const therapyPages = cmsEntries.filter((page) => page.category_slug === "therapy");
   const mentalHealthPages = cmsEntries.filter((page) => page.category_slug === "mental-healthcare");
-  const treatmentPages = cmsEntries.filter((page) => page.category_slug === "treatments" && !page.slug.startsWith("luxury-rehabilitation-centre-"));
+  const treatmentPages = treatmentMenuSlugs
+    .map((slug) => cmsEntries.find((page) => page.slug === slug && page.category_slug === "treatments"))
+    .filter((page): page is CmsPageLink => Boolean(page));
   const blogPosts = cmsEntries.filter((page) => page.category_slug === "blog");
   const menuItems: Record<MenuId, MenuItem[]> = {
     about: [
@@ -63,7 +82,6 @@ export function Navbar() {
     ],
     therapy: therapyPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     treatments: [
-      { label: "All Treatments", href: "/services" },
       ...treatmentPages.map((item) => ({ label: item.title.trim(), href: getCmsContentHref(item.slug, item.category_slug) })),
     ],
     "mental-health": mentalHealthPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
