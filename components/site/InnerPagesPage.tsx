@@ -56,7 +56,9 @@ function CmsPageContent({ html, slug }: { html: string; slug: string }) {
     });
 
     const pageRoot = content.querySelector<HTMLElement>(":scope > .elementor") || content;
-    const sections = Array.from(pageRoot.querySelectorAll<HTMLElement>(".e-con.e-parent"));
+    const sections = Array.from(pageRoot.querySelectorAll<HTMLElement>(
+      ".e-con.e-parent, .elementor-section, .elementor-top-section"
+    ));
     sections.forEach((section) => {
       const headings = Array.from(section.querySelectorAll<HTMLElement>("h1, h2, h3, h4"))
         .map((heading) => heading.textContent?.trim() || "");
@@ -65,7 +67,7 @@ function CmsPageContent({ html, slug }: { html: string; slug: string }) {
         || /^(let[’']s talk|take the first step\.?)$/i.test(heading)
       );
       const containsEmbeddedWidget = Boolean(section.querySelector(
-        ".elementor-widget-reviews, .elementor-widget-form, .accordion"
+        ".elementor-widget-reviews, .elementor-widget-testimonial, .elementor-widget-testimonial-carousel, .elementor-widget-form, .elementor-form, .accordion"
       ));
       if (!containsSharedSection && !containsEmbeddedWidget) return;
 
