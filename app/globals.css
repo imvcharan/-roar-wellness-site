@@ -237,6 +237,12 @@
   .cms-page-content li { margin: .3rem 0; text-align: justify !important; text-align-last: start; text-justify: inter-word; }
   .cms-page-content a { color: var(--color-terracotta); text-decoration: underline; text-underline-offset: .2em; }
   .cms-page-content img { max-width: 100%; height: auto; }
+  .cms-centered-media figure.wp-block-image { display: table; float: none !important; clear: both; max-width: 100%; margin: 1.5rem auto !important; text-align: center; }
+  .cms-centered-media figure.wp-block-image img { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+  .cms-centered-media > img { display: block; margin: 1.5rem auto; }
+  .cms-centered-media .elementor-widget-image { margin: 1.5rem auto !important; text-align: center; }
+  .cms-centered-media .elementor-widget-image .elementor-widget-container { text-align: center; }
+  .cms-centered-media .elementor-widget-image img { display: inline-block; width: min(100%, 40rem); max-width: 100%; height: auto; margin: 0 auto; }
   .cms-experts-page > .elementor > .e-con.e-parent:first-child { display: none; }
   .cms-experts-page .e-con.e-parent:has(.elementor-widget-image-box) { padding-top: .5rem; padding-bottom: 2rem; }
   .cms-experts-page .e-con.e-parent:has(.elementor-widget-image-box) > .e-con-inner > .e-con.e-child { display: grid !important; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }

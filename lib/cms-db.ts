@@ -233,6 +233,16 @@ function openDatabase(): DatabaseSync {
     });
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('homepage-defaults')").run();
   }
+  const gameTherapyImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-game-therapy-image-v1'",
+  ).get();
+  if (!gameTherapyImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'facility-game-therapy' AND group_name = 'facility'
+    `).run("/images/game-therapy.webp");
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-game-therapy-image-v1')").run();
+  }
   const seededFaqs = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'faq-defaults'").get();
   if (!seededFaqs) {
     const faqDefaults: [string, string][] = [

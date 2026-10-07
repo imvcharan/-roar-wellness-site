@@ -35,7 +35,7 @@ interface CmsCategory {
   slug: string;
 }
 
-function CmsPageContent({ html, slug }: { html: string; slug: string }) {
+function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slug: string; centerMedia?: boolean }) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,7 +130,7 @@ function CmsPageContent({ html, slug }: { html: string; slug: string }) {
 
   return <div
     ref={contentRef}
-    className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}`}
+    className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${centerMedia ? " cms-centered-media" : ""}`}
     onClickCapture={onClickCapture}
     onKeyDownCapture={onKeyDownCapture}
     dangerouslySetInnerHTML={{ __html: html }}
@@ -368,7 +368,11 @@ export default function InnerPagesPage({
                   ? pageVideos.length
                     ? <GalleryVideoGrid videos={pageVideos} gridClassName="cms-videos-page-grid" />
                     : <p role="status">Videos are temporarily unavailable. Please check back soon.</p>
-                  : (selectedItem.content || selectedItem.description) && <CmsPageContent html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
+                  : (selectedItem.content || selectedItem.description) && <CmsPageContent
+                    html={selectedItem.content || selectedItem.description || ""}
+                    slug={selectedSlug}
+                    centerMedia={selectedKind === "blog" || selectedKind === "service"}
+                  />}
               </article>
 
               <aside className="detail-sidebar" aria-label="Related information">

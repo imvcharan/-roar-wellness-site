@@ -128,7 +128,7 @@ export default function Home() {
     ["Gym", "Modern gym equipment to support strength, stamina, and self-confidence.", "https://www.roarwellness.org/wp-content/uploads/2025/04/617565207766SS_05321-1.jpg"],
     ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "https://www.roarwellness.org/wp-content/uploads/2025/04/544658068149SS_05316.jpg"],
     ["Yoga & Meditation", "Quiet, restorative spaces that support mindfulness and emotional balance.", "https://www.roarwellness.org/wp-content/uploads/2025/04/157245510430SS_05239-1.jpg"],
-    ["Game Therapy", "Structured play and shared activities that make recovery engaging and social.", "https://www.roarwellness.org/wp-content/uploads/2025/04/846283606208SS_05300-1.jpg"],
+    ["Game Therapy", "Structured play and shared activities that make recovery engaging and social.", "/images/game-therapy.webp"],
     ["Therapy Room", "Comfortable spaces for evidence-based conversations and personal care.", "https://www.roarwellness.org/wp-content/uploads/2025/04/285728832438SS_05308.jpg"],
   ];
   const activeFacilitySlides = cmsHomeLoaded
