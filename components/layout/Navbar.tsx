@@ -18,7 +18,7 @@ interface MenuItem {
   reload?: boolean;
 }
 
-type MenuId = "about" | "therapy" | "treatments" | "mental-health" | "faqs";
+type MenuId = "about" | "therapy" | "treatments" | "mental-health" | "blog" | "faqs";
 
 export function faqAnchorId(question: string): string {
   return `faq-${question.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
@@ -53,6 +53,7 @@ export function Navbar() {
   const therapyPages = cmsEntries.filter((page) => page.category_slug === "therapy");
   const mentalHealthPages = cmsEntries.filter((page) => page.category_slug === "mental-healthcare");
   const treatmentPages = cmsEntries.filter((page) => page.category_slug === "treatments" && !page.slug.startsWith("luxury-rehabilitation-centre-"));
+  const blogPosts = cmsEntries.filter((page) => page.category_slug === "blog");
   const menuItems: Record<MenuId, MenuItem[]> = {
     about: [
       { label: "About Roar Wellness", href: "/about-roarwellness/" },
@@ -66,6 +67,10 @@ export function Navbar() {
       ...treatmentPages.map((item) => ({ label: item.title.trim(), href: getCmsContentHref(item.slug, item.category_slug) })),
     ],
     "mental-health": mentalHealthPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
+    blog: [
+      { label: "All Blog Posts", href: "/blog" },
+      ...blogPosts.map((post) => ({ label: post.title.trim(), href: getCmsContentHref(post.slug, post.category_slug) })),
+    ],
     faqs: [{ label: "Frequently asked questions", href: "/#faq" }],
   };
 
@@ -74,6 +79,7 @@ export function Navbar() {
     therapy: "Therapy",
     treatments: "Treatments",
     "mental-health": "Mental Healthcare",
+    blog: "Blog",
     faqs: "FAQs",
   };
 
@@ -135,6 +141,7 @@ export function Navbar() {
           {renderDropdown("mental-health")}
           <Link href="/facility/" className="nav-link">Facility</Link>
           <Link href="/gallery/" className="nav-link">Gallery</Link>
+          {renderDropdown("blog")}
           {renderDropdown("faqs")}
           <Link href="/contact-us/" className="nav-link">Contact</Link>
         </div>
@@ -152,6 +159,7 @@ export function Navbar() {
           {renderDropdown("mental-health", true)}
           <Link href="/facility/" className="nav-link" onClick={closeMobileMenu}>Facility</Link>
           <Link href="/gallery/" className="nav-link" onClick={closeMobileMenu}>Gallery</Link>
+          {renderDropdown("blog", true)}
           {renderDropdown("faqs", true)}
           <Link href="/contact-us/" className="nav-link" onClick={closeMobileMenu}>Contact</Link>
         </div>}
