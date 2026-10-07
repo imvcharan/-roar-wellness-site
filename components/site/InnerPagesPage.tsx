@@ -41,97 +41,31 @@ function CmsPageContent({ html, slug }: { html: string; slug: string }) {
     const content = contentRef.current;
     if (!content) return;
 
-    const cleanups: (() => void)[] = [];
-    const widgets = content.querySelectorAll<HTMLElement>(".elementor-widget-reviews");
+    ["Our Therapy", "Other Services"].forEach((headingText) => {
+      const heading = Array.from(content.querySelectorAll<HTMLElement>("h2, h3, h4"))
+        .find((element) => element.textContent?.trim() === headingText);
+      if (!heading) return;
 
-    widgets.forEach((widget) => {
-      const track = widget.querySelector<HTMLElement>(".swiper-wrapper");
-      const slides = track?.querySelectorAll<HTMLElement>(".swiper-slide");
-      if (!track || !slides || slides.length < 2) return;
-
-      const controls = document.createElement("div");
-      controls.className = "cms-testimonial-controls";
-
-      const createButton = (label: string, arrow: string) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "cms-testimonial-arrow";
-        button.setAttribute("aria-label", label);
-        button.textContent = arrow;
-        controls.append(button);
-        return button;
-      };
-
-      const previous = createButton("Previous testimonial", "←");
-      const next = createButton("Next testimonial", "→");
-      const originalAttributes = new Map(
-        ["tabindex", "role", "aria-label", "aria-roledescription"].map((name) => [name, track.getAttribute(name)]),
-      );
-      const updateControls = () => {
-        const maxScroll = track.scrollWidth - track.clientWidth;
-        previous.disabled = track.scrollLeft <= 1;
-        next.disabled = track.scrollLeft >= maxScroll - 1;
-      };
-      const scrollBySlide = (direction: number) => {
-        const slide = track.querySelector<HTMLElement>(".swiper-slide");
-        if (!slide) return;
-        const gap = Number.parseFloat(getComputedStyle(track).gap) || 0;
-        track.scrollBy({ left: direction * (slide.offsetWidth + gap), behavior: "smooth" });
-      };
-      const handlePrevious = () => scrollBySlide(-1);
-      const handleNext = () => scrollBySlide(1);
-
-      track.setAttribute("tabindex", "0");
-      track.setAttribute("role", "region");
-      track.setAttribute("aria-label", "Client testimonials");
-      track.setAttribute("aria-roledescription", "carousel");
-      previous.addEventListener("click", handlePrevious);
-      next.addEventListener("click", handleNext);
-      track.addEventListener("scroll", updateControls, { passive: true });
-      window.addEventListener("resize", updateControls);
-      widget.append(controls);
-      updateControls();
-
-      cleanups.push(() => {
-        previous.removeEventListener("click", handlePrevious);
-        next.removeEventListener("click", handleNext);
-        track.removeEventListener("scroll", updateControls);
-        window.removeEventListener("resize", updateControls);
-        originalAttributes.forEach((value, name) => {
-          if (value === null) track.removeAttribute(name);
-          else track.setAttribute(name, value);
-        });
-        controls.remove();
-      });
+      let section = heading.parentElement;
+      while (section && section !== content) {
+        if (section.matches(".e-con") && section.querySelector("a")) break;
+        section = section.parentElement;
+      }
+      if (section && section !== content) section.remove();
     });
 
-    const sidebar = document.querySelector<HTMLElement>(".detail-sidebar");
-    if (sidebar) {
-      const movingHeadings = ["Our Therapy", "Other Services"];
-      const movedSections = new Set<HTMLElement>();
-
-      movingHeadings.forEach((headingText) => {
-        const heading = Array.from(content.querySelectorAll<HTMLElement>("h2, h3, h4")).find((element) => element.textContent?.trim() === headingText);
-        if (!heading) return;
-
-        let section = heading.parentElement;
-        while (section && section !== content) {
-          if (section.matches("section, article, div, nav")) break;
-          section = section.parentElement;
-        }
-        if (!section || section === content) section = heading.parentElement;
-        if (!section || !section.querySelector("a")) return;
-
-        const sectionClone = section.cloneNode(true) as HTMLElement;
-        sectionClone.classList.add("detail-sidebar-card", "detail-related", "detail-moved-links");
-        section.remove();
-        movedSections.add(sectionClone);
-      });
-
-      movedSections.forEach((section) => sidebar.append(section));
-    }
-
-    return () => cleanups.forEach((cleanup) => cleanup());
+    const pageRoot = content.querySelector<HTMLElement>(":scope > .elementor") || content;
+    const sections = Array.from(pageRoot.children)
+      .filter((element): element is HTMLElement => element instanceof HTMLElement && element.matches(".e-con.e-parent"));
+    sections.forEach((section) => {
+      if (!section.querySelector(".elementor-widget-reviews, .elementor-widget-form, .accordion")) return;
+      const previous = section.previousElementSibling;
+      if (previous instanceof HTMLElement && previous.matches(".e-con.e-parent")
+        && /testimonial|client.s say/i.test(previous.textContent || "")) {
+        previous.remove();
+      }
+      section.remove();
+    });
   }, [html]);
 
   const toggleFaq = (title: HTMLElement) => {

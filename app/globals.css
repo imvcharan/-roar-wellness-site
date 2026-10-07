@@ -239,12 +239,6 @@
   .cms-page-content .elementor-widget-reviews .elementor-testimonial__icon { display: none; }
   .cms-page-content .elementor-widget-reviews .elementor-testimonial__content { margin-top: auto; }
   .cms-page-content .elementor-widget-reviews .elementor-testimonial__text { margin: 2rem 0 0; color: var(--color-olive); font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.35; }
-  .cms-testimonial-controls { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .85rem; }
-  .cms-testimonial-arrow { display: inline-flex; width: 2.5rem; height: 2.5rem; align-items: center; justify-content: center; border: 1px solid var(--color-beige); border-radius: 9999px; background: var(--color-cream); color: var(--color-olive); font-size: 1.25rem; line-height: 1; transition: background-color .2s ease, color .2s ease, opacity .2s ease; }
-  .cms-testimonial-arrow:not(:disabled) { cursor: pointer; }
-  .cms-testimonial-arrow:not(:disabled):hover { background: var(--color-olive); color: var(--color-cream); }
-  .cms-testimonial-arrow:disabled { opacity: .4; }
-  .cms-testimonial-arrow:focus-visible { outline: 2px solid var(--color-terracotta); outline-offset: 2px; }
   .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem); align-items: start; gap: clamp(2rem, 5vw, 4rem); }
   .detail-layout-full { grid-template-columns: minmax(0, 1fr); }
   .detail-layout-full .detail-sidebar { position: static; }
