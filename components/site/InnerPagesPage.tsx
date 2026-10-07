@@ -64,7 +64,7 @@ function CmsPageContent({ html, slug }: { html: string; slug: string }) {
         .map((heading) => heading.textContent?.trim() || "");
       const containsSharedSection = headings.some((heading) =>
         /testimonial|client.s say|frequently asked questions|^faq'?s?$/i.test(heading)
-        || /^(let[’']s talk|take the first step\.?)$/i.test(heading)
+        || /^(let[’']s talk[!.]?|take the first step\.?)$/i.test(heading)
       );
       const containsEmbeddedWidget = Boolean(section.querySelector(
         ".elementor-widget-reviews, .elementor-widget-testimonial, .elementor-widget-testimonial-carousel, .elementor-widget-form, .elementor-form, .accordion"
