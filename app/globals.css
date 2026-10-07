@@ -557,8 +557,8 @@
   .arrow-link span { font-size: 1.25rem; transition: transform .25s ease; }
   .arrow-link:hover span { transform: translate(3px, -3px); }
   .approach-section { background: linear-gradient(180deg, #fbf7fb 0%, #f6f2ed 100%); }
-  .approach-layout { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: clamp(4rem, 9vw, 9rem); }
-  .approach-lead { position: sticky; top: 6rem; align-self: start; padding-top: .1rem; }
+  .approach-layout { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); align-items: center; gap: clamp(4rem, 9vw, 9rem); }
+  .approach-lead { align-self: center; padding-top: .1rem; }
   .approach-kicker { display: inline-block; margin: 0 0 1.6rem; border-radius: .25rem; background: var(--color-brand-plum); color: var(--color-cream); font-family: var(--font-body); font-size: .65rem; font-weight: 600; line-height: 1; padding: .42rem .65rem; }
   .approach-heading { color: #51483f; font-family: var(--font-serif); font-size: clamp(3.5rem, 5.2vw, 5.4rem); line-height: .88; letter-spacing: -.065em; }
   .approach-intro { max-width: 34rem; margin-top: 1.75rem; color: rgba(81, 72, 63, .78); font-family: var(--font-body); font-size: 1rem; line-height: 1.6; }
