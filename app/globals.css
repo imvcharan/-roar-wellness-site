@@ -558,10 +558,10 @@
   .arrow-link:hover span { transform: translate(3px, -3px); }
   .approach-section { background: linear-gradient(180deg, #fbf7fb 0%, #f6f2ed 100%); }
   .approach-layout { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); align-items: center; gap: clamp(4rem, 9vw, 9rem); }
-  .approach-lead { align-self: center; padding-top: .1rem; }
+  .approach-lead { align-self: center; padding-top: .1rem; text-align: center; }
   .approach-kicker { display: inline-block; margin: 0 0 1.6rem; border-radius: .25rem; background: var(--color-brand-plum); color: var(--color-cream); font-family: var(--font-body); font-size: .65rem; font-weight: 600; line-height: 1; padding: .42rem .65rem; }
   .approach-heading { color: #51483f; font-family: var(--font-serif); font-size: clamp(3.5rem, 5.2vw, 5.4rem); line-height: .88; letter-spacing: -.065em; }
-  .approach-intro { max-width: 34rem; margin-top: 1.75rem; color: rgba(81, 72, 63, .78); font-family: var(--font-body); font-size: 1rem; line-height: 1.6; }
+  .approach-intro { max-width: 34rem; margin: 1.75rem auto 0; color: rgba(81, 72, 63, .78); font-family: var(--font-body); font-size: 1rem; line-height: 1.6; }
   .approach-action { display: inline-flex; align-items: center; gap: .8rem; margin-top: 1.8rem; border: 1px solid rgb(117 71 122 / .14); border-radius: .45rem; background: #f1e7f1; color: var(--color-brand-plum-deep); font-family: var(--font-body); font-size: .8rem; font-weight: 600; padding: .75rem .9rem; transition: background .2s ease, transform .2s ease; }
   .approach-action:hover { transform: translateY(-1px); background: var(--color-brand-blush); }
   .approach-action span { display: inline-flex; align-items: center; justify-content: center; width: 1.55rem; height: 1.55rem; margin: -.25rem -.35rem -.25rem 0; border-radius: .3rem; background: rgb(117 71 122 / .1); font-size: 1.2rem; }
