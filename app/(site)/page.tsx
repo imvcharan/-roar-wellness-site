@@ -309,7 +309,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="about" className="approach-section px-6 py-20 md:px-12 md:py-28">
+      <section id="about" className="approach-section px-6 py-24 md:px-12 md:py-32">
         <div className="approach-layout site-container">
           <div className="approach-lead">
             <p className="approach-kicker">{homeSettings.homepageApproachEyebrow || "Approach"}</p>
