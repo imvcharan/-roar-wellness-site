@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImages } from "@/lib/gallery-images";
 import { getCmsContentHref } from "@/lib/cms-routes";
@@ -39,7 +39,8 @@ export default function Home() {
   const [treatmentIndex, setTreatmentIndex] = useState(0);
   const [treatmentAutoplayPaused, setTreatmentAutoplayPaused] = useState(false);
   const [treatmentReducedMotion, setTreatmentReducedMotion] = useState(false);
-  const [approachIndex, setApproachIndex] = useState(0);
+  const [approachIndex, setApproachIndex] = useState(1);
+  const [approachTransitionEnabled, setApproachTransitionEnabled] = useState(true);
   const [approachAutoplayPaused, setApproachAutoplayPaused] = useState(false);
   const [facilityIndex, setFacilityIndex] = useState(0);
   const [cmsTreatments, setCmsTreatments] = useState<CmsTreatment[]>([]);
@@ -255,9 +256,21 @@ export default function Home() {
   const activeApproachItems = cmsHomeLoaded
     ? (cmsHome.approach || []).map((item) => ({ title: item.heading, description: item.body, image: item.image_url, position: "center center" }))
     : approachItems;
+  const approachSlides = activeApproachItems.length > 1
+    ? [
+        { ...activeApproachItems[activeApproachItems.length - 1], slideNumber: activeApproachItems.length, slideKey: "clone-last", clone: true },
+        ...activeApproachItems.map((item, index) => ({ ...item, slideNumber: index + 1, slideKey: `${item.title}-${index}`, clone: false })),
+        { ...activeApproachItems[0], slideNumber: 1, slideKey: "clone-first", clone: true },
+      ]
+    : activeApproachItems.map((item, index) => ({ ...item, slideNumber: index + 1, slideKey: `${item.title}-${index}`, clone: false }));
+  const activeApproachIndex = activeApproachItems.length > 1
+    ? (approachIndex - 1 + activeApproachItems.length) % activeApproachItems.length
+    : 0;
 
   useEffect(() => {
-    setApproachIndex((current) => activeApproachItems.length ? current % activeApproachItems.length : 0);
+    setApproachIndex((current) => activeApproachItems.length > 1
+      ? ((current - 1 + activeApproachItems.length) % activeApproachItems.length) + 1
+      : 0);
   }, [activeApproachItems.length]);
 
   useEffect(() => {
@@ -265,11 +278,21 @@ export default function Home() {
 
     const timer = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      setApproachIndex((current) => (current + 1) % activeApproachItems.length);
+      setApproachIndex((current) => Math.min(current + 1, activeApproachItems.length + 1));
     }, 5000);
 
     return () => window.clearInterval(timer);
   }, [activeApproachItems.length, approachAutoplayPaused, treatmentReducedMotion]);
+
+  useEffect(() => {
+    if (!treatmentReducedMotion || activeApproachItems.length <= 1
+      || (approachIndex !== 0 && approachIndex !== activeApproachItems.length + 1)) return;
+
+    setApproachTransitionEnabled(false);
+    setApproachIndex(approachIndex === 0 ? activeApproachItems.length : 1);
+    const frame = window.requestAnimationFrame(() => setApproachTransitionEnabled(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeApproachItems.length, approachIndex, treatmentReducedMotion]);
 
   return (
     <main id="top" className="overflow-hidden">
@@ -304,18 +327,29 @@ export default function Home() {
             className="approach-steps"
             role="region"
             aria-label="Our approach"
+            aria-roledescription="carousel"
             aria-live="off"
             onMouseEnter={() => setApproachAutoplayPaused(true)}
             onMouseLeave={() => setApproachAutoplayPaused(false)}
           >
             <div
-              className="approach-track"
-              style={{ transform: `translateX(-${approachIndex * 100}%)` }}
+              className={`approach-track${approachTransitionEnabled ? "" : " approach-track-no-transition"}`}
+              style={{ transform: `translateY(-${approachIndex * 100}%)` }}
+              onTransitionEnd={(event) => {
+                if (event.target !== event.currentTarget || event.propertyName !== "transform"
+                  || activeApproachItems.length <= 1
+                  || (approachIndex !== 0 && approachIndex !== activeApproachItems.length + 1)) return;
+                setApproachTransitionEnabled(false);
+                setApproachIndex(approachIndex === 0 ? activeApproachItems.length : 1);
+                window.requestAnimationFrame(() => {
+                  window.requestAnimationFrame(() => setApproachTransitionEnabled(true));
+                });
+              }}
             >
-              {activeApproachItems.map(({ title, description, image, position }, index) => (
-                <article key={`${title}-${index}`} className="approach-item" style={{ backgroundImage: `url(${image})`, backgroundPosition: position }}>
+              {approachSlides.map(({ title, description, image, position, slideNumber, slideKey, clone }) => (
+                <article key={slideKey} aria-hidden={clone || undefined} className="approach-item" style={{ backgroundImage: `url(${image})`, backgroundPosition: position }}>
                   <div className="approach-item-overlay" />
-                  <span className="approach-number">{index + 1}</span>
+                  <span className="approach-number">{slideNumber}</span>
                   <div className="approach-copy">
                     <h3>{title}</h3>
                     <p>{description}</p>
@@ -325,12 +359,12 @@ export default function Home() {
             </div>
             {activeApproachItems.length > 1 && (
               <div className="approach-carousel-controls" role="group" aria-label="Approach slides">
-                <span aria-live="polite">{approachIndex + 1} / {activeApproachItems.length}</span>
-                <button type="button" aria-label="Previous approach card" onClick={() => setApproachIndex((current) => (current - 1 + activeApproachItems.length) % activeApproachItems.length)}>
-                  <ChevronLeft size={18} aria-hidden="true" />
+                <span aria-live="polite">{activeApproachIndex + 1} / {activeApproachItems.length}</span>
+                <button type="button" aria-label="Previous approach card" onClick={() => setApproachIndex((current) => current === 1 ? 0 : current === 0 ? activeApproachItems.length : current - 1)}>
+                  <ChevronUp size={18} aria-hidden="true" />
                 </button>
-                <button type="button" aria-label="Next approach card" onClick={() => setApproachIndex((current) => (current + 1) % activeApproachItems.length)}>
-                  <ChevronRight size={18} aria-hidden="true" />
+                <button type="button" aria-label="Next approach card" onClick={() => setApproachIndex((current) => current === activeApproachItems.length ? current + 1 : current === activeApproachItems.length + 1 ? 2 : current + 1)}>
+                  <ChevronDown size={18} aria-hidden="true" />
                 </button>
               </div>
             )}
