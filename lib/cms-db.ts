@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { homepageSeeds } from "@/lib/homepage-seed-data";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
+import { getCmsContentHref } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 
 export interface CmsCategory {
@@ -478,6 +479,51 @@ function openDatabase(): DatabaseSync {
         updateCategory.run(categoryId, row.slug);
       }
       database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('service-article-categories-v4')").run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  const blogPostMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'wordpress-posts-blog-v5'",
+  ).get();
+  if (!blogPostMigration) {
+    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
+      items: Record<string, unknown>[];
+    };
+    const blogCategory = database.prepare("SELECT id FROM categories WHERE slug = 'blog'").get() as { id: string } | undefined;
+    if (!blogCategory) throw new Error("WordPress post classification requires the Blog category.");
+    const findImportedPost = database.prepare(`
+      SELECT c.id, c.slug, cat.slug AS category_slug
+      FROM content c JOIN categories cat ON cat.id = c.category_id
+      WHERE c.slug = ? AND c.status = 'published'
+        AND cat.slug IN ('treatments', 'therapy', 'mental-healthcare')
+    `);
+    const updateCategory = database.prepare(`
+      UPDATE content SET category_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE id = ?
+    `);
+    const recordRedirect = database.prepare(`
+      INSERT INTO cms_url_redirects (source_path, content_id) VALUES (?, ?)
+      ON CONFLICT(source_path) DO UPDATE SET content_id = excluded.content_id
+    `);
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      for (const row of snapshot.items) {
+        if (row.post_type !== "post" || typeof row.slug !== "string"
+          || inferImportedCategorySlug(row, row.slug) !== "blog") continue;
+        const current = findImportedPost.get(row.slug) as {
+          id: string;
+          slug: string;
+          category_slug: string;
+        } | undefined;
+        if (!current) continue;
+        const previousPath = getCmsContentHref(current.slug, current.category_slug);
+        updateCategory.run(blogCategory.id, current.id);
+        recordRedirect.run(previousPath, current.id);
+      }
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-posts-blog-v5')").run();
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");

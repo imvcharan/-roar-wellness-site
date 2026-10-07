@@ -54,23 +54,6 @@ const servicePostSlugs = new Set([
   "rehab-center-in-india",
 ]);
 
-const editorialPostCategories = new Set(["awards-recognition", "success-stories"]);
-const editorialPostSlugs = new Set([
-  "overcoming-drug-addiction-the-recovery-journey-of-rahul-mehra-at-roar-wellness-rehab-centre",
-  "roar-wellness-rehabilitation-centre-honoured-as-most-trusted-de-addiction-rehabilitation-centre-in-delhi-at-pride-bharat-awards-2026",
-  "sarah-overcame-alcohol-addiction",
-]);
-const treatmentPostCategories = new Set([
-  "addiction-treatment",
-  "alcohol-addiction-help",
-  "delhi-ncr-rehab",
-  "drug",
-  "drug-addiction-treatment",
-  "heroin",
-  "rehab-centre",
-  "substance-abuse-recovery",
-]);
-
 function renderedText(value: unknown): string | null {
   const text = typeof value === "string"
     ? value
@@ -103,21 +86,7 @@ export function inferImportedCategorySlug(row: Record<string, unknown>, slug: st
   const postType = getString(row, "post_type", "postType", "type")?.toLowerCase();
   if (postType === "post" || postType === "blog") {
     if (servicePostSlugs.has(slug)) return "treatments";
-    if (editorialPostSlugs.has(slug)) return "blog";
-
-    const text = `${slug} ${renderedText(row.title ?? row.name) || ""}`.toLowerCase();
-    const sourceCategories = Array.isArray(row.source_categories)
-      ? row.source_categories.filter((category): category is string => typeof category === "string")
-      : [];
-    if (sourceCategories.some((category) => editorialPostCategories.has(category))) return "blog";
-    if (/\b(therapy|therapies|meditation)\b/.test(text)) return "therapy";
-    if (/\b(adhd|bipolar|dementia|mental health|personality[- ]disorder|psychiatr|schizophrenia)\b/.test(text)) {
-      return "mental-healthcare";
-    }
-    if (sourceCategories.some((category) => treatmentPostCategories.has(category))
-      || /\b(alcohol|addiction|cannabis|charas|cocaine|de-?addiction|detox|drug|gambling|heroin|nasha|opioid|rehab|substance abuse)\b/.test(text)) {
-      return "treatments";
-    }
+    return "blog";
   }
   if (mainPageSlugs.has(slug)) return "main-pages";
   const rawCategory = row.category_slug ?? row.category ?? row.category_name;
