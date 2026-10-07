@@ -42,42 +42,50 @@ function CmsPageContent({ html, slug }: { html: string; slug: string }) {
     const content = contentRef.current;
     if (!content) return;
 
-    ["Our Therapy", "Other Services"].forEach((headingText) => {
-      const heading = Array.from(content.querySelectorAll<HTMLElement>("h2, h3, h4"))
-        .find((element) => element.textContent?.trim() === headingText);
-      if (!heading) return;
+    const removeEmbeddedSections = () => {
+      ["Our Therapy", "Other Services"].forEach((headingText) => {
+        const heading = Array.from(content.querySelectorAll<HTMLElement>("h2, h3, h4"))
+          .find((element) => element.textContent?.trim() === headingText);
+        if (!heading) return;
 
-      let section = heading.parentElement;
-      while (section && section !== content) {
-        if (section.matches(".e-con") && section.querySelector("a")) break;
-        section = section.parentElement;
-      }
-      if (section && section !== content) section.remove();
-    });
+        let section = heading.parentElement;
+        while (section && section !== content) {
+          if (section.matches(".e-con") && section.querySelector("a")) break;
+          section = section.parentElement;
+        }
+        if (section && section !== content) section.remove();
+      });
 
-    const pageRoot = content.querySelector<HTMLElement>(":scope > .elementor") || content;
-    const sections = Array.from(pageRoot.querySelectorAll<HTMLElement>(
-      ".e-con.e-parent, .elementor-section, .elementor-top-section"
-    ));
-    sections.forEach((section) => {
-      const headings = Array.from(section.querySelectorAll<HTMLElement>("h1, h2, h3, h4"))
-        .map((heading) => heading.textContent?.trim() || "");
-      const containsSharedSection = headings.some((heading) =>
-        /testimonial|client.s say|frequently asked questions|^faq'?s?$/i.test(heading)
-        || /^(let[’']s talk[!.]?|take the first step\.?)$/i.test(heading)
-      );
-      const containsEmbeddedWidget = Boolean(section.querySelector(
-        ".elementor-widget-reviews, .elementor-widget-testimonial, .elementor-widget-testimonial-carousel, .elementor-widget-form, .elementor-form, .accordion"
+      const pageRoot = content.querySelector<HTMLElement>(":scope > .elementor") || content;
+      const sections = Array.from(pageRoot.querySelectorAll<HTMLElement>(
+        ".e-con.e-parent, .elementor-section, .elementor-top-section"
       ));
-      if (!containsSharedSection && !containsEmbeddedWidget) return;
+      sections.forEach((section) => {
+        const headings = Array.from(section.querySelectorAll<HTMLElement>("h1, h2, h3, h4"))
+          .map((heading) => heading.textContent?.trim() || "");
+        const containsSharedSection = headings.some((heading) =>
+          /testimonial|client.s say|frequently asked questions|^faq'?s?$/i.test(heading)
+          || /^(let[’']s talk[!.]?|take the first step\.?)$/i.test(heading)
+        );
+        const containsEmbeddedWidget = Boolean(section.querySelector(
+          ".elementor-widget-reviews, .elementor-widget-testimonial, .elementor-widget-testimonial-carousel, .elementor-widget-form, .elementor-form, .accordion"
+        ));
+        if (!containsSharedSection && !containsEmbeddedWidget) return;
 
-      const previous = section.previousElementSibling;
-      if (previous instanceof HTMLElement && previous.matches(".e-con.e-parent")
-        && /testimonial|client.s say/i.test(previous.textContent || "")) {
-        previous.remove();
-      }
-      section.remove();
-    });
+        const previous = section.previousElementSibling;
+        if (previous instanceof HTMLElement
+          && previous.matches(".e-con.e-parent, .elementor-section, .elementor-top-section")
+          && /testimonial|client.s say/i.test(previous.textContent || "")) {
+          previous.remove();
+        }
+        section.remove();
+      });
+    };
+
+    removeEmbeddedSections();
+    const observer = new MutationObserver(removeEmbeddedSections);
+    observer.observe(content, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [html]);
 
   const toggleFaq = (title: HTMLElement) => {
