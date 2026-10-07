@@ -296,6 +296,27 @@ export default function InnerPagesPage({
       .filter((item) => item.slug !== selectedSlug && item.category_slug === selectedCategorySlug)
       .slice(0, 4);
 
+    if (selectedItem && selectedKind === "page" && selectedSlug.toLowerCase() === "contact-us") {
+      return (
+        <main className="pb-20 pt-40 md:pb-24">
+          <section className="contact-page-hero px-6 text-cream md:px-12">
+            <div className="site-container">
+              <p className="contact-page-hero-kicker">Roar Wellness</p>
+              <h1>Contact Us</h1>
+              <p>Reach out for a confidential conversation about care, recovery, and the next step for you or someone you care about.</p>
+            </div>
+          </section>
+          <ContactSection
+            contactEmail={contactEmail}
+            contactPhone={contactPhone}
+            contactWhatsApp={contactWhatsApp}
+            contactAddress={contactAddress}
+            appearance="light"
+          />
+        </main>
+      );
+    }
+
     return (
       <main className="pb-20 pt-40 md:pb-24">
         {selectedItem && <nav aria-label="Breadcrumb" className="site-container px-5">

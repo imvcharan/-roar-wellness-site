@@ -137,6 +137,22 @@
   .contact-socials { display: flex; gap: .6rem; }
   .contact-section.lets-talk-band { margin-top: 0; }
   .lets-talk-band .contact-socials { margin-top: .9rem; }
+  .contact-section-light.lets-talk-band { background: transparent; color: var(--color-brown); }
+  .contact-section-light.lets-talk-band::before { display: none; }
+  .contact-section-light .lets-talk-section { color: var(--color-brown); }
+  .contact-section-light .lets-talk-copy :is(h1, h2) { color: var(--color-brown); }
+  .contact-section-light .lets-talk-kicker { color: var(--color-terracotta); }
+  .contact-section-light .lets-talk-text { color: var(--color-brown-muted); }
+  .contact-section-light .contact-socials a { border-color: rgb(81 72 63 / .25); color: var(--color-brown); }
+  .contact-section-light .contact-socials a:hover { background: var(--color-brand-plum); color: var(--color-cream); }
+  .contact-section-light .lets-talk-contact-details .contact-detail,
+  .contact-section-light .lets-talk-contact-details .contact-detail:first-child { color: var(--color-brown); }
+  .contact-section-light .lets-talk-contact-details .contact-detail svg { color: var(--color-terracotta); }
+  .contact-section-light .lets-talk-contact-details .contact-detail p { color: var(--color-brown-muted); }
+  .contact-section-light .lets-talk-contact-details .contact-detail a,
+  .contact-section-light .lets-talk-contact-details .contact-detail span { color: var(--color-brown); }
+  .contact-section-light .lets-talk-contact-details .contact-detail a:hover { color: var(--color-terracotta); }
+  .contact-section-light .lets-talk-form { box-shadow: 0 14px 38px rgb(30 17 36 / .1); }
   .detail-contact-main { padding: clamp(1.8rem, 3vw, 3rem) 0; color: var(--color-cream); }
   .contact-socials a { display: inline-flex; width: 2.6rem; height: 2.6rem; align-items: center; justify-content: center; border: 1px solid rgb(255 252 245 / .35); border-radius: 50%; color: var(--color-cream); transition: background .2s ease, color .2s ease; }
   .contact-socials a:hover { background: var(--color-cream); color: var(--color-coral); }
@@ -155,6 +171,14 @@
   .contact-form-note { margin: .8rem 0 0; color: var(--color-brown-muted); font-size: .7rem; line-height: 1.5; }
   .contact-details-band { background: linear-gradient(180deg, #fff 0%, #fbf7fb 100%); }
   .contact-details { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--color-beige); padding: 1.5rem 0; }
+  .lets-talk-contact-details { grid-template-columns: minmax(0, 1fr); gap: .6rem; margin-top: 2rem; border: 0; padding: 0; }
+  .lets-talk-contact-details .contact-detail,
+  .lets-talk-contact-details .contact-detail:first-child { align-items: flex-start; border: 0; padding: .4rem 0; color: var(--color-cream); }
+  .lets-talk-contact-details .contact-detail svg { color: rgb(255 252 245 / .78); }
+  .lets-talk-contact-details .contact-detail p { margin-bottom: .2rem; color: rgb(255 252 245 / .66); }
+  .lets-talk-contact-details .contact-detail a,
+  .lets-talk-contact-details .contact-detail span { color: var(--color-cream); }
+  .lets-talk-contact-details .contact-detail a:hover { color: white; }
   .contact-detail { display: flex; align-items: flex-start; gap: .9rem; padding: .5rem 1.25rem; color: var(--color-brown); }
   .contact-detail:first-child { padding-left: 0; }
   .contact-detail + .contact-detail { border-left: 1px solid var(--color-brand-blush); }
@@ -314,6 +338,20 @@
     font-size: .8rem;
     line-height: 1.5;
   }
+  .contact-page-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 82% 0%, rgb(183 126 174 / .3), transparent 38%),
+      radial-gradient(ellipse at 8% 100%, rgb(120 78 126 / .32), transparent 42%),
+      linear-gradient(125deg, #49334f 0%, #62456b 54%, #755478 100%);
+    padding-top: clamp(3rem, 6vw, 5rem);
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+  .contact-page-hero-kicker { margin: 0 0 .9rem; color: rgb(255 252 245 / .74); font-size: .72rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+  .contact-page-hero h1 { max-width: 48rem; margin: 0; color: var(--color-cream); font-family: var(--font-serif); font-size: clamp(3rem, 6vw, 5rem); font-weight: 400; line-height: .98; letter-spacing: -.05em; }
+  .contact-page-hero p:last-child { max-width: 38rem; margin: 1.15rem 0 0; color: rgb(255 252 245 / .84); font-size: 1rem; line-height: 1.65; }
   .detail-hero-media { min-height: 100%; background: rgba(255, 252, 245, 0.08); }
   .detail-hero-image {
     display: block;
@@ -361,7 +399,7 @@
     max-width: 28rem;
     padding-right: 1rem;
   }
-  .lets-talk-copy h2 {
+  .lets-talk-copy :is(h1, h2) {
     margin: 0;
     color: var(--color-cream);
     font-family: var(--font-serif);
