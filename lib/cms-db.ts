@@ -333,6 +333,33 @@ function openDatabase(): DatabaseSync {
     );
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-therapy-room-image-v1')").run();
   }
+  const facilityContentMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-live-content-v1'",
+  ).get();
+  if (!facilityContentMigration) {
+    const facilities = homepageSeeds.filter((item) => item.group === "facility");
+    const keys = facilities.map((item) => item.key);
+    database.prepare(
+      `DELETE FROM cms_home_sections WHERE group_name = 'facility' AND section_key NOT IN (${keys.map(() => "?").join(", ")})`,
+    ).run(...keys);
+    const upsertFacility = database.prepare(`
+      INSERT INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(section_key) DO UPDATE SET
+        group_name = excluded.group_name,
+        heading = excluded.heading,
+        eyebrow = excluded.eyebrow,
+        body = excluded.body,
+        image_url = excluded.image_url,
+        position = excluded.position,
+        is_published = 1,
+        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+    `);
+    facilities.forEach((item, position) => {
+      upsertFacility.run(item.key, item.group, item.heading, item.eyebrow, item.body, item.imageUrl, position);
+    });
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-live-content-v1')").run();
+  }
   const recoveryCommunityBlogImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-sarah-recovery-community-image-v1'",
   ).get();

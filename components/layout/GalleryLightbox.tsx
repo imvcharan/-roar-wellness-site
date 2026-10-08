@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 
-export function GalleryLightbox({ images, children }: { images: string[]; children: ReactNode }) {
+export function GalleryLightbox({ images, imageAlts, children }: { images: string[]; imageAlts?: string[]; children: ReactNode }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
 
@@ -50,7 +50,7 @@ export function GalleryLightbox({ images, children }: { images: string[]; childr
           </div>
           <button type="button" className="gallery-lightbox-arrow gallery-lightbox-previous" onClick={showPrevious} aria-label="Previous gallery image"><ChevronLeft size={26} /></button>
           <div className="gallery-lightbox-image-wrap">
-            <img src={images[activeIndex]} alt="Roar Wellness gallery" className="gallery-lightbox-image" style={{ transform: `scale(${zoom})` }} />
+            <img src={images[activeIndex]} alt={imageAlts?.[activeIndex] ?? "Roar Wellness gallery"} className="gallery-lightbox-image" style={{ transform: `scale(${zoom})` }} />
           </div>
           <button type="button" className="gallery-lightbox-arrow gallery-lightbox-next" onClick={showNext} aria-label="Next gallery image"><ChevronRight size={26} /></button>
         </div>

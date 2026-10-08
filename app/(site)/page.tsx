@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImages } from "@/lib/gallery-images";
@@ -191,12 +191,14 @@ export default function Home() {
   const [galleryIndex, setGalleryIndex] = useState(0);
 
   const facilitySlides = [
-    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "/images/facility-swimming-pool.webp"],
-    ["Gym", "Modern gym equipment to support strength, stamina, and self-confidence.", "https://www.roarwellness.org/wp-content/uploads/2025/04/617565207766SS_05321-1.jpg"],
-    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "/images/facility-open-space.webp"],
-    ["Yoga & Meditation", "Quiet, restorative spaces that support mindfulness and emotional balance.", "/images/facility-yoga-meditation.webp"],
-    ["Game Therapy", "Structured play and shared activities that make recovery engaging and social.", "/images/game-therapy.webp"],
-    ["Therapy Room", "Comfortable spaces for evidence-based conversations and personal care.", "/images/facility-therapy-room.webp"],
+    ["Table Tennis", "A fun table setup for fast-paced ping pong matches that boost focus and energy.", "https://www.roarwellness.org/wp-content/uploads/2025/06/7gg.jpg"],
+    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "https://www.roarwellness.org/wp-content/uploads/2025/06/5ee.jpg"],
+    ["Gym", "Modern gym equipment to support strength, stamina, and self-confidence.", "https://www.roarwellness.org/wp-content/uploads/2025/06/4dd.jpg"],
+    ["Medical Room", "Fully facilitated medical room for good mental peace and personal growth.", "https://www.roarwellness.org/wp-content/uploads/2025/06/20ff.jpg"],
+    ["Yoga Meditation", "Peaceful yoga hall to regain balance, flexibility, and inner calm.", "https://www.roarwellness.org/wp-content/uploads/2025/06/8gg.png"],
+    ["Library", "Best library for reading and discussion for individual growth.", "https://www.roarwellness.org/wp-content/uploads/2025/06/1aa.jpg"],
+    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "https://www.roarwellness.org/wp-content/uploads/2025/06/2bb.jpg"],
+    ["Snooker Table", "Play your game! Professional snooker table for mind-sharpening fun.", "https://www.roarwellness.org/wp-content/uploads/2025/06/3cc.jpg"],
   ];
   const activeFacilitySlides = cmsHomeLoaded
     ? (cmsHome.facility || []).map((item) => [item.heading, item.body, item.image_url] as [string, string, string])
@@ -554,25 +556,38 @@ export default function Home() {
           <div className="facility-heading-row mb-12">
             <div>
               <p className="eyebrow text-coral">Roar Wellness Rehabilitation Centre</p>
-              <h2 className="section-title mt-5 text-olive">Our <em>facility</em></h2>
-            </div>
-            <div className="facility-intro">
-              <p>ROAR aims to give the best quality care in residential treatment for substance use disorder, in a safe, secure and supportive environment.</p>
-              <Link href="/facility/" className="arrow-link mt-5 inline-flex text-olive">Explore our facility <span aria-hidden="true">↗</span></Link>
+              <h2 className="section-title mt-5 text-olive">Our <em>Facility</em></h2>
             </div>
           </div>
 
           <div className="facility-carousel" aria-roledescription="carousel" aria-label="Roar Wellness facility gallery">
-            <div className="facility-viewport">
-              <div className="facility-track" style={{ transform: `translateX(-${facilityIndex * (100 / loopingFacilitySlides.length)}%)` }}>
-                {loopingFacilitySlides.map(([title, description, image], index) => (
-                  <article key={`${title}-${index}`} className="facility-slide" aria-hidden={index >= activeFacilitySlides.length} aria-label={`${(index % activeFacilitySlides.length) + 1} of ${activeFacilitySlides.length}`}>
-                    <div className="facility-image-wrap"><img src={image} alt={`${title} at Roar Wellness`} className="facility-image" /></div>
-                    <div className="facility-card-copy"><p className="facility-index">0{index + 1}</p><h3>{title}</h3><p>{description}</p></div>
-                  </article>
-                ))}
+            <GalleryLightbox
+              images={activeFacilitySlides.map(([, , image]) => image)}
+              imageAlts={activeFacilitySlides.map(([title, description]) => `${title}: ${description}`)}
+            >
+              <div className="facility-viewport">
+                <div
+                  className="facility-track"
+                  style={{
+                    "--facility-card-basis": `${100 / loopingFacilitySlides.length}%`,
+                    "--facility-track-desktop-width": `${loopingFacilitySlides.length / 3 * 100}%`,
+                    "--facility-track-tablet-width": `${loopingFacilitySlides.length / 2 * 100}%`,
+                    "--facility-track-mobile-width": `${loopingFacilitySlides.length * 100}%`,
+                    transform: `translateX(-${facilityIndex * (100 / loopingFacilitySlides.length)}%)`,
+                  } as CSSProperties}
+                >
+                  {loopingFacilitySlides.map(([title, description, image], index) => (
+                    <article key={`${title}-${index}`} className="facility-slide" aria-hidden={index >= activeFacilitySlides.length} aria-label={`${(index % activeFacilitySlides.length) + 1} of ${activeFacilitySlides.length}`}>
+                      <div className="facility-image-wrap">
+                        <button type="button" className="facility-image-button" data-gallery-index={index % activeFacilitySlides.length} aria-label={`View full image: ${title}`} tabIndex={index >= activeFacilitySlides.length ? -1 : 0}>
+                          <img src={image} alt={`${title}: ${description}`} className="facility-image" />
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
-            </div>
+            </GalleryLightbox>
             <div className="facility-controls">
               <div className="facility-dots" role="tablist" aria-label="Choose a facility slide">
                 {activeFacilitySlides.map(([title], index) => (
