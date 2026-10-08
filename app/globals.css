@@ -489,7 +489,7 @@
     min-height: min(44rem, 86vh);
     place-items: center;
     overflow: hidden;
-    background: #51483f url("/images/naturopathic-consultation.png") center 45% / cover no-repeat;
+    background: #51483f url("/images/healing-journey-background.png") center 45% / cover no-repeat;
     padding: clamp(3rem, 8vw, 6rem) 1.5rem;
   }
   .home-theme .home-appointment-showcase::before {
