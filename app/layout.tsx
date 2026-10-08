@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@fontsource-variable/inter";
+import "@fontsource-variable/lora";
 import { QueryProvider } from "@/lib/query-client";
 import "./globals.css";
 

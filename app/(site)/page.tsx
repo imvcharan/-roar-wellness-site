@@ -342,7 +342,7 @@ export default function Home() {
         <div className="home-hero-content relative site-container">
           <p className="eyebrow mb-6 text-cream/75">{homeSettings.homepageHeroEyebrow || "Rehabilitation centre · Delhi"}</p>
           <h1 className="mx-auto max-w-5xl font-serif text-[clamp(3.8rem,10vw,9.5rem)] leading-[.86] tracking-[-.06em]">{homeSettings.homepageHeroTitle || "Roar Wellness"}</h1>
-          <p className="mx-auto mt-8 max-w-xl font-serif text-xl italic leading-relaxed text-cream/85 md:text-2xl">{homeSettings.homepageHeroDescription || "A premier rehabilitation centre committed to transforming lives through personalized, evidence-based care."}</p>
+          <p className="mx-auto mt-8 max-w-xl text-xl italic leading-relaxed text-cream/85 md:text-2xl" style={{ fontFamily: "var(--font-body)" }}>{homeSettings.homepageHeroDescription || "A premier rehabilitation centre committed to transforming lives through personalized, evidence-based care."}</p>
           <a href="tel:+919319977207" className="home-hero-appointment">
             <span>Make an appointment</span><span className="home-hero-appointment-arrow" aria-hidden="true">→</span>
           </a>
