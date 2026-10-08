@@ -36,24 +36,28 @@ export default function BlogPage() {
   }, []);
 
   return (
-    <main className="site-container px-4 py-24">
-      <h1 className="mb-16 text-center font-display text-4xl font-bold tracking-tight text-brown md:text-5xl">News</h1>
-      {posts.length ? <div className="space-y-12">
+    <main className="site-container content-archive content-archive-blog px-4 py-24">
+      <header className="archive-heading">
+        <p className="eyebrow text-terracotta">Roar Wellness journal</p>
+        <h1 className="mt-4 font-serif tracking-tight">News &amp; insights</h1>
+        <p className="archive-intro">Thoughtful perspectives on recovery, mental wellbeing, and the journey toward lasting change.</p>
+      </header>
+      {posts.length ? <div className="blog-archive-list">
         {posts.map((post) => {
           const href = getCmsContentHref(post.slug, post.category_slug);
           return (
-          <article key={post.slug} className="group grid max-w-4xl gap-6 border-b border-beige pb-12 last:border-0 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <article key={post.slug} className="blog-archive-card group grid gap-0 md:grid-cols-[minmax(14rem,.8fr)_minmax(0,1.2fr)]">
             <Link href={href} aria-label={`Read ${post.title}`} className={`blog-card-image ${post.image_url ? "" : "blog-card-image-placeholder"}`}>
               {post.image_url
                 ? <img src={post.image_url} alt={post.featured_image_alt || ""} loading="lazy" style={{ objectPosition: post.featured_image_position || "50% 50%" }} />
                 : <span aria-hidden="true">Roar Wellness</span>}
             </Link>
-            <div>
-              <h2 className="mb-3 font-display text-xl font-bold text-brown transition-colors group-hover:text-terracotta md:text-2xl">
+            <div className="blog-archive-card-copy flex flex-col justify-center">
+              <h2 className="blog-archive-card-title mb-3 transition-colors">
                 <Link href={href}>{post.title}</Link>
               </h2>
-              {post.published_at && <p className="mb-4 font-serif text-sm text-brown-muted">{new Date(post.published_at).toLocaleDateString()}</p>}
-              {(post.excerpt || post.summary) && <p className="font-body leading-relaxed text-brown/70">{post.excerpt || post.summary}</p>}
+              {post.published_at && <p className="blog-archive-card-date mb-4 font-body text-xs font-semibold uppercase tracking-[.12em]">{new Date(post.published_at).toLocaleDateString()}</p>}
+              {(post.excerpt || post.summary) && <p className="blog-archive-card-summary font-body text-sm leading-relaxed">{post.excerpt || post.summary}</p>}
             </div>
           </article>
           );

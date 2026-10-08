@@ -327,7 +327,7 @@ export default function InnerPagesPage({
     }
 
     return (
-      <main className={`pb-20 pt-40 md:pb-24${selectedSlug === "about-roarwellness" ? " about-roarwellness-detail" : ""}`}>
+      <main className={`pb-20 pt-40 md:pb-24${selectedSlug ? " detail-content-theme" : ""}${selectedSlug === "about-roarwellness" ? " about-roarwellness-detail" : ""}`}>
         {selectedItem && <nav aria-label="Breadcrumb" className="site-container px-5">
           <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
             <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
