@@ -295,8 +295,8 @@ export default function Home() {
   }, [activeApproachItems.length, approachIndex, treatmentReducedMotion]);
 
   return (
-    <main id="top" className="overflow-hidden">
-      <section className="relative flex min-h-[92vh] items-end bg-brown px-6 pb-12 pt-40 text-cream md:px-12 md:pb-16">
+    <main id="top" className="home-theme overflow-hidden">
+      <section className="relative flex min-h-[92vh] items-end bg-brand-plum px-6 pb-12 pt-40 text-cream md:px-12 md:pb-16">
         <iframe
           title="Roar Wellness hero background"
           src="https://www.youtube.com/embed/zmzAImnceg8?autoplay=1&mute=1&controls=0&loop=1&playlist=zmzAImnceg8&playsinline=1&rel=0"
@@ -451,7 +451,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="facility" className="facility-section bg-[#f8f4f6] px-6 py-20 md:px-12 md:py-28">
+      <section id="facility" className="facility-section bg-sand px-6 py-20 md:px-12 md:py-28">
         <div className="site-container">
           <div className="facility-heading-row mb-12">
             <div>
