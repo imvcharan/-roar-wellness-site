@@ -840,6 +840,10 @@
   .facility-image-button:focus-visible { outline: 2px solid var(--color-coral); outline-offset: 3px; }
   .facility-image { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.86); transition: transform .7s ease, filter .7s ease; }
   .facility-slide:hover .facility-image { transform: scale(1.04); filter: saturate(1); }
+  .facility-card-copy { padding-top: 1rem; }
+  .facility-index { margin: 0 0 .55rem; color: var(--color-terracotta); font-family: var(--font-body); font-size: .66rem; letter-spacing: .14em; }
+  .facility-card-copy h3 { margin: 0; color: var(--color-brown); font-family: var(--font-serif); font-size: clamp(1.55rem, 2.5vw, 2.2rem); font-weight: 400; line-height: 1.05; letter-spacing: -.04em; }
+  .facility-card-copy > p:last-child { max-width: 23rem; margin: .55rem 0 0; color: rgb(81 72 63 / .72); font-family: var(--font-body); font-size: .8rem; line-height: 1.5; }
   .facility-controls { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-top: 2.2rem; }
   .facility-dots { display: flex; align-items: center; gap: .5rem; }
   .facility-dot { width: .55rem; height: .55rem; padding: 0; border: 0; border-radius: 50%; background: rgb(81 72 63 / .22); transition: transform .2s ease, background .2s ease; }

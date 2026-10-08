@@ -583,6 +583,11 @@ export default function Home() {
                           <img src={image} alt={`${title}: ${description}`} className="facility-image" />
                         </button>
                       </div>
+                      <div className="facility-card-copy">
+                        <p className="facility-index">{String((index % activeFacilitySlides.length) + 1).padStart(2, "0")}</p>
+                        <h3>{title}</h3>
+                        <p>{description}</p>
+                      </div>
                     </article>
                   ))}
                 </div>
