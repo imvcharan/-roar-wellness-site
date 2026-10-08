@@ -509,7 +509,7 @@
   }
   .home-theme .home-appointment-image {
     height: clamp(13rem, 29vw, 17rem);
-    background: #a1806e url("/images/naturopathic-consultation.png") center 43% / cover no-repeat;
+    background: #a1806e url("/images/healing-journey-background.png") center 45% / cover no-repeat;
   }
   .home-theme .home-appointment-copy {
     display: flex;
