@@ -360,6 +360,20 @@ function openDatabase(): DatabaseSync {
     });
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-live-content-v1')").run();
   }
+  const facilityImageAlignmentMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-image-alignment-v1'",
+  ).get();
+  if (!facilityImageAlignmentMigration) {
+    const updateFacilityImage = database.prepare(`
+      UPDATE cms_home_sections
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = ? AND group_name = 'facility'
+    `);
+    homepageSeeds
+      .filter((item) => item.group === "facility")
+      .forEach((item) => updateFacilityImage.run(item.imageUrl, item.key));
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-image-alignment-v1')").run();
+  }
   const recoveryCommunityBlogImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-sarah-recovery-community-image-v1'",
   ).get();

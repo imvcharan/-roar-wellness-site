@@ -1332,7 +1332,6 @@
   @media (max-width: 767px) {
     .facility-heading-row { align-items: flex-start; flex-direction: column; gap: 1.25rem; }
     .facility-track { width: var(--facility-track-tablet-width); }
-    .facility-slide { flex-basis: 8.333333%; }
     .facility-controls { margin-top: 1.6rem; }
     .footer-main-row { align-items: flex-start; flex-wrap: wrap; }
     .footer-navigation { order: 3; flex-basis: 100%; flex-wrap: wrap; justify-content: flex-start; }
@@ -1515,7 +1514,7 @@
   }
   @media (max-width: 520px) {
     .facility-track { width: var(--facility-track-mobile-width); }
-    .facility-slide { flex-basis: 8.333333%; padding-right: 0; }
+    .facility-slide { padding-right: 0; }
     .header-logo { width: 9rem; }
     .footer-logo { width: 10rem; }
     .footer-contact-inline { width: 100%; margin-left: 0; text-align: left; }
