@@ -347,7 +347,7 @@ export default function InnerPagesPage({
         {selectedItem ? <>
           <section className="detail-hero-band mt-6" aria-labelledby="treatment-detail-title">
             <div className="site-container px-5">
-              <div className={image ? "detail-hero" : "detail-hero detail-hero-no-media"}>
+              <div className={`detail-hero${image ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
               <div className="detail-hero-copy">
                 <p className="detail-hero-kicker">{isExpertsPage ? "Meet the people behind your care" : selectedKind === "blog" ? "From the Roar Wellness journal" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
                 <h1 id="treatment-detail-title" className="detail-hero-title">{selectedItem.title}</h1>
@@ -356,7 +356,7 @@ export default function InnerPagesPage({
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "service" && <p className="detail-hero-note">Private, supportive, and without obligation</p>}
               </div>
-              {image && <div className="detail-hero-media"><img src={image} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
+              {image && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial" : ""}`}><img src={image} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
           </section>
