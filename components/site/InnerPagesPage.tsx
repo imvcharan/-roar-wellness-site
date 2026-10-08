@@ -130,7 +130,7 @@ function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slu
 
   return <div
     ref={contentRef}
-    className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${centerMedia ? " cms-centered-media" : ""}`}
+    className={`cms-page-content${slug === "about-roarwellness" ? " cms-about-page" : ""}${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${centerMedia ? " cms-centered-media" : ""}`}
     onClickCapture={onClickCapture}
     onKeyDownCapture={onKeyDownCapture}
     dangerouslySetInnerHTML={{ __html: html }}
