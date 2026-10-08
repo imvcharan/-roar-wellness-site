@@ -191,12 +191,12 @@ export default function Home() {
   const [galleryIndex, setGalleryIndex] = useState(0);
 
   const facilitySlides = [
-    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "/images/facility-swimming-pool.png"],
+    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "/images/facility-swimming-pool.webp"],
     ["Gym", "Modern gym equipment to support strength, stamina, and self-confidence.", "https://www.roarwellness.org/wp-content/uploads/2025/04/617565207766SS_05321-1.jpg"],
-    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "/images/facility-open-space.png"],
-    ["Yoga & Meditation", "Quiet, restorative spaces that support mindfulness and emotional balance.", "https://www.roarwellness.org/wp-content/uploads/2025/04/157245510430SS_05239-1.jpg"],
+    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "/images/facility-open-space.webp"],
+    ["Yoga & Meditation", "Quiet, restorative spaces that support mindfulness and emotional balance.", "/images/facility-yoga-meditation.webp"],
     ["Game Therapy", "Structured play and shared activities that make recovery engaging and social.", "/images/game-therapy.webp"],
-    ["Therapy Room", "Comfortable spaces for evidence-based conversations and personal care.", "https://www.roarwellness.org/wp-content/uploads/2025/04/285728832438SS_05308.jpg"],
+    ["Therapy Room", "Comfortable spaces for evidence-based conversations and personal care.", "/images/facility-therapy-room.webp"],
   ];
   const activeFacilitySlides = cmsHomeLoaded
     ? (cmsHome.facility || []).map((item) => [item.heading, item.body, item.image_url] as [string, string, string])
@@ -513,6 +513,7 @@ export default function Home() {
               </article>
 
               <article className="mosaic-card mosaic-timeline" tabIndex={0}>
+                <img src="/images/recovery-at-your-pace.webp" alt="" className="mosaic-timeline-image" />
                 <span className="mosaic-plus" aria-hidden="true">+</span>
                 <span className="mosaic-card-copy">
                   <span className="mosaic-card-title">Your path, at your pace</span>

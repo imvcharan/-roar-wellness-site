@@ -258,6 +258,21 @@ function openDatabase(): DatabaseSync {
     );
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v1')").run();
   }
+  const openSpacePhotoMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-image-v2'",
+  ).get();
+  if (!openSpacePhotoMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'facility-open-space'
+        AND group_name = 'facility'
+        AND image_url = ?
+    `).run(
+      "/images/facility-open-space.webp",
+      "/images/facility-open-space.png",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v2')").run();
+  }
   const swimmingPoolImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-swimming-pool-image-v1'",
   ).get();
@@ -272,6 +287,51 @@ function openDatabase(): DatabaseSync {
       "https://www.roarwellness.org/wp-content/uploads/2025/04/452908267532SS_05330.jpg",
     );
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v1')").run();
+  }
+  const swimmingPoolPhotoMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-swimming-pool-image-v2'",
+  ).get();
+  if (!swimmingPoolPhotoMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'facility-pool'
+        AND group_name = 'facility'
+        AND image_url = ?
+    `).run(
+      "/images/facility-swimming-pool.webp",
+      "/images/facility-swimming-pool.png",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v2')").run();
+  }
+  const yogaMeditationImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-yoga-meditation-image-v1'",
+  ).get();
+  if (!yogaMeditationImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'facility-yoga'
+        AND group_name = 'facility'
+        AND image_url = ?
+    `).run(
+      "/images/facility-yoga-meditation.webp",
+      "https://www.roarwellness.org/wp-content/uploads/2025/04/157245510430SS_05239-1.jpg",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-yoga-meditation-image-v1')").run();
+  }
+  const therapyRoomImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-therapy-room-image-v1'",
+  ).get();
+  if (!therapyRoomImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'facility-therapy-room'
+        AND group_name = 'facility'
+        AND image_url = ?
+    `).run(
+      "/images/facility-therapy-room.webp",
+      "https://www.roarwellness.org/wp-content/uploads/2025/04/285728832438SS_05308.jpg",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-therapy-room-image-v1')").run();
   }
   const recoveryCommunityBlogImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-sarah-recovery-community-image-v1'",
