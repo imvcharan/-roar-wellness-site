@@ -70,6 +70,17 @@ function isAllowedImageUrl(value: string): boolean {
   if (/^\/(?:api\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|uploads\/[0-9a-f-]+\.webp)$/i.test(value)) {
     return true;
   }
+  if (value.startsWith("/images/")) {
+    const imagePath = value.slice("/images/".length);
+    const segments = imagePath.split("/");
+    return /\.(?:avif|gif|jpe?g|png|webp)$/i.test(imagePath)
+      && segments.every((segment) =>
+        segment.length > 0
+        && segment !== "."
+        && segment !== ".."
+        && /^(?:[a-z0-9_-]|\.)+(?:%20(?:[a-z0-9_-]|\.)+)*$/i.test(segment)
+      );
+  }
   try {
     const parsed = new URL(value);
     return parsed.protocol === "http:" || parsed.protocol === "https:";
