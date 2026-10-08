@@ -191,14 +191,14 @@ export default function Home() {
   const [galleryIndex, setGalleryIndex] = useState(0);
 
   const facilitySlides = [
-    ["Table Tennis", "A fun table setup for fast-paced ping pong matches that boost focus and energy.", "https://www.roarwellness.org/wp-content/uploads/2025/06/1aa.jpg"],
-    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "https://www.roarwellness.org/wp-content/uploads/2025/06/2bb.jpg"],
-    ["Gym", "Modern gym equipment to support strength, stamina, and self-confidence.", "https://www.roarwellness.org/wp-content/uploads/2025/06/3cc.jpg"],
-    ["Medical Room", "Fully facilitated medical room for good mental peace and personal growth.", "https://www.roarwellness.org/wp-content/uploads/2025/06/20ff.jpg"],
-    ["Yoga Meditation", "Peaceful yoga hall to regain balance, flexibility, and inner calm.", "https://www.roarwellness.org/wp-content/uploads/2025/06/7gg.jpg"],
-    ["Library", "Best library for reading and discussion for individual growth.", "https://www.roarwellness.org/wp-content/uploads/2025/06/8gg.png"],
-    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "https://www.roarwellness.org/wp-content/uploads/2025/06/4dd.jpg"],
-    ["Snooker Table", "Play your game! Professional snooker table for mind-sharpening fun.", "https://www.roarwellness.org/wp-content/uploads/2025/06/5ee.jpg"],
+    ["Table Tennis", "A fun table setup for fast-paced ping pong matches that boost focus and energy.", "/images/facility-table-tennis.webp"],
+    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "/images/facility-swimming-pool.webp"],
+    ["Gym", "Modern gym equipment to support strength, stamina, and self-confidence.", "/images/facility-gym.webp"],
+    ["Medical Room", "Fully facilitated medical room for good mental peace and personal growth.", "/images/facility-therapy-room.webp"],
+    ["Yoga Meditation", "Peaceful yoga hall to regain balance, flexibility, and inner calm.", "/images/facility-yoga-meditation.webp"],
+    ["Library", "Best library for reading and discussion for individual growth.", "/images/facility-library.webp"],
+    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "/images/facility-open-space.webp"],
+    ["Snooker Table", "Play your game! Professional snooker table for mind-sharpening fun.", "/images/facility-snooker-table.webp"],
   ];
   const activeFacilitySlides = cmsHomeLoaded
     ? (cmsHome.facility || []).map((item) => [item.heading, item.body, item.image_url] as [string, string, string])

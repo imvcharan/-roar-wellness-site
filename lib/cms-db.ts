@@ -374,6 +374,66 @@ function openDatabase(): DatabaseSync {
       .forEach((item) => updateFacilityImage.run(item.imageUrl, item.key));
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-image-alignment-v1')").run();
   }
+  const facilityCustomImagesMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-custom-images-v1'",
+  ).get();
+  if (!facilityCustomImagesMigration) {
+    const updateFacilityImage = database.prepare(`
+      UPDATE cms_home_sections
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = ? AND group_name = 'facility'
+    `);
+    for (const item of homepageSeeds) {
+      if (["facility-therapy-room", "facility-yoga", "facility-snooker-table", "facility-table-tennis"].includes(item.key)) {
+        updateFacilityImage.run(item.imageUrl, item.key);
+      }
+    }
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-custom-images-v1')").run();
+  }
+  const facilityGymImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-gym-image-v1'",
+  ).get();
+  if (!facilityGymImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = 'facility-gym' AND group_name = 'facility'
+    `).run("/images/facility-gym.webp");
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-gym-image-v1')").run();
+  }
+  const facilityPoolImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-pool-local-image-v1'",
+  ).get();
+  if (!facilityPoolImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = 'facility-pool' AND group_name = 'facility'
+    `).run("/images/facility-swimming-pool.webp");
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-pool-local-image-v1')").run();
+  }
+  const facilityOpenSpaceLocalImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-local-image-v1'",
+  ).get();
+  if (!facilityOpenSpaceLocalImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = 'facility-open-space' AND group_name = 'facility'
+    `).run("/images/facility-open-space.webp");
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-open-space-local-image-v1')").run();
+  }
+  const facilityLibraryImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-library-local-image-v1'",
+  ).get();
+  if (!facilityLibraryImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = 'facility-library' AND group_name = 'facility'
+    `).run("/images/facility-library.webp");
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-library-local-image-v1')").run();
+  }
   const recoveryCommunityBlogImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-sarah-recovery-community-image-v1'",
   ).get();
