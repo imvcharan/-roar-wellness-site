@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImages } from "@/lib/gallery-images";
 import { getCmsContentHref } from "@/lib/cms-routes";
@@ -39,9 +39,9 @@ export default function Home() {
   const [treatmentIndex, setTreatmentIndex] = useState(0);
   const [treatmentAutoplayPaused, setTreatmentAutoplayPaused] = useState(false);
   const [treatmentReducedMotion, setTreatmentReducedMotion] = useState(false);
-  const [approachIndex, setApproachIndex] = useState(1);
-  const [approachTransitionEnabled, setApproachTransitionEnabled] = useState(true);
-  const [approachAutoplayPaused, setApproachAutoplayPaused] = useState(false);
+  const [revealedApproachItems, setRevealedApproachItems] = useState<Set<number>>(() => new Set([0]));
+  const [approachRevealReady, setApproachRevealReady] = useState(false);
+  const approachStepsRef = useRef<HTMLDivElement>(null);
   const [facilityIndex, setFacilityIndex] = useState(0);
   const [cmsTreatments, setCmsTreatments] = useState<CmsTreatment[]>([]);
   const [cmsTreatmentsLoaded, setCmsTreatmentsLoaded] = useState(false);
@@ -256,47 +256,38 @@ export default function Home() {
   const activeApproachItems = cmsHomeLoaded
     ? (cmsHome.approach || []).map((item) => ({ title: item.heading, description: item.body, image: item.image_url, position: "center center" }))
     : approachItems;
-  const approachSlides = activeApproachItems.length > 1
-    ? [
-        { ...activeApproachItems[activeApproachItems.length - 1], slideNumber: activeApproachItems.length, slideKey: "clone-last", clone: true },
-        ...activeApproachItems.map((item, index) => ({ ...item, slideNumber: index + 1, slideKey: `${item.title}-${index}`, clone: false })),
-        { ...activeApproachItems[0], slideNumber: 1, slideKey: "clone-first", clone: true },
-      ]
-    : activeApproachItems.map((item, index) => ({ ...item, slideNumber: index + 1, slideKey: `${item.title}-${index}`, clone: false }));
-  const activeApproachIndex = activeApproachItems.length > 1
-    ? (approachIndex - 1 + activeApproachItems.length) % activeApproachItems.length
-    : 0;
 
   useEffect(() => {
-    setApproachIndex((current) => activeApproachItems.length > 1
-      ? ((current - 1 + activeApproachItems.length) % activeApproachItems.length) + 1
-      : 0);
-  }, [activeApproachItems.length]);
+    const stepElements = approachStepsRef.current?.querySelectorAll<HTMLElement>(".approach-step");
+    if (!stepElements?.length) return;
+    if (treatmentReducedMotion || !("IntersectionObserver" in window)) {
+      setRevealedApproachItems(new Set(Array.from(stepElements, (_, index) => index)));
+      setApproachRevealReady(true);
+      return;
+    }
 
-  useEffect(() => {
-    if (treatmentReducedMotion || approachAutoplayPaused || activeApproachItems.length <= 1) return;
+    setRevealedApproachItems(new Set([0]));
+    setApproachRevealReady(true);
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const index = Number((entry.target as HTMLElement).dataset.approachIndex);
+        setRevealedApproachItems((current) => {
+          if (current.has(index)) return current;
+          const next = new Set(current);
+          next.add(index);
+          return next;
+        });
+        observer.unobserve(entry.target);
+      }
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
 
-    const timer = window.setInterval(() => {
-      if (document.visibilityState !== "visible") return;
-      setApproachIndex((current) => Math.min(current + 1, activeApproachItems.length + 1));
-    }, 5000);
-
-    return () => window.clearInterval(timer);
-  }, [activeApproachItems.length, approachAutoplayPaused, treatmentReducedMotion]);
-
-  useEffect(() => {
-    if (!treatmentReducedMotion || activeApproachItems.length <= 1
-      || (approachIndex !== 0 && approachIndex !== activeApproachItems.length + 1)) return;
-
-    setApproachTransitionEnabled(false);
-    setApproachIndex(approachIndex === 0 ? activeApproachItems.length : 1);
-    const frame = window.requestAnimationFrame(() => setApproachTransitionEnabled(true));
-    return () => window.cancelAnimationFrame(frame);
-  }, [activeApproachItems.length, approachIndex, treatmentReducedMotion]);
-
+    stepElements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [cmsHomeLoaded, treatmentReducedMotion]);
   return (
-    <main id="top" className="home-theme overflow-hidden">
-      <section className="relative flex min-h-[92vh] items-end bg-brand-plum px-6 pb-12 pt-40 text-cream md:px-12 md:pb-16">
+    <main id="top" className="home-theme">
+      <section className="home-hero relative flex min-h-[92vh] items-center justify-center bg-brand-plum px-6 py-32 text-cream md:px-12 md:py-36">
         <iframe
           title="Roar Wellness hero background"
           src="https://www.youtube.com/embed/zmzAImnceg8?autoplay=1&mute=1&controls=0&loop=1&playlist=zmzAImnceg8&playsinline=1&rel=0"
@@ -304,13 +295,13 @@ export default function Home() {
           className="hero-video"
           aria-hidden="true"
         />
-        <div className="relative site-container grid gap-10 md:grid-cols-[1fr_280px] md:items-end">
-          <div>
-            <p className="eyebrow mb-6 text-cream/75">{homeSettings.homepageHeroEyebrow || "Rehabilitation centre · Delhi"}</p>
-            <h1 className="max-w-5xl font-serif text-[clamp(3.8rem,10vw,9.5rem)] leading-[.86] tracking-[-.06em]">{homeSettings.homepageHeroTitle || "Roar Wellness"}</h1>
-            <p className="mt-8 max-w-xl font-serif text-xl italic leading-relaxed text-cream/85 md:text-2xl">{homeSettings.homepageHeroDescription || "A premier rehabilitation centre committed to transforming lives through personalized, evidence-based care."}</p>
-          </div>
-          <a href="tel:+919319977207" className="arrow-link mb-2 w-fit text-cream">Call us now <span>↗</span></a>
+        <div className="home-hero-content relative site-container">
+          <p className="eyebrow mb-6 text-cream/75">{homeSettings.homepageHeroEyebrow || "Rehabilitation centre · Delhi"}</p>
+          <h1 className="mx-auto max-w-5xl font-serif text-[clamp(3.8rem,10vw,9.5rem)] leading-[.86] tracking-[-.06em]">{homeSettings.homepageHeroTitle || "Roar Wellness"}</h1>
+          <p className="mx-auto mt-8 max-w-xl font-serif text-xl italic leading-relaxed text-cream/85 md:text-2xl">{homeSettings.homepageHeroDescription || "A premier rehabilitation centre committed to transforming lives through personalized, evidence-based care."}</p>
+          <a href="tel:+919319977207" className="home-hero-appointment">
+            <span>Make an appointment</span><span className="home-hero-appointment-arrow" aria-hidden="true">→</span>
+          </a>
         </div>
       </section>
 
@@ -320,54 +311,31 @@ export default function Home() {
             <p className="approach-kicker">{homeSettings.homepageApproachEyebrow || "Approach"}</p>
             <h2 className="approach-heading">{homeSettings.homepageApproachTitle || "Our Approach"}</h2>
             <p className="approach-intro">{homeSettings.homepageApproachDescription || "At Roar Wellness Rehab Centre, we believe that healing and transformation happen through experiences. Our Evidence Based Therapy is a unique and dynamic approach designed to support individuals struggling with addiction, mental health issues, and emotional distress. This therapy harnesses the power of real-life events and structured activities to promote personal growth, self-awareness, and long-term recovery."}</p>
-            <a href="tel:+919319977207" className="approach-action">Call Us Now <span>→</span></a>
+            <Link href="/services" className="approach-action">Explore Services <span aria-hidden="true">→</span></Link>
           </div>
 
           <div
+            ref={approachStepsRef}
             className="approach-steps"
-            role="region"
+            role="list"
             aria-label="Our approach"
-            aria-roledescription="carousel"
-            aria-live="off"
-            onMouseEnter={() => setApproachAutoplayPaused(true)}
-            onMouseLeave={() => setApproachAutoplayPaused(false)}
+            data-reveal-ready={approachRevealReady || undefined}
           >
-            <div
-              className={`approach-track${approachTransitionEnabled ? "" : " approach-track-no-transition"}`}
-              style={{ transform: `translateY(-${approachIndex * 100}%)` }}
-              onTransitionEnd={(event) => {
-                if (event.target !== event.currentTarget || event.propertyName !== "transform"
-                  || activeApproachItems.length <= 1
-                  || (approachIndex !== 0 && approachIndex !== activeApproachItems.length + 1)) return;
-                setApproachTransitionEnabled(false);
-                setApproachIndex(approachIndex === 0 ? activeApproachItems.length : 1);
-                window.requestAnimationFrame(() => {
-                  window.requestAnimationFrame(() => setApproachTransitionEnabled(true));
-                });
-              }}
-            >
-              {approachSlides.map(({ title, description, image, position, slideNumber, slideKey, clone }) => (
-                <article key={slideKey} aria-hidden={clone || undefined} className="approach-item" style={{ backgroundImage: `url(${image})`, backgroundPosition: position }}>
-                  <div className="approach-item-overlay" />
-                  <span className="approach-number">{slideNumber}</span>
-                  <div className="approach-copy">
-                    <h3>{title}</h3>
-                    <p>{description}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-            {activeApproachItems.length > 1 && (
-              <div className="approach-carousel-controls" role="group" aria-label="Approach slides">
-                <span aria-live="polite">{activeApproachIndex + 1} / {activeApproachItems.length}</span>
-                <button type="button" aria-label="Previous approach card" onClick={() => setApproachIndex((current) => current === 1 ? 0 : current === 0 ? activeApproachItems.length : current - 1)}>
-                  <ChevronUp size={18} aria-hidden="true" />
-                </button>
-                <button type="button" aria-label="Next approach card" onClick={() => setApproachIndex((current) => current === activeApproachItems.length ? current + 1 : current === activeApproachItems.length + 1 ? 2 : current + 1)}>
-                  <ChevronDown size={18} aria-hidden="true" />
-                </button>
-              </div>
-            )}
+            {activeApproachItems.map(({ title, description }, index) => (
+              <article
+                key={`${title}-${index}`}
+                className={`approach-item approach-step${revealedApproachItems.has(index) ? " is-visible" : ""}`}
+                data-approach-index={index}
+                role="listitem"
+                style={{ transitionDelay: `${Math.min(index * 90, 540)}ms` }}
+              >
+                <span className="approach-number">{index + 1}</span>
+                <div className="approach-copy">
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
