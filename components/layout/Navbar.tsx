@@ -18,7 +18,7 @@ interface MenuItem {
   reload?: boolean;
 }
 
-type MenuId = "about" | "locations" | "therapy" | "treatments" | "mental-health" | "news";
+type MenuId = "about" | "services" | "news";
 
 const treatmentMenuSlugs = [
   "alcohol-addiction",
@@ -91,6 +91,12 @@ export function Navbar() {
   const aboutPages = aboutPageSlugs
     .map((slug) => cmsEntries.find((page) => page.slug === slug))
     .filter((page): page is CmsPageLink => Boolean(page));
+  const servicePages = [
+    ...therapyPages,
+    ...treatmentPages,
+    ...mentalHealthPages,
+    ...locationPages,
+  ];
   const menuItems: Record<MenuId, MenuItem[]> = {
     about: [
       { label: "About Roar Wellness", href: "/about-roarwellness/" },
@@ -99,14 +105,13 @@ export function Navbar() {
       { label: "Facility", href: "/facility/" },
       { label: "Gallery", href: "/gallery/" },
       { label: "Videos", href: "/videos/" },
+      { label: "FAQs", href: "/faqs/" },
       ...aboutPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     ],
-    locations: locationPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
-    therapy: therapyPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
-    treatments: [
-      ...treatmentPages.map((item) => ({ label: item.title.trim(), href: getCmsContentHref(item.slug, item.category_slug) })),
+    services: [
+      { label: "All Services", href: "/services/" },
+      ...servicePages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     ],
-    "mental-health": mentalHealthPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     news: [
       { label: "All News", href: "/blog/" },
       ...newsPosts.map((post) => ({ label: post.title.trim(), href: getCmsContentHref(post.slug, post.category_slug) })),
@@ -114,12 +119,9 @@ export function Navbar() {
   };
 
   const menuLabels: Record<MenuId, string> = {
-    about: "About Us",
-    locations: "Locations",
-    therapy: "Therapy",
-    treatments: "Treatments",
-    "mental-health": "Mental Healthcare",
-    news: "Blog",
+    about: "About",
+    services: "Services",
+    news: "Blogs",
   };
 
   const renderDropdown = (id: MenuId, mobile = false) => {
@@ -150,9 +152,8 @@ export function Navbar() {
         </button>
         {isActive && <div id={`${mobile ? "mobile" : "desktop"}-${id}-menu`} className="header-dropdown-panel">
           {items.map(renderItem)}
-          {id === "locations" && !items.length && <span className="header-dropdown-empty">No locations have been published</span>}
           {id === "news" && !newsPosts.length && <span className="header-dropdown-empty">{newsLoaded ? "No news posts have been published" : "Loading published news..."}</span>}
-          {!items.length && id !== "locations" && id !== "news" && <span className="header-dropdown-empty">Content will appear when published</span>}
+          {!items.length && id !== "news" && <span className="header-dropdown-empty">Content will appear when published</span>}
         </div>}
       </div>
     );
@@ -166,14 +167,11 @@ export function Navbar() {
         <div className="header-desktop-links">
           <Link href="/#top" className="nav-link">Home</Link>
           {renderDropdown("about")}
-          {renderDropdown("therapy")}
-          {renderDropdown("treatments")}
+          {renderDropdown("services")}
           <Link href="/" aria-label="Roar Wellness home" className="header-brand"><img src="/images/logo.png" alt="Roar Wellness" className="header-logo" /></Link>
-          {renderDropdown("mental-health")}
-          {renderDropdown("locations")}
           {renderDropdown("news")}
-          <Link href="/faqs/" className="nav-link">FAQs</Link>
           <Link href="/contact-us/" className="nav-link">Contact</Link>
+          <Link href="/#contact" className="nav-link">Schedule</Link>
         </div>
         <div className="header-mobile-row">
           <Link href="/#top" aria-label="Roar Wellness home" className="header-brand"><img src="/images/logo.png" alt="Roar Wellness" className="header-logo" /></Link>
@@ -184,13 +182,10 @@ export function Navbar() {
         {isOpen && <div className="header-mobile-links">
           <Link href="/#top" className="nav-link" onClick={closeMobileMenu}>Home</Link>
           {renderDropdown("about", true)}
-          {renderDropdown("therapy", true)}
-          {renderDropdown("treatments", true)}
-          {renderDropdown("mental-health", true)}
-          {renderDropdown("locations", true)}
+          {renderDropdown("services", true)}
           {renderDropdown("news", true)}
-          <Link href="/faqs/" className="nav-link" onClick={closeMobileMenu}>FAQs</Link>
           <Link href="/contact-us/" className="nav-link" onClick={closeMobileMenu}>Contact</Link>
+          <Link href="/#contact" className="nav-link" onClick={closeMobileMenu}>Schedule</Link>
         </div>}
       </div>
     </nav>

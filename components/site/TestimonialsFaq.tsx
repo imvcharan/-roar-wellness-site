@@ -37,22 +37,61 @@ interface CmsFaq {
   answer: string;
 }
 
-export function TestimonialsSection({ reviews }: { reviews: Review[] }) {
+export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: Review[]; variant?: "cards" | "featured" }) {
   const [reviewIndex, setReviewIndex] = useState(0);
 
   useEffect(() => {
-    if (reviews.length === 0) return;
+    if (variant === "featured" || reviews.length === 0) return;
     const timer = window.setInterval(() => {
       setReviewIndex((current) => (current + 1) % reviews.length);
     }, 2800);
 
     return () => window.clearInterval(timer);
-  }, [reviews.length]);
+  }, [reviews.length, variant]);
 
   const visibleReviews = Array.from(
     { length: Math.min(3, reviews.length) },
     (_, offset) => reviews[(reviewIndex + offset) % reviews.length],
   );
+
+  if (variant === "featured") {
+    const currentReview = reviews.length ? reviews[reviewIndex % reviews.length] : null;
+    const moveReview = (offset: number) => {
+      if (!reviews.length) return;
+      setReviewIndex((current) => (current + offset + reviews.length) % reviews.length);
+    };
+
+    return (
+      <section id="stories" className="review-featured-section px-6 py-20 md:px-12 md:py-28">
+        <div className="site-container">
+          <div className="review-featured-heading">
+            <p className="eyebrow">Testimonials</p>
+            <h2>Healing through <em>their eyes</em></h2>
+          </div>
+          {currentReview && (
+            <div className="review-featured-layout" aria-live="polite">
+              <img
+                src={currentReview[2].replace(/i\.pravatar\.cc\/\d+/, "i.pravatar.cc/600")}
+                alt=""
+                className="review-featured-image"
+              />
+              <div className="review-featured-content">
+                <article className="review-featured-quote">
+                  <span className="review-featured-mark" aria-hidden="true">“</span>
+                  <blockquote>{currentReview[1]}</blockquote>
+                  <p className="review-featured-name">~ {currentReview[0]}</p>
+                </article>
+                <div className="review-featured-controls" aria-label="Testimonial controls">
+                  <button type="button" onClick={() => moveReview(-1)} aria-label="Previous testimonial" disabled={reviews.length < 2}>←</button>
+                  <button type="button" onClick={() => moveReview(1)} aria-label="Next testimonial" disabled={reviews.length < 2}>→</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="stories" className="band-light px-6 py-20 md:px-12 md:py-28">

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImages } from "@/lib/gallery-images";
 import { getCmsContentHref } from "@/lib/cms-routes";
@@ -10,7 +9,7 @@ import { cmsRequest } from "@/services/cms-api";
 import { defaultFaqs, defaultReviews, FaqSection, TestimonialsSection, type Faq, type Review } from "@/components/site/TestimonialsFaq";
 import { ContactSection } from "@/components/site/ContactSection";
 
-interface CmsTreatment {
+interface CmsService {
   title: string;
   slug: string;
   category_slug: string;
@@ -18,6 +17,17 @@ interface CmsTreatment {
   description: string | null;
   image_url: string | null;
   featured_image_alt: string | null;
+  featured_image_position: string;
+}
+
+interface CmsBlogPost {
+  title: string;
+  slug: string;
+  category_slug: string;
+  excerpt: string | null;
+  summary: string | null;
+  description: string | null;
+  image_url: string | null;
   featured_image_position: string;
 }
 
@@ -35,16 +45,41 @@ interface CmsFaq {
   answer: string;
 }
 
+function servicePlaceholderImage(title: string, slug: string, category: string): string {
+  const serviceName = `${title} ${slug}`.toLowerCase();
+  if (/alcohol/.test(serviceName)) return "/images/Alcohol%20Addiction.png";
+  if (/heroin/.test(serviceName)) return "/images/Heroine%20Addiction.png";
+  if (/opioid|morphine|benzodiazepine/.test(serviceName)) return "/images/Opioid%20Addiction.png";
+  if (/cocaine/.test(serviceName)) return "/images/Cocaine%20Addiction.png";
+  if (/cannabis|marijuana|charas/.test(serviceName)) return "/images/Marijuana%20Addiction.png";
+  if (/gambl/.test(serviceName)) return "/images/Gambling%20Addiction.png";
+  if (/internet|drug/.test(serviceName)) return "/images/Drug%20Addiction.png";
+  if (/sex/.test(serviceName)) return "/images/sex%20Addiction.png";
+  if (/schizophren/.test(serviceName)) return "/images/Schizophrenia.png";
+  if (/bipolar/.test(serviceName)) return "/images/Bipolar%20Disorder.png";
+  if (/adhd/.test(serviceName)) return "/images/ADHD.png";
+  if (/nutri/.test(serviceName)) return "/images/nutritional-guidance.png";
+  if (/detox|drainage/.test(serviceName)) return "/images/detox-dranage-therapy.png";
+  if (/pain|relief/.test(serviceName)) return "/images/pain-relief-therapy.png";
+  if (/mind|yoga|meditation/.test(serviceName)) return "/images/mind-body-coaching.png";
+  if (/naturopath|consultation|mental|psychiatr/.test(serviceName) || category === "mental-healthcare") {
+    return "/images/naturopathic-consultation.png";
+  }
+  return "/images/atlas-session.png";
+}
+
 export default function Home() {
-  const [treatmentIndex, setTreatmentIndex] = useState(0);
-  const [treatmentAutoplayPaused, setTreatmentAutoplayPaused] = useState(false);
-  const [treatmentReducedMotion, setTreatmentReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [activeInterludeStep, setActiveInterludeStep] = useState(0);
   const [revealedApproachItems, setRevealedApproachItems] = useState<Set<number>>(() => new Set([0]));
   const [approachRevealReady, setApproachRevealReady] = useState(false);
   const approachStepsRef = useRef<HTMLDivElement>(null);
+  const careInterludeRef = useRef<HTMLElement>(null);
   const [facilityIndex, setFacilityIndex] = useState(0);
-  const [cmsTreatments, setCmsTreatments] = useState<CmsTreatment[]>([]);
-  const [cmsTreatmentsLoaded, setCmsTreatmentsLoaded] = useState(false);
+  const [cmsServices, setCmsServices] = useState<CmsService[]>([]);
+  const [cmsServicesLoaded, setCmsServicesLoaded] = useState(false);
+  const [cmsBlogPosts, setCmsBlogPosts] = useState<CmsBlogPost[]>([]);
+  const [blogMessage, setBlogMessage] = useState("Loading published articles...");
   const [cmsFaqs, setCmsFaqs] = useState<Faq[]>([]);
   const [cmsFaqsLoaded, setCmsFaqsLoaded] = useState(false);
   const [cmsHome, setCmsHome] = useState<Record<string, CmsHomeSection[]>>({});
@@ -58,9 +93,19 @@ export default function Home() {
 
   useEffect(() => {
     let mounted = true;
-    cmsRequest<{ data: CmsTreatment[] }>("/api/content/services")
-      .then(({ data }) => { if (mounted) { setCmsTreatments(data); setCmsTreatmentsLoaded(true); } })
-      .catch((error: unknown) => console.error("Unable to load published treatment cards.", error));
+    cmsRequest<{ data: CmsService[] }>("/api/content/services?all=1")
+      .then(({ data }) => { if (mounted) { setCmsServices(data); setCmsServicesLoaded(true); } })
+      .catch((error: unknown) => console.error("Unable to load published homepage services.", error));
+    cmsRequest<{ data: CmsBlogPost[] }>("/api/content/blog")
+      .then(({ data }) => {
+        if (!mounted) return;
+        setCmsBlogPosts(data);
+        setBlogMessage(data.length ? "" : "No articles have been published yet.");
+      })
+      .catch((error: unknown) => {
+        console.error("Unable to load published homepage articles.", error);
+        if (mounted) setBlogMessage("Articles are temporarily unavailable.");
+      });
     cmsRequest<{ data: CmsFaq[] }>("/api/content/faqs")
       .then(({ data }) => { if (mounted) { setCmsFaqs(data.map((faq) => [faq.question, faq.answer] as Faq)); setCmsFaqsLoaded(true); } })
       .catch((error: unknown) => console.error("Unable to load published FAQs.", error));
@@ -73,23 +118,53 @@ export default function Home() {
     return () => { mounted = false; };
   }, []);
 
-  const treatments = [
-    ["Alcohol Addiction", "A chronic disorder involving uncontrollable alcohol use, leading to physical, emotional, and social problems; treatable with therapy and support."],
-    ["Opioid Addiction", "Dependence on prescription or illegal opioids, causing brain changes, intense cravings, and health issues; requires medical and psychological treatment."],
-    ["Heroin Addiction", "A powerful opioid causing intense euphoria, tolerance, and dependence, leading to severe health, social, and legal consequences without treatment."],
-    ["Cocaine Addiction", "A stimulant drug that causes intense energy and mood changes, leading to psychological dependence, paranoia, and cardiovascular risks."],
-    ["Poly Substance Abuse", "Use of multiple drugs simultaneously, increasing risks and complicating treatment due to interactions and severe psychological and physical harm."],
-    ["Benzodiazepine Addiction", "Dependence on anxiety medications, leading to tolerance, withdrawal symptoms, cognitive issues, and emotional instability without medical supervision."],
-    ["Morphine Addiction", "Strong painkiller dependency affecting brain function, causing euphoria, tolerance, and withdrawal symptoms; needs supervised medical treatment."],
-    ["Gambling Addiction", "Compulsive gambling behavior disrupting finances, relationships, and mental health; cognitive-behavioral therapy helps regain control and stability."],
-    ["Internet Addiction", "Excessive internet use disrupting daily life, relationships, and mental health; often treated with behavioral therapy and digital detox strategies."],
-    ["Sex Addiction", "Compulsive sexual thoughts and behaviors that interfere with functioning, relationships, and emotional well-being; therapy is essential."],
-    ["Schizophrenia", "A serious mental disorder involving hallucinations, delusions, and disorganized thinking; long-term treatment and support are necessary."],
-    ["Bipolar Disorder", "A mental health condition marked by extreme mood swings, including emotional highs (mania or hypomania) and lows (depression)."],
-    ["ADHD", "A neurodevelopmental disorder causing inattention, hyperactivity, and impulsiveness, affecting focus, behavior, and daily functioning."],
-    ["Drugs addiction", "A chronic disease causing compulsive drug seeking, harming health, relationships, and daily life despite negative consequences."],
-    ["Marijuana addiction", "Treatment includes behavioral therapies, counseling, cognitive-behavioral therapy (CBT), motivational enhancement therapy (MET), support groups, and sometimes medications for withdrawal symptoms."],
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setReducedMotion(preference.matches);
+
+    updatePreference();
+    preference.addEventListener("change", updatePreference);
+    return () => preference.removeEventListener("change", updatePreference);
+  }, []);
+
+  useEffect(() => {
+    const section = careInterludeRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const step = Number((entry.target as HTMLElement).dataset.careInterludeStep);
+        if (Number.isInteger(step)) setActiveInterludeStep(step);
+      });
+    }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
+    section.querySelectorAll("[data-care-interlude-step]").forEach((step) => observer.observe(step));
+    return () => observer.disconnect();
+  }, []);
+
+  const featuredServiceSlugs = [
+    "alcohol-addiction",
+    "opioid-treatment",
+    "heroin-addiction",
+    "cocaine-addiction",
+    "cannabis-treatment",
+    "poly-substance-abuse",
   ];
+  const fallbackServices = [
+    "Alcohol Addiction",
+    "Opioid Treatment",
+    "Heroin Addiction",
+    "Cocaine Addiction",
+    "Cannabis Treatment",
+    "Poly Substance Abuse",
+  ];
+  const serviceDescriptions: Record<string, string> = {
+    "alcohol-addiction": "Personalized clinical and therapeutic support for recovery from alcohol dependence.",
+    "opioid-treatment": "Structured care and ongoing support for people recovering from opioid use.",
+    "heroin-addiction": "Individualized rehabilitation and support for recovery from heroin dependence.",
+    "cocaine-addiction": "Therapeutic care tailored to each person's recovery from cocaine use.",
+    "cannabis-treatment": "Personalized support to address cannabis use and build sustainable recovery.",
+    "poly-substance-abuse": "Integrated care for people affected by the use of multiple substances.",
+  };
   const treatmentImages: Record<string, string> = {
     "Alcohol Addiction": "/images/Alcohol%20Addiction.png",
     "Opioid Addiction": "/images/Opioid%20Addiction.png",
@@ -108,14 +183,6 @@ export default function Home() {
     "Marijuana addiction": "/images/Marijuana%20Addiction.png",
   };
 
-  const team = [
-    ["Mr. Madhav Singh", "Founder of Roar Wellness", "Founder of ROAR, involved full time with therapeutic and facility management. He has worked for over 14 years to help people recover and live alcohol- and drug-free lives.", "https://www.roarwellness.org/wp-content/uploads/2025/05/111383828753madhav-1.jpg"],
-    ["Dr. Manish Sarkar", "Director of Roar Wellness", "A renowned psychiatrist of Delhi NCR with over two decades of experience in psychiatric disorders and substance dependence, with postgraduate training from NIMHANS, Bangalore.", "https://www.roarwellness.org/wp-content/uploads/2025/05/736893036507dr-manish-sarkar-1.jpg"],
-    ["Dhruv Singh Tanwar", "Director of Roar Wellness", "A young, energetic director and social activist who volunteers with youth and social development programs and shares the knowledge gained from his journey.", "https://www.roarwellness.org/wp-content/uploads/2025/05/880816739116Dhruv-Singh-Tanwa-1.jpg"],
-  ];
-  const activeTeam = cmsHomeLoaded
-    ? (cmsHome.team || []).map((item) => [item.heading, item.eyebrow, item.body, item.image_url] as [string, string, string, string])
-    : team;
   const activeReviews = cmsHomeLoaded
     ? (cmsHome.reviews || []).map((item) => [item.heading, item.body, item.image_url] as Review)
     : defaultReviews;
@@ -159,55 +226,32 @@ export default function Home() {
     </div>
   );
 
-  const activeTreatments = cmsTreatmentsLoaded
-    ? cmsTreatments.map((item) => ({
-      title: item.title,
-      description: item.summary || item.description || "",
-      slug: item.slug,
-      categorySlug: item.category_slug,
-      imageUrl: item.image_url || treatmentImages[item.title] || null,
-      imageAlt: item.featured_image_alt || "",
-      imagePosition: item.featured_image_position || "50% 50%",
-    }))
-    : (treatments as [string, string][]).map(([title, description]) => ({
+  const activeServices = cmsServicesLoaded
+    ? featuredServiceSlugs.flatMap((slug) => {
+      const item = cmsServices.find((service) => service.slug === slug);
+      return item ? [{
+        title: item.title,
+        slug: item.slug,
+        categorySlug: item.category_slug,
+        description: item.summary?.trim() || item.description?.trim() || serviceDescriptions[item.slug] || "",
+        imageUrl: item.image_url || treatmentImages[item.title] || servicePlaceholderImage(item.title, item.slug, item.category_slug),
+        imagePosition: item.featured_image_position || "50% 50%",
+      }] : [];
+    })
+    : fallbackServices.map((title, index) => ({
       title,
-      description,
-      slug: null,
+      slug: featuredServiceSlugs[index],
       categorySlug: "treatments",
-      imageUrl: treatmentImages[title] || null,
-      imageAlt: "",
+      description: serviceDescriptions[featuredServiceSlugs[index]],
+      imageUrl: treatmentImages[title] || servicePlaceholderImage(title, featuredServiceSlugs[index], "treatments"),
       imagePosition: "50% 50%",
     }));
-  const treatmentVisibleCount = Math.min(3, activeTreatments.length);
-  const treatmentSlides = Array.from({ length: treatmentVisibleCount }, (_, offset) => activeTreatments[(treatmentIndex + offset) % activeTreatments.length]);
-
-  const prevTreatment = () => setTreatmentIndex((current) => (current - 1 + activeTreatments.length) % activeTreatments.length);
-  const nextTreatment = () => setTreatmentIndex((current) => (current + 1) % activeTreatments.length);
-
-  useEffect(() => {
-    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setTreatmentReducedMotion(preference.matches);
-
-    updatePreference();
-    preference.addEventListener("change", updatePreference);
-    return () => preference.removeEventListener("change", updatePreference);
-  }, []);
-
-  useEffect(() => {
-    if (treatmentAutoplayPaused || treatmentReducedMotion || activeTreatments.length <= treatmentVisibleCount) return;
-
-    const timer = window.setInterval(() => {
-      setTreatmentIndex((current) => (current + 1) % activeTreatments.length);
-    }, 5000);
-
-    return () => window.clearInterval(timer);
-  }, [activeTreatments.length, treatmentAutoplayPaused, treatmentReducedMotion, treatmentVisibleCount]);
-
-  const modalities = [
-    ["Yoga & Meditation", "https://www.roarwellness.org/wp-content/uploads/2025/04/157245510430SS_05239-1.jpg"],
-    ["Game Therapy", "https://www.roarwellness.org/wp-content/uploads/2025/04/846283606208SS_05300-1.jpg"],
-    ["Evidence-Based Therapy", "https://www.roarwellness.org/wp-content/uploads/2025/04/285728832438SS_05308.jpg"],
-  ];
+  const activeBlogPosts = cmsBlogPosts.slice(0, 3).map((post) => ({
+    ...post,
+    description: post.excerpt?.trim() || post.summary?.trim() || post.description?.trim() || "",
+    imageUrl: post.image_url || servicePlaceholderImage(post.title, post.slug, post.category_slug),
+    imagePosition: post.featured_image_position || "50% 50%",
+  }));
 
   const approachItems = [
     {
@@ -260,7 +304,7 @@ export default function Home() {
   useEffect(() => {
     const stepElements = approachStepsRef.current?.querySelectorAll<HTMLElement>(".approach-step");
     if (!stepElements?.length) return;
-    if (treatmentReducedMotion || !("IntersectionObserver" in window)) {
+    if (reducedMotion || !("IntersectionObserver" in window)) {
       setRevealedApproachItems(new Set(Array.from(stepElements, (_, index) => index)));
       setApproachRevealReady(true);
       return;
@@ -284,7 +328,7 @@ export default function Home() {
 
     stepElements.forEach((element) => observer.observe(element));
     return () => observer.disconnect();
-  }, [cmsHomeLoaded, treatmentReducedMotion]);
+  }, [cmsHomeLoaded, reducedMotion]);
   return (
     <main id="top" className="home-theme">
       <section className="home-hero relative flex min-h-[92vh] items-center justify-center bg-brand-plum px-6 py-32 text-cream md:px-12 md:py-36">
@@ -340,80 +384,157 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="services" className="bg-sand px-6 py-20 md:px-12 md:py-28">
+      <section className="about-showcase" aria-labelledby="about-showcase-title">
+        <div className="about-showcase-card">
+          <p className="eyebrow">About Roar Wellness</p>
+          <h2 id="about-showcase-title">A place to begin again</h2>
+          <p>
+            We offer compassionate, evidence-based rehabilitation and mental health care,
+            supporting individuals and families through every step of recovery.
+          </p>
+          <Link href="/about-roarwellness/" className="about-showcase-link">
+            Get to know us <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </section>
+
+      <section id="services" className="services-section px-6 py-20 md:px-12 md:py-28">
         <div className="site-container">
-          <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="services-heading-row">
             <div>
-              <p className="eyebrow text-coral">Our treatments</p>
-              <h2 className="section-title mt-5 text-olive">A path toward <em>recovery</em></h2>
-              <Link href="/services" className="treatment-browse-link mt-5">
-                <span>Browse all services</span><span className="treatment-browse-arrow" aria-hidden="true">→</span>
-              </Link>
+              <p className="eyebrow text-coral">Services</p>
+              <h2 className="section-title mt-5 text-olive">Our signature <em>services</em></h2>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setTreatmentAutoplayPaused((paused) => !paused)}
-                aria-label={treatmentReducedMotion ? "Automatic treatment slides are disabled because reduced motion is enabled" : treatmentAutoplayPaused ? "Resume automatic treatment slides" : "Pause automatic treatment slides"}
-                aria-pressed={treatmentAutoplayPaused || treatmentReducedMotion}
-                disabled={treatmentReducedMotion}
-                className="treatment-arrow"
-              >
-                {treatmentAutoplayPaused ? <Play aria-hidden="true" size={16} /> : <Pause aria-hidden="true" size={16} />}
-              </button>
-              <button type="button" onClick={prevTreatment} aria-label="Previous treatment" className="treatment-arrow" disabled={!activeTreatments.length}>←</button>
-              <button type="button" onClick={nextTreatment} aria-label="Next treatment" className="treatment-arrow" disabled={!activeTreatments.length}>→</button>
-            </div>
+            <Link href="/services/" className="services-browse-link">
+              <span>Explore all Services</span><span aria-hidden="true">→</span>
+            </Link>
           </div>
 
-          <div className="treatment-slider-viewport overflow-hidden" role="region" aria-label="Featured treatments" aria-roledescription="carousel">
-            <div className="treatment-slider">
-              {treatmentSlides.map((treatment, index) => {
-                const href = treatment.slug ? getCmsContentHref(treatment.slug, treatment.categorySlug) : null;
-                return (
-                  <article key={`${treatment.slug || treatment.title}-${index}`} className="treatment-slide treatment-card">
-                    {href ? (
-                      <Link href={href} className="treatment-card-media" aria-label={`View ${treatment.title}`}>
-                        {treatment.imageUrl
-                          ? <img src={treatment.imageUrl} alt={treatment.imageAlt || treatment.title} loading="lazy" style={{ objectPosition: treatment.imagePosition }} />
-                          : <span className="treatment-card-image-placeholder" aria-hidden="true">Roar Wellness</span>}
-                      </Link>
-                    ) : (
-                      <div className="treatment-card-media" aria-hidden="true">
-                        {treatment.imageUrl
-                          ? <img src={treatment.imageUrl} alt="" loading="lazy" style={{ objectPosition: treatment.imagePosition }} />
-                          : <span className="treatment-card-image-placeholder">Roar Wellness</span>}
-                      </div>
-                    )}
-                    <div className="treatment-card-content">
-                      <h3 className="treatment-card-title font-serif text-[clamp(1.7rem,2vw,2.5rem)] leading-tight tracking-[-0.04em]">
-                        {href ? <Link href={href}>{treatment.title}</Link> : treatment.title}
-                      </h3>
-                      {href
-                        ? <Link href={href} className="treatment-card-description">{treatment.description}</Link>
-                        : <p className="treatment-card-description">{treatment.description}</p>}
-                      {href && <Link href={href} className="treatment-card-link">View treatment <span aria-hidden="true">→</span></Link>}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+          <div className="services-grid" role="list" aria-label="Roar Wellness services">
+            {activeServices.map((service, index) => {
+              const href = service.slug ? getCmsContentHref(service.slug, service.categorySlug) : "/services/";
+              return (
+                <Link
+                  key={`${service.slug || service.title}-${index}`}
+                  href={href}
+                  className="service-tile"
+                  aria-label={`Explore ${service.title}`}
+                  role="listitem"
+                >
+                  {service.imageUrl
+                    ? <img src={service.imageUrl} alt="" loading="lazy" style={{ objectPosition: service.imagePosition }} className="service-tile-image" />
+                    : <span className="service-tile-placeholder" aria-hidden="true" />}
+                  <span className="service-tile-overlay" aria-hidden="true" />
+                  <span className="service-tile-plus" aria-hidden="true">+</span>
+                  <span className="service-tile-copy">
+                    <span className="service-tile-title">{service.title}</span>
+                    <span className="service-tile-description">{service.description}</span>
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section className="band-light px-6 py-20 md:px-12 md:py-28">
+      <section ref={careInterludeRef} className="care-interlude" aria-label="Care centered around you">
+        <div className="care-interlude-scene" data-step={activeInterludeStep}>
+          <img src="/images/naturopathic-consultation.png" alt="A care provider speaking with a patient" className="care-interlude-image" />
+          <span className="care-interlude-shade" aria-hidden="true" />
+          <span className="care-interlude-frame" aria-hidden="true" />
+          <h2 className="care-interlude-copy" aria-live="polite" aria-atomic="true">
+            <span key={`left-${activeInterludeStep}`} className="care-interlude-copy-side care-interlude-copy-left">
+              {activeInterludeStep === 0 ? "Care" : "Recovery"}
+            </span>
+            <span key={`right-${activeInterludeStep}`} className="care-interlude-copy-side care-interlude-copy-right">
+              {activeInterludeStep === 0 ? <>that sees<br />you</> : <>at your<br />pace</>}
+            </span>
+          </h2>
+        </div>
+        <span className="care-interlude-step" data-care-interlude-step="0" aria-hidden="true" />
+        <span className="care-interlude-step care-interlude-step-later" data-care-interlude-step="1" aria-hidden="true" />
+      </section>
+
+      <section id="essence" className="essence-section py-20 md:py-28" aria-labelledby="essence-heading">
         <div className="site-container">
-            <div className="mb-16 text-center"><p className="eyebrow text-coral">Gallery</p><h2 className="section-title mt-5 max-w-none text-olive">Inside <em>Roar Wellness</em></h2></div>
-          <GalleryLightbox images={galleryImages}>
-          <div className="essence-mosaic">
-            <article className="mosaic-card mosaic-rooted">{renderGalleryImages(0)}</article>
-            <article className="mosaic-card mosaic-personal">{renderGalleryImages(3)}</article>
-            <article className="mosaic-card mosaic-feature">{renderGalleryImages(6)}</article>
-            <article className="mosaic-card mosaic-quote">{renderGalleryImages(9)}</article>
-            <article className="mosaic-card mosaic-timeline">{renderGalleryImages(12)}</article>
-            <article className="mosaic-card mosaic-stat">{renderGalleryImages(15)}</article>
+          <div className="essence-heading">
+            <p className="eyebrow">Essence</p>
+            <h2 id="essence-heading">Care that <em>connects</em></h2>
           </div>
+          <GalleryLightbox images={galleryImages}>
+            <div className="essence-mosaic">
+              <article className="mosaic-card mosaic-rooted" tabIndex={0}>
+                {renderGalleryImages(0)}
+                <span className="mosaic-shade" aria-hidden="true" />
+                <span className="mosaic-plus" aria-hidden="true">+</span>
+                <span className="mosaic-card-copy">
+                  <span className="mosaic-card-title">Rooted in recovery</span>
+                  <span className="mosaic-card-description">A calm, supportive place to take your next step.</span>
+                </span>
+              </article>
+
+              <article className="mosaic-card mosaic-personal" tabIndex={0}>
+                <img src="/images/nutritional-guidance.png" alt="" className="mosaic-personal-image" />
+                <span className="mosaic-plus" aria-hidden="true">+</span>
+                <span className="mosaic-card-copy">
+                  <span className="mosaic-card-title">Truly personal</span>
+                  <span className="mosaic-card-description">Care shaped around the person, not just the diagnosis.</span>
+                </span>
+              </article>
+
+              <article className="mosaic-card mosaic-feature" tabIndex={0}>
+                <img src="/images/atlas-session.png" alt="" className="mosaic-feature-image" />
+                <span className="mosaic-shade" aria-hidden="true" />
+                <span className="mosaic-plus" aria-hidden="true">+</span>
+                <span className="mosaic-card-copy">
+                  <span className="mosaic-card-title">Personalized care at Roar Wellness</span>
+                  <span className="mosaic-card-description">Professional guidance and compassionate support through recovery.</span>
+                </span>
+              </article>
+
+              <article className="mosaic-card mosaic-quote" tabIndex={0}>
+                <span className="mosaic-plus" aria-hidden="true">+</span>
+                <span className="mosaic-quote-mark" aria-hidden="true">“</span>
+                <div className="mosaic-quote-slider" aria-live="polite">
+                  {(activeReviews.length ? activeReviews : defaultReviews).slice(0, 3).map(([name, quote], index) => (
+                    <span key={`${name}-${index}`} className="mosaic-quote-item" style={{ animationDelay: `${index * 4}s` }}>
+                      <span>{quote}</span><span className="mosaic-quote-author">— {name}</span>
+                    </span>
+                  ))}
+                </div>
+              </article>
+
+              <article className="mosaic-card mosaic-timeline" tabIndex={0}>
+                <span className="mosaic-plus" aria-hidden="true">+</span>
+                <span className="mosaic-card-copy">
+                  <span className="mosaic-card-title">Your path, at your pace</span>
+                  <span className="mosaic-card-description">A supportive team helps you explore the next steps that fit your needs.</span>
+                </span>
+                <span className="mosaic-orbit" aria-hidden="true">
+                  {[1, 4, 7, 10, 13].map((offset, index) => (
+                    <span
+                      key={offset}
+                      className={`mosaic-orbit-dot mosaic-orbit-dot-${index + 1}`}
+                      style={{ backgroundImage: `url("${galleryImages[offset]}")` }}
+                    />
+                  ))}
+                </span>
+              </article>
+
+              <a className="mosaic-card mosaic-stat" href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}>
+                <span className="mosaic-plus" aria-hidden="true">+</span>
+                <span className="mosaic-avatar-stack" aria-hidden="true">
+                  {(activeReviews.length ? activeReviews : defaultReviews).slice(0, 3).map(([name, , avatar]) => (
+                    <img key={name} src={avatar} alt="" />
+                  ))}
+                </span>
+                <span className="mosaic-card-copy">
+                  <span className="mosaic-card-title">Here when you&apos;re ready</span>
+                  <span className="mosaic-card-description">Start with a confidential conversation. Call our care team.</span>
+                </span>
+                <span className="mosaic-stat-link">Make an appointment <span aria-hidden="true">→</span></span>
+              </a>
+            </div>
           </GalleryLightbox>
           <div className="gallery-action"><a href="/gallery" className="gallery-view-more">View more <span aria-hidden="true">↗</span></a></div>
         </div>
@@ -458,24 +579,56 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="team" className="team-section bg-sand px-6 py-20 md:px-12 md:py-28">
+      <section id="blog" className="blog-section services-section px-6 py-20 md:px-12 md:py-28">
         <div className="site-container">
-          <div className="team-heading-row mb-14">
-            <div className="team-heading-copy"><p className="eyebrow text-coral">Meet the team</p><h2 className="section-title mt-5 max-w-none text-olive">People who make <em>recovery possible</em></h2></div>
-            <Link href="/drug-alcohol-rehabilitation-experts/" className="arrow-link text-olive">View all experts <span>↗</span></Link>
+          <div className="services-heading-row">
+            <div>
+              <p className="eyebrow text-coral">Blogs</p>
+              <h2 className="section-title mt-5 text-olive">Stories for the <em>journey</em></h2>
+            </div>
+            <Link href="/blog/" className="services-browse-link">
+              <span>Explore all Blogs</span><span aria-hidden="true">→</span>
+            </Link>
           </div>
-          <div className="team-grid">
-            {activeTeam.map(([name, role, bio, image], index) => (
-              <article key={name} className={`team-card team-card-${index + 1}`}>
-                <div className="team-image-wrap"><img src={image} alt={name} className="team-image" /></div>
-                <div className="team-card-copy"><p className="team-index">0{index + 1}</p><h3>{name}</h3><p className="team-role">{role}</p><p className="team-bio">{bio}</p></div>
-              </article>
-            ))}
+          {activeBlogPosts.length
+            ? <div className="blog-showcase" role="list" aria-label="Latest Roar Wellness articles">
+              {activeBlogPosts.map((post, index) => (
+                <Link
+                  key={post.slug}
+                  href={getCmsContentHref(post.slug, post.category_slug)}
+                  className={`blog-showcase-card${index === 0 ? " blog-showcase-featured" : " blog-showcase-secondary"}`}
+                  aria-label={`Read ${post.title}`}
+                  role="listitem"
+                >
+                  <span className="blog-showcase-image">
+                    <img src={post.imageUrl} alt="" loading="lazy" style={{ objectPosition: post.imagePosition }} />
+                    <span className="blog-showcase-category">{post.category_slug.replace(/-/g, " ")}</span>
+                  </span>
+                  <span className="blog-showcase-copy">
+                    <span className="blog-showcase-title">{post.title}</span>
+                    {post.description && <span className="blog-showcase-description">{post.description}</span>}
+                    <span className="blog-showcase-arrow" aria-hidden="true">↗</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+            : <p className="blog-section-message" role="status">{blogMessage}</p>}
+        </div>
+      </section>
+
+      <section className="home-appointment-showcase" aria-labelledby="home-appointment-title">
+        <div className="home-appointment-card">
+          <div className="home-appointment-image" aria-hidden="true" />
+          <div className="home-appointment-copy">
+            <h2 id="home-appointment-title">Ready to begin your healing journey?</h2>
+            <a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`} className="home-appointment-link">
+              <span>Make an Appointment</span><span aria-hidden="true">→</span>
+            </a>
           </div>
         </div>
       </section>
 
-      <TestimonialsSection reviews={activeReviews} />
+      <TestimonialsSection reviews={activeReviews} variant="featured" />
       <FaqSection faqs={activeFaqs} />
 
       <ContactSection
