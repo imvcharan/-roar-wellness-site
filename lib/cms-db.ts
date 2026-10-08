@@ -243,6 +243,52 @@ function openDatabase(): DatabaseSync {
     `).run("/images/game-therapy.webp");
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-game-therapy-image-v1')").run();
   }
+  const openSpaceImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-image-v1'",
+  ).get();
+  if (!openSpaceImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'facility-open-space'
+        AND group_name = 'facility'
+        AND image_url = ?
+    `).run(
+      "/images/facility-open-space.png",
+      "https://www.roarwellness.org/wp-content/uploads/2025/04/544658068149SS_05316.jpg",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v1')").run();
+  }
+  const swimmingPoolImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-swimming-pool-image-v1'",
+  ).get();
+  if (!swimmingPoolImageMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'facility-pool'
+        AND group_name = 'facility'
+        AND image_url = ?
+    `).run(
+      "/images/facility-swimming-pool.png",
+      "https://www.roarwellness.org/wp-content/uploads/2025/04/452908267532SS_05330.jpg",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v1')").run();
+  }
+  const recoveryCommunityBlogImageMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-sarah-recovery-community-image-v1'",
+  ).get();
+  if (!recoveryCommunityBlogImageMigration) {
+    database.prepare(`
+      UPDATE content
+      SET image_url = ?, image_alt_text = ?,
+          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE slug = 'sarah-overcame-alcohol-addiction'
+        AND (image_url IS NULL OR image_url = '')
+    `).run(
+      "/images/blog-sarah-recovery-community.png",
+      "A woman speaking with a counselor alongside a recovery support group.",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('blog-sarah-recovery-community-image-v1')").run();
+  }
   const seededFaqs = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'faq-defaults'").get();
   if (!seededFaqs) {
     const faqDefaults: [string, string][] = [

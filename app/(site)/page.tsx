@@ -191,9 +191,9 @@ export default function Home() {
   const [galleryIndex, setGalleryIndex] = useState(0);
 
   const facilitySlides = [
-    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "https://www.roarwellness.org/wp-content/uploads/2025/04/452908267532SS_05330.jpg"],
+    ["Swimming Pool", "A clean pool for relaxation, rehab, and healthy aquatic exercise routines.", "/images/facility-swimming-pool.png"],
     ["Gym", "Modern gym equipment to support strength, stamina, and self-confidence.", "https://www.roarwellness.org/wp-content/uploads/2025/04/617565207766SS_05321-1.jpg"],
-    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "https://www.roarwellness.org/wp-content/uploads/2025/04/544658068149SS_05316.jpg"],
+    ["Open Space", "Relax or walk in fresh air, reconnect with nature in our lush open ground.", "/images/facility-open-space.png"],
     ["Yoga & Meditation", "Quiet, restorative spaces that support mindfulness and emotional balance.", "https://www.roarwellness.org/wp-content/uploads/2025/04/157245510430SS_05239-1.jpg"],
     ["Game Therapy", "Structured play and shared activities that make recovery engaging and social.", "/images/game-therapy.webp"],
     ["Therapy Room", "Comfortable spaces for evidence-based conversations and personal care.", "https://www.roarwellness.org/wp-content/uploads/2025/04/285728832438SS_05308.jpg"],
@@ -246,7 +246,15 @@ export default function Home() {
       imageUrl: treatmentImages[title] || servicePlaceholderImage(title, featuredServiceSlugs[index], "treatments"),
       imagePosition: "50% 50%",
     }));
-  const activeBlogPosts = cmsBlogPosts.slice(0, 3).map((post) => ({
+  const homeBlogPosts = cmsBlogPosts.slice(0, 3);
+  const featuredRecoveryPost = cmsBlogPosts.find(
+    (post) => post.slug === "borderline-personality-disorder-diagnosis-substance-addiction-and-recovery",
+  );
+  if (featuredRecoveryPost && !homeBlogPosts.some((post) => post.slug === featuredRecoveryPost.slug)) {
+    if (homeBlogPosts.length === 3) homeBlogPosts[2] = featuredRecoveryPost;
+    else homeBlogPosts.push(featuredRecoveryPost);
+  }
+  const activeBlogPosts = homeBlogPosts.map((post) => ({
     ...post,
     description: post.excerpt?.trim() || post.summary?.trim() || post.description?.trim() || "",
     imageUrl: post.image_url || servicePlaceholderImage(post.title, post.slug, post.category_slug),
