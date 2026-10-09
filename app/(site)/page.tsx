@@ -8,6 +8,7 @@ import { getCmsContentHref } from "@/lib/cms-routes";
 import { cmsRequest } from "@/services/cms-api";
 import { defaultFaqs, defaultReviews, FaqSection, TestimonialsSection, type Faq, type Review } from "@/components/site/TestimonialsFaq";
 import { ContactSection } from "@/components/site/ContactSection";
+import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
 
 interface CmsService {
   title: string;
@@ -645,17 +646,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-appointment-showcase" aria-labelledby="home-appointment-title">
-        <div className="home-appointment-card">
-          <div className="home-appointment-image" aria-hidden="true" />
-          <div className="home-appointment-copy">
-            <h2 id="home-appointment-title">Ready to begin your healing journey?</h2>
-            <a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`} className="home-appointment-link">
-              <span>Make an Appointment</span><span aria-hidden="true">→</span>
-            </a>
-          </div>
-        </div>
-      </section>
+      <AppointmentShowcase phone={contactPhone} />
 
       <TestimonialsSection reviews={activeReviews} variant="featured" />
       <FaqSection faqs={activeFaqs} />

@@ -7,6 +7,7 @@ import { getCmsCategoryLabel, getCmsContentHref, getCmsRouteKind, isLocationServ
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { cmsRequest } from "@/services/cms-api";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
+import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
 import { ContactSection } from "@/components/site/ContactSection";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { getYouTubeVideos } from "@/lib/youtube-videos";
@@ -452,6 +453,8 @@ export default function InnerPagesPage({
 
           </div>
 
+          {selectedKind === "service" && <AppointmentShowcase phone={contactPhone} />}
+
           {!isExpertsPage && <DetailTestimonialsFaq />}
 
           <ContactSection
@@ -499,14 +502,18 @@ export default function InnerPagesPage({
           {visibleItems.length ? <ul className="services-card-grid" aria-live="polite">
             {visibleItems.map((item) => {
               const image = item.featured_image_url || item.image_url || getServiceImageFallback(item);
+              const rawDescription = item.excerpt || item.summary || item.description || "";
+              const description = normalizeCmsPlainText(rawDescription.replace(/<[^>]*>/g, " ").replace(/\s+/g, " "));
               return <li key={item.slug}>
-                <Link href={getCmsContentHref(item.slug, item.category_slug)} className="services-card">
-                  <span className="services-card-image">
-                    {image && <img src={image} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />}
-                    <span className="services-card-shade" aria-hidden="true" />
-                    <span className="services-card-plus" aria-hidden="true">+</span>
-                    <span className="services-card-title">{item.title}</span>
-                    <span className="services-card-arrow" aria-hidden="true"><ArrowUpRight size={18} /></span>
+                <Link href={getCmsContentHref(item.slug, item.category_slug)} className="service-tile">
+                  {image
+                    ? <img src={image} alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} className="service-tile-image" />
+                    : <span className="service-tile-placeholder" aria-hidden="true" />}
+                  <span className="service-tile-overlay" aria-hidden="true" />
+                  <span className="service-tile-plus" aria-hidden="true">+</span>
+                  <span className="service-tile-copy">
+                    <span className="service-tile-title">{item.title}</span>
+                    {description && <span className="service-tile-description">{description}</span>}
                   </span>
                 </Link>
               </li>;
@@ -514,14 +521,7 @@ export default function InnerPagesPage({
           </ul> : <p role="status" className="services-empty">{allItems.length ? "No services match your search. Try another title or care type." : pagesMessage || "Loading published services..."}</p>}
         </section>
 
-        <section className="services-appointment" aria-labelledby="services-appointment-title">
-          <div className="services-appointment-content">
-            <p className="eyebrow">A gentle first step</p>
-            <h2 id="services-appointment-title">Ready to begin your healing journey?</h2>
-            <p>Our team is here to listen, answer your questions, and help you find the right way forward.</p>
-            <Link href="/#contact" className="services-appointment-link">Make an appointment <ArrowUpRight size={17} aria-hidden="true" /></Link>
-          </div>
-        </section>
+        <AppointmentShowcase phone={contactPhone} />
 
         <section className="services-faq site-container" aria-labelledby="services-faq-title">
           <div className="services-faq-heading">
