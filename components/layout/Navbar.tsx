@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getCmsContentHref, isLocationService } from "@/lib/cms-routes";
+import { getCmsContentHref } from "@/lib/cms-routes";
 import { cmsRequest } from "@/services/cms-api";
 
 interface CmsPageLink {
@@ -18,24 +18,7 @@ interface MenuItem {
   reload?: boolean;
 }
 
-type MenuId = "about" | "services" | "news";
-
-const treatmentMenuSlugs = [
-  "alcohol-addiction",
-  "opioid-treatment",
-  "heroin-addiction",
-  "cocaine-addiction",
-  "cannabis-treatment",
-  "poly-substance-abuse",
-  "benzodiazepine-treatment",
-  "morphine-addiction",
-  "gambling-treatment",
-  "internet-addiction",
-  "sex-addiction",
-  "drugs-addiction",
-  "de-addiction-treatment",
-  "marijuana-treatment-in-delhi",
-];
+type MenuId = "about" | "news";
 
 const aboutPageSlugs = [
   "about-substance-abuse",
@@ -80,23 +63,9 @@ export function Navbar() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [activeMenu, isOpen]);
 
-  const locationPages = cmsEntries.filter((page) =>
-    isLocationService(page.slug) && page.slug !== "rehab-centre-female-delhi"
-  );
-  const therapyPages = cmsEntries.filter((page) => page.category_slug === "therapy");
-  const mentalHealthPages = cmsEntries.filter((page) => page.category_slug === "mental-healthcare");
-  const treatmentPages = treatmentMenuSlugs
-    .map((slug) => cmsEntries.find((page) => page.slug === slug && page.category_slug === "treatments"))
-    .filter((page): page is CmsPageLink => Boolean(page));
   const aboutPages = aboutPageSlugs
     .map((slug) => cmsEntries.find((page) => page.slug === slug))
     .filter((page): page is CmsPageLink => Boolean(page));
-  const servicePages = [
-    ...therapyPages,
-    ...treatmentPages,
-    ...mentalHealthPages,
-    ...locationPages,
-  ];
   const menuItems: Record<MenuId, MenuItem[]> = {
     about: [
       { label: "About Roar Wellness", href: "/about-roarwellness/" },
@@ -108,10 +77,6 @@ export function Navbar() {
       { label: "FAQs", href: "/faqs/" },
       ...aboutPages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
     ],
-    services: [
-      { label: "All Services", href: "/services/" },
-      ...servicePages.map((page) => ({ label: page.title.trim(), href: getCmsContentHref(page.slug, page.category_slug) })),
-    ],
     news: [
       { label: "All News", href: "/blog/" },
       ...newsPosts.map((post) => ({ label: post.title.trim(), href: getCmsContentHref(post.slug, post.category_slug) })),
@@ -120,7 +85,6 @@ export function Navbar() {
 
   const menuLabels: Record<MenuId, string> = {
     about: "About",
-    services: "Services",
     news: "Blogs",
   };
 
@@ -167,7 +131,7 @@ export function Navbar() {
         <div className="header-desktop-links">
           <Link href="/#top" className="nav-link">Home</Link>
           {renderDropdown("about")}
-          {renderDropdown("services")}
+          <Link href="/services/" className="nav-link">Services</Link>
           <Link href="/" aria-label="Roar Wellness home" className="header-brand"><img src="/images/logo.png" alt="Roar Wellness" className="header-logo" /></Link>
           {renderDropdown("news")}
           <Link href="/contact-us/" className="nav-link">Contact</Link>
@@ -182,7 +146,7 @@ export function Navbar() {
         {isOpen && <div className="header-mobile-links">
           <Link href="/#top" className="nav-link" onClick={closeMobileMenu}>Home</Link>
           {renderDropdown("about", true)}
-          {renderDropdown("services", true)}
+          <Link href="/services/" className="nav-link" onClick={closeMobileMenu}>Services</Link>
           {renderDropdown("news", true)}
           <Link href="/contact-us/" className="nav-link" onClick={closeMobileMenu}>Contact</Link>
           <Link href="/#contact" className="nav-link" onClick={closeMobileMenu}>Schedule</Link>

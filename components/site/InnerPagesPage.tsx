@@ -35,6 +35,59 @@ interface CmsCategory {
   slug: string;
 }
 
+const serviceImageFallbacks: Record<string, string> = {
+  "atlaslogy-session": "/images/atlas-session.png",
+  "nutritional-guidance": "/images/nutritional-guidance.png",
+  "naturopathic-consultation": "/images/naturopathic-consultation.png",
+  "mind-body-coaching": "/images/mind-body-coaching.png",
+  "detox-drainage-therapy": "/images/detox-dranage-therapy.png",
+  "pain-relief-therapy": "/images/pain-relief-therapy.png",
+  "charas-deaddiction": "/images/Drug Addiction.png",
+  "drug-rehabilitation-center-in-delhi-ncr": "/images/Drug Addiction.png",
+  "rehab-center-in-india": "/images/Drug Addiction.png",
+  "drugs-addiction": "/images/Drug Addiction.png",
+  "de-addiction-treatment": "/images/Drug Addiction.png",
+  "alcohol-addiction": "/images/Alcohol Addiction.png",
+  "opioid-addiction": "/images/Opioid Addiction.png",
+  "opioid-treatment": "/images/Opioid Addiction.png",
+  "heroin-addiction": "/images/Heroine Addiction.png",
+  "cocaine-addiction": "/images/Cocaine Addiction.png",
+  "marijuana-addiction": "/images/Marijuana Addiction.png",
+  "marijuana-treatment-in-delhi": "/images/Marijuana Addiction.png",
+  "cannabis-treatment": "/images/Marijuana Addiction.png",
+  "poly-substance-abuse": "/images/Poly Substance Abuse.png",
+  "benzodiazepine-addiction": "/images/Benzodiazepine Addiction.png",
+  "benzodiazepine-treatment": "/images/Benzodiazepine Addiction.png",
+  "morphine-addiction": "/images/Morphine Addiction.png",
+  "gambling-addiction": "/images/Gambling Addiction.png",
+  "gambling-treatment": "/images/Gambling Addiction.png",
+  "sex-addiction": "/images/sex Addiction.png",
+  "game-therapy": "/images/game-therapy.webp",
+  "yoga-and-meditation": "/images/facility-yoga-meditation.webp",
+  "schizophrenia-treatment-in-delhi": "/images/Schizophrenia.png",
+  "treatment-of-personality-disorders": "/images/Bipolar Disorder.png",
+  "adhd-treatment-in-delhi": "/images/ADHD.png",
+  "internet-addiction": "/images/game-therapy.webp",
+};
+
+function getServiceImageFallback(item: CmsItem) {
+  if (serviceImageFallbacks[item.slug]) return serviceImageFallbacks[item.slug];
+  if (item.slug.includes("rehab") || item.slug.includes("rehabilitation") || item.slug.includes("centre") || item.slug.includes("center")) {
+    return "/images/facility-open-space.webp";
+  }
+  if (item.category_slug === "therapy") return "/images/game-therapy.webp";
+  if (item.category_slug === "mental-healthcare") return "/images/recovery-at-your-pace.webp";
+  return "/images/Drug Addiction.png";
+}
+
+const serviceFaqs = [
+  ["How do I know which service is right for me?", "Every recovery journey is different. Contact our team for a confidential conversation and we can help you explore the support options that best fit your needs."],
+  ["Can I speak with someone before booking?", "Yes. Our team can answer your questions and explain what to expect before you decide on a service or appointment."],
+  ["Are services personalized to each person?", "Care is shaped around the individual, their circumstances, and their goals. Our team will discuss an appropriate next step with you."],
+  ["Can a family member ask about services?", "Yes. Families and caregivers are welcome to reach out for information and guidance on how to support someone they care about."],
+  ["How can I arrange an appointment?", "Use the appointment link below or contact our team by phone. We will help you find a suitable time and explain what to expect."],
+];
+
 function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slug: string; centerMedia?: boolean }) {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -413,52 +466,115 @@ export default function InnerPagesPage({
   }
 
   return (
-    <main className={`site-container px-5 pb-20 pt-40 md:pb-24 ${listingKind === "services" ? "content-archive content-archive-services" : "content-archive"}`}>
-      <header className="archive-heading">
-        <p className="eyebrow text-terracotta">Roar Wellness</p>
-        <h1 className="mt-4 font-serif text-5xl tracking-tight text-brown md:text-6xl">{listingKind === "services" ? "Services" : "Treatments & site pages"}</h1>
-        <p className="archive-intro">{listingKind === "services" ? "Explore care for recovery, therapy, and mental wellbeing." : "Published treatment information, therapy, mental healthcare, and pages from Roar Wellness."}</p>
-      </header>
+    <main className={listingKind === "services" ? "content-archive content-archive-services" : "content-archive content-archive-all"}>
+      {listingKind === "services" ? <>
+        <header className="services-hero site-container">
+          <p className="services-hero-kicker">Services</p>
+          <h1>Rooted in <em>wellness</em></h1>
+          <p className="services-hero-intro">Thoughtful support for recovery, therapy, and mental wellbeing — shaped around you.</p>
+          <a className="services-hero-scroll" href="#browse-services" aria-label="Explore our services">↓</a>
+        </header>
 
-      <section aria-label="Browse services">
-        <div className="archive-toolbar">
-          <label className="archive-search">
-            <span>Find content</span>
-            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search titles and summaries" />
-          </label>
-          {categories.length > 0 && <div className="archive-tabs" role="tablist" aria-label="Filter site content">
-            <button type="button" role="tab" aria-selected={!category} onClick={() => setCategory("")} className={!category ? "archive-tab is-active" : "archive-tab"}>All</button>
-            {categories.map((item) => <button key={item.id} type="button" role="tab" aria-selected={category === item.slug} onClick={() => setCategory(item.slug)} className={category === item.slug ? "archive-tab is-active" : "archive-tab"}>{item.name}</button>)}
-          </div>}
-        </div>
+        <div className="services-divider" aria-hidden="true"><span>+</span></div>
 
-        {allItems.length > 0 && <p className="archive-result-count" aria-live="polite">
-          {visibleItems.length} {visibleItems.length === 1 ? "result" : "results"}
-          {category ? ` in ${categories.find((item) => item.slug === category)?.name || category}` : ""}
-        </p>}
+        <section id="browse-services" className="services-gallery site-container" aria-labelledby="services-gallery-title">
+          <div className="services-gallery-heading">
+            <div>
+              <p className="eyebrow">Find your next step</p>
+              <h2 id="services-gallery-title">Care for every part of you</h2>
+            </div>
+            <p>Explore our services and discover support that meets you where you are.</p>
+          </div>
+          <div className="services-gallery-tools">
+            <label className="services-search">
+              <span className="sr-only">Search services</span>
+              <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search services" />
+            </label>
+            {categories.length > 0 && <div className="services-filter-tabs" role="tablist" aria-label="Filter services">
+              <button type="button" role="tab" aria-selected={!category} onClick={() => setCategory("")} className={!category ? "is-active" : ""}>All services</button>
+              {categories.map((item) => <button key={item.id} type="button" role="tab" aria-selected={category === item.slug} onClick={() => setCategory(item.slug)} className={category === item.slug ? "is-active" : ""}>{item.name}</button>)}
+            </div>}
+          </div>
 
-        {visibleItems.length ? <ul className="archive-list">
-          {visibleItems.map((item, index) => (
-            <li key={item.slug} className="archive-item archive-item-has-image">
-              <span className="archive-item-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-              <Link href={getCmsContentHref(item.slug, item.category_slug)} className={`archive-item-image ${item.featured_image_url ? "" : "archive-item-image-placeholder"}`} aria-label={`View ${item.title}`}>
-                {item.featured_image_url
-                  ? <img src={item.featured_image_url} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
-                  : <span aria-hidden="true">Roar Wellness</span>}
-              </Link>
-              <div className="archive-item-content">
-                <p className="archive-item-category">{item.category_name}</p>
-                <h2><Link href={getCmsContentHref(item.slug, item.category_slug)}>{item.title}</Link></h2>
-                {(item.excerpt || item.summary) && <p className="archive-item-summary">{normalizeCmsPlainText(item.excerpt || item.summary || "")}</p>}
-              </div>
-              <Link href={getCmsContentHref(item.slug, item.category_slug)} className="archive-item-action">
-                View details <ArrowUpRight size={16} aria-hidden="true" />
-              </Link>
-            </li>
-          ))}
-        </ul> : <p role="status" className="archive-empty">{allItems.length ? "No content matches your search. Try another title or category." : pagesMessage || "Loading published content..."}</p>}
-      </section>
-      <p className="mt-10 text-center"><Link href="/#top" className="text-sm font-semibold text-terracotta hover:underline">Back to home</Link></p>
+          {visibleItems.length ? <ul className="services-card-grid" aria-live="polite">
+            {visibleItems.map((item) => {
+              const image = item.featured_image_url || item.image_url || getServiceImageFallback(item);
+              return <li key={item.slug}>
+                <Link href={getCmsContentHref(item.slug, item.category_slug)} className="services-card">
+                  <span className="services-card-image">
+                    {image && <img src={image} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />}
+                    <span className="services-card-shade" aria-hidden="true" />
+                    <span className="services-card-plus" aria-hidden="true">+</span>
+                    <span className="services-card-title">{item.title}</span>
+                    <span className="services-card-arrow" aria-hidden="true"><ArrowUpRight size={18} /></span>
+                  </span>
+                </Link>
+              </li>;
+            })}
+          </ul> : <p role="status" className="services-empty">{allItems.length ? "No services match your search. Try another title or care type." : pagesMessage || "Loading published services..."}</p>}
+        </section>
+
+        <section className="services-appointment" aria-labelledby="services-appointment-title">
+          <div className="services-appointment-content">
+            <p className="eyebrow">A gentle first step</p>
+            <h2 id="services-appointment-title">Ready to begin your healing journey?</h2>
+            <p>Our team is here to listen, answer your questions, and help you find the right way forward.</p>
+            <Link href="/#contact" className="services-appointment-link">Make an appointment <ArrowUpRight size={17} aria-hidden="true" /></Link>
+          </div>
+        </section>
+
+        <section className="services-faq site-container" aria-labelledby="services-faq-title">
+          <div className="services-faq-heading">
+            <p className="eyebrow">FAQs</p>
+            <h2 id="services-faq-title">Healing starts <em>with clarity</em></h2>
+          </div>
+          <div className="services-faq-list">
+            {serviceFaqs.map(([question, answer]) => <details key={question}>
+              <summary>{question}<span aria-hidden="true">+</span></summary>
+              <p>{answer}</p>
+            </details>)}
+          </div>
+        </section>
+      </> : <>
+        <header className="archive-heading site-container">
+          <p className="eyebrow text-terracotta">Roar Wellness</p>
+          <h1 className="mt-4 font-serif text-5xl tracking-tight text-brown md:text-6xl">Treatments &amp; site pages</h1>
+          <p className="archive-intro">Published treatment information, therapy, mental healthcare, and pages from Roar Wellness.</p>
+        </header>
+        <section className="site-container" aria-label="Browse site content">
+          <div className="archive-toolbar">
+            <label className="archive-search">
+              <span>Find content</span>
+              <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search titles and summaries" />
+            </label>
+            {categories.length > 0 && <div className="archive-tabs" role="tablist" aria-label="Filter site content">
+              <button type="button" role="tab" aria-selected={!category} onClick={() => setCategory("")} className={!category ? "archive-tab is-active" : "archive-tab"}>All</button>
+              {categories.map((item) => <button key={item.id} type="button" role="tab" aria-selected={category === item.slug} onClick={() => setCategory(item.slug)} className={category === item.slug ? "archive-tab is-active" : "archive-tab"}>{item.name}</button>)}
+            </div>}
+          </div>
+          {visibleItems.length ? <ul className="archive-list">
+            {visibleItems.map((item, index) => (
+              <li key={item.slug} className="archive-item archive-item-has-image">
+                <span className="archive-item-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                <Link href={getCmsContentHref(item.slug, item.category_slug)} className={`archive-item-image ${item.featured_image_url ? "" : "archive-item-image-placeholder"}`} aria-label={`View ${item.title}`}>
+                  {item.featured_image_url
+                    ? <img src={item.featured_image_url} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
+                    : <span aria-hidden="true">Roar Wellness</span>}
+                </Link>
+                <div className="archive-item-content">
+                  <p className="archive-item-category">{item.category_name}</p>
+                  <h2><Link href={getCmsContentHref(item.slug, item.category_slug)}>{item.title}</Link></h2>
+                  {(item.excerpt || item.summary) && <p className="archive-item-summary">{normalizeCmsPlainText(item.excerpt || item.summary || "")}</p>}
+                </div>
+                <Link href={getCmsContentHref(item.slug, item.category_slug)} className="archive-item-action">
+                  View details <ArrowUpRight size={16} aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul> : <p role="status" className="archive-empty">{allItems.length ? "No content matches your search. Try another title or category." : pagesMessage || "Loading published content..."}</p>}
+        </section>
+        <p className="mt-10 text-center"><Link href="/#top" className="text-sm font-semibold text-terracotta hover:underline">Back to home</Link></p>
+      </>}
     </main>
   );
 }
