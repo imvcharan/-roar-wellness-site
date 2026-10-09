@@ -1,7 +1,7 @@
 "use client";
 
-import { type FormEvent } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
+import { RefreshCw, ArrowUpRight } from "lucide-react";
 
 const supportOptions = [
   "Alcohol and substance use",
@@ -19,10 +19,60 @@ export function AppointmentRequestForm({
   variant?: "appointment" | "contact";
 }) {
   const isContact = variant === "contact";
+  const [challenge, setChallenge] = useState<{ question: string; token: string } | null>(null);
+  const [answer, setAnswer] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const loadChallenge = async (preserveError = false) => {
+    setChallenge(null);
+    setAnswer("");
+    if (!preserveError) setCaptchaError("");
+    try {
+      const response = await fetch("/api/appointment-captcha", { cache: "no-store" });
+      const result = await response.json() as { question?: string; token?: string; error?: string };
+      if (!response.ok || !result.question || !result.token) {
+        throw new Error(result.error || "The verification question could not be loaded.");
+      }
+      setChallenge({ question: result.question, token: result.token });
+    } catch (error) {
+      console.error("Unable to load appointment verification question.", error);
+      setCaptchaError(error instanceof Error ? error.message : "The verification question could not be loaded.");
+    }
+  };
+
+  useEffect(() => {
+    void loadChallenge();
+  }, []);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!challenge || isSubmitting) return;
     const formData = new FormData(event.currentTarget);
+    setIsSubmitting(true);
+    setCaptchaError("");
+
+    try {
+      const verification = await fetch("/api/appointment-captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ token: challenge.token, answer }),
+      });
+      const result = await verification.json() as { verified?: boolean; error?: string };
+      if (!verification.ok || result.verified !== true) {
+        setCaptchaError(result.error || "The answer could not be verified. Please try again.");
+        await loadChallenge(true);
+        return;
+      }
+    } catch (error) {
+      console.error("Unable to verify appointment math answer.", error);
+      setCaptchaError("The answer could not be verified. Please try again.");
+      return;
+    } finally {
+      setIsSubmitting(false);
+    }
+
     const firstName = formData.get("firstName")?.toString().trim() || "";
     const lastName = formData.get("lastName")?.toString().trim() || "";
     const name = `${firstName} ${lastName}`.trim();
@@ -75,7 +125,34 @@ export function AppointmentRequestForm({
         <span>Message*</span>
         <textarea name="message" placeholder="Share anything you’d like us to know..." rows={3} required />
       </label>
-      <button type="submit" className={isContact ? "lets-talk-button" : "appointment-submit"}>
+      <div className="appointment-captcha">
+        <label htmlFor="appointment-captcha-answer">
+          <span>Quick check*</span>
+          <span className="appointment-captcha-question" aria-live="polite">
+            {challenge?.question || "Loading verification question..."}
+          </span>
+          <input
+            id="appointment-captcha-answer"
+            name="captchaAnswer"
+            type="number"
+            inputMode="numeric"
+            autoComplete="off"
+            min="0"
+            max="99"
+            step="1"
+            placeholder="Your answer"
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            required
+            disabled={!challenge || isSubmitting}
+          />
+        </label>
+        <button type="button" className="appointment-captcha-refresh" onClick={() => void loadChallenge()} disabled={isSubmitting} aria-label="Get a new math question">
+          <RefreshCw size={16} aria-hidden="true" />
+        </button>
+      </div>
+      {captchaError && <p className="appointment-captcha-error" role="alert">{captchaError}</p>}
+      <button type="submit" className={isContact ? "lets-talk-button" : "appointment-submit"} disabled={!challenge || isSubmitting}>
         <span>Send appointment request</span>
         <ArrowUpRight size={17} aria-hidden="true" />
       </button>

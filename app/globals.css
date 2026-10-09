@@ -1232,6 +1232,18 @@
   .appointment-request-form :is(input, select, textarea)::placeholder { color: rgb(81 72 63 / .46); }
   .appointment-request-form select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2351483f' stroke-width='1.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: right center; background-repeat: no-repeat; padding-right: 1.5rem; }
   .appointment-request-form textarea { min-height: 5rem; resize: vertical; }
+  .appointment-captcha { display: flex; align-items: flex-end; gap: .7rem; }
+  .appointment-captcha label { display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) minmax(7rem, .55fr); align-items: center; gap: .4rem 1rem; }
+  .appointment-captcha label > span:first-child { grid-column: 1; }
+  .appointment-captcha-question { grid-column: 1; color: rgb(81 72 63 / .72); font-size: .88rem; }
+  .appointment-request-form .appointment-captcha input { grid-column: 2; grid-row: 1 / span 2; }
+  .appointment-request-form input:disabled,
+  .appointment-submit:disabled,
+  .lets-talk-button:disabled { cursor: wait; opacity: .65; }
+  .appointment-captcha-refresh { display: grid; width: 2.65rem; height: 2.65rem; flex: 0 0 auto; place-items: center; border: 1px solid rgb(81 72 63 / .25); border-radius: .2rem; background: transparent; color: #51483f; transition: background .2s ease, color .2s ease; }
+  .appointment-captcha-refresh:hover:not(:disabled) { background: #51483f; color: #fffcf5; }
+  .appointment-captcha-refresh:focus-visible { outline: 2px solid #a1806e; outline-offset: 3px; }
+  .appointment-captcha-error { margin: -.7rem 0 0; color: #a3342a; font-size: .76rem; line-height: 1.5; }
   .appointment-submit { display: inline-flex; min-height: 3rem; align-items: center; justify-content: space-between; justify-self: start; gap: 1.1rem; border: 0; border-radius: .2rem; background: #ede9dd; color: #51483f; padding: .75rem 1rem; font-size: .75rem; font-weight: 700; transition: background .2s ease, color .2s ease, transform .2s ease; }
   .appointment-submit:hover { transform: translateY(-2px); background: #51483f; color: #fffcf5; }
   .appointment-submit:focus-visible { outline: 3px solid #a1806e; outline-offset: 3px; }
@@ -1246,6 +1258,7 @@
     .contact-details-row a,
     .appointment-booking-image img,
     .appointment-request-form label,
+    .appointment-captcha-refresh,
     .appointment-submit,
     .appointment-contact-links a { transition: none; }
   }
@@ -1394,6 +1407,7 @@
     letter-spacing: .16em;
     text-transform: uppercase;
   }
+  .lets-talk-form .appointment-captcha-question { color: rgb(81 72 63 / .72); font-size: .88rem; font-weight: 600; letter-spacing: normal; text-transform: none; }
   .lets-talk-form input,
   .lets-talk-form textarea,
   .lets-talk-form select {

@@ -93,6 +93,11 @@ function openDatabase(): DatabaseSync {
       expires_at INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
+    CREATE TABLE IF NOT EXISTS appointment_captcha_challenges (
+      challenge_id TEXT PRIMARY KEY,
+      answer INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS cms_users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE COLLATE NOCASE,
