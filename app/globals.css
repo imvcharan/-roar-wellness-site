@@ -955,7 +955,7 @@
   .about-reference-story-image:hover img { transform: scale(1.025); }
   .about-reference-story-image figcaption { position: absolute; right: 1.15rem; bottom: 1.1rem; color: #fffcf5; font-size: .68rem; font-weight: 650; letter-spacing: .08em; text-shadow: 0 1px 8px rgb(0 0 0 / .55); text-transform: uppercase; }
   .about-reference-story-copy { color: rgb(81 72 63 / .82); font-size: clamp(.92rem, 1.05vw, 1rem); line-height: 1.8; }
-  .about-reference-story-copy p { margin: 0 0 1.2rem; }
+  .about-reference-story-copy p { margin: 0 0 1.2rem; text-align: justify; text-justify: inter-word; }
   .about-reference-film { position: relative; display: grid; min-height: min(90svh, 58rem); place-items: center; overflow: hidden; background: #453b34; }
   .about-reference-film > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 42%; }
   .about-reference-film-overlay { position: absolute; inset: 0; background: rgb(32 27 24 / .25); transition: background .3s ease; }
