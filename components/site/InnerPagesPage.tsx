@@ -8,6 +8,7 @@ import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { cmsRequest } from "@/services/cms-api";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
 import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
+import { AboutPage } from "@/components/site/AboutPage";
 import { ContactSection } from "@/components/site/ContactSection";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { getYouTubeVideos } from "@/lib/youtube-videos";
@@ -134,31 +135,6 @@ function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slu
     return () => observer.disconnect();
   }, [html]);
 
-  useEffect(() => {
-    if (slug !== "about-roarwellness") return;
-    const sections = contentRef.current?.querySelectorAll<HTMLElement>(
-      ":scope > .elementor > .e-con.e-parent"
-    );
-    if (!sections?.length) return;
-
-    sections.forEach((section) => section.classList.add("about-section-reveal"));
-    if (!("IntersectionObserver" in window)) {
-      sections.forEach((section) => section.classList.add("is-revealed"));
-      return;
-    }
-
-    const revealObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add("is-revealed");
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.12 });
-    sections.forEach((section) => revealObserver.observe(section));
-
-    return () => revealObserver.disconnect();
-  }, [html, slug]);
-
   const toggleFaq = (title: HTMLElement) => {
     const panel = title.parentElement?.querySelector<HTMLElement>(".accordion-content");
     if (!panel) return;
@@ -201,7 +177,7 @@ function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slu
 
   return <div
     ref={contentRef}
-    className={`cms-page-content${slug === "about-roarwellness" ? " cms-about-page" : ""}${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${centerMedia ? " cms-centered-media" : ""}`}
+    className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${centerMedia ? " cms-centered-media" : ""}`}
     onClickCapture={onClickCapture}
     onKeyDownCapture={onKeyDownCapture}
     dangerouslySetInnerHTML={{ __html: html }}
@@ -426,9 +402,11 @@ export default function InnerPagesPage({
       );
     }
 
+    if (isAboutPage) return <AboutPage phone={contactPhone} />;
+
     return (
-      <main className={`pb-20 pt-40 md:pb-24${selectedSlug ? " detail-content-theme" : ""}${selectedSlug === "about-roarwellness" ? " about-roarwellness-detail" : ""}`}>
-        {selectedItem && !isAboutPage && <nav aria-label="Breadcrumb" className="site-container px-5">
+      <main className={`pb-20 pt-40 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
+        {selectedItem && <nav aria-label="Breadcrumb" className="site-container px-5">
           <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
             <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
             {selectedKind !== "page" && <li aria-hidden="true" className="text-beige">/</li>}
@@ -445,15 +423,7 @@ export default function InnerPagesPage({
           </ol>
         </nav>}
         {selectedItem ? <>
-          {isAboutPage
-            ? <section className="about-page-hero" aria-labelledby="about-page-title">
-              <div className="about-page-hero-content">
-                <p className="about-page-hero-kicker">Roar Wellness</p>
-                <h1 id="about-page-title">About Us</h1>
-                <a href="#about-story">Discover our story <span aria-hidden="true">↓</span></a>
-              </div>
-            </section>
-            : <section className="detail-hero-band mt-6" aria-labelledby="treatment-detail-title">
+          <section className="detail-hero-band mt-6" aria-labelledby="treatment-detail-title">
             <div className="site-container px-5">
               <div className={`detail-hero${image ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
               <div className="detail-hero-copy">
@@ -467,11 +437,11 @@ export default function InnerPagesPage({
               {image && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial" : ""}`}><img src={image} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
-          </section>}
+          </section>
 
-          <div className={isAboutPage ? "about-content-wrap" : "site-container px-5"}>
-            <div id={isAboutPage ? "about-story" : undefined} className={`${isAboutPage ? "about-content-layout" : "detail-layout"} ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"}${isAboutPage ? "" : " mt-10 md:mt-14"}`}>
-              <article className={`detail-article${isAboutPage ? " about-detail-article" : ""}`}>
+          <div className="site-container px-5">
+            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"} mt-10 md:mt-14`}>
+              <article className="detail-article">
                 {isVideosPage
                   ? pageVideos.length
                     ? <GalleryVideoGrid videos={pageVideos} gridClassName="cms-videos-page-grid" />
@@ -507,7 +477,7 @@ export default function InnerPagesPage({
 
           </div>
 
-          {(selectedKind === "service" || isAboutPage) && <AppointmentShowcase phone={contactPhone} />}
+          {selectedKind === "service" && <AppointmentShowcase phone={contactPhone} />}
 
           {!isExpertsPage && <DetailTestimonialsFaq />}
 
