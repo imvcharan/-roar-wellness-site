@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Mail, Phone } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getCmsCategoryLabel, getCmsContentHref, getCmsRouteKind, isLocationService, isServiceCategory } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { cmsRequest } from "@/services/cms-api";
@@ -133,6 +133,31 @@ function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slu
     observer.observe(content, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [html]);
+
+  useEffect(() => {
+    if (slug !== "about-roarwellness") return;
+    const sections = contentRef.current?.querySelectorAll<HTMLElement>(
+      ":scope > .elementor > .e-con.e-parent"
+    );
+    if (!sections?.length) return;
+
+    sections.forEach((section) => section.classList.add("about-section-reveal"));
+    if (!("IntersectionObserver" in window)) {
+      sections.forEach((section) => section.classList.add("is-revealed"));
+      return;
+    }
+
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-revealed");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+    sections.forEach((section) => revealObserver.observe(section));
+
+    return () => revealObserver.disconnect();
+  }, [html, slug]);
 
   const toggleFaq = (title: HTMLElement) => {
     const panel = title.parentElement?.querySelector<HTMLElement>(".accordion-content");
@@ -335,6 +360,7 @@ export default function InnerPagesPage({
   if (selectedSlug) {
     const isVideosPage = selectedItem?.slug === "videos";
     const isExpertsPage = selectedSlug.toLowerCase() === "drug-alcohol-rehabilitation-experts";
+    const isAboutPage = selectedSlug === "about-roarwellness";
     const summary = isExpertsPage
       ? "Meet the experienced clinicians and recovery professionals who guide care at Roar Wellness."
       : !isVideosPage && (selectedItem?.excerpt || selectedItem?.summary)
@@ -353,28 +379,56 @@ export default function InnerPagesPage({
 
     if (selectedItem && selectedKind === "page" && selectedSlug.toLowerCase() === "contact-us") {
       return (
-        <main className="pb-20 pt-40 md:pb-24">
-          <section className="contact-page-hero px-6 text-cream md:px-12">
+        <main className="contact-page">
+          <section className="contact-page-hero" aria-labelledby="contact-page-title">
             <div className="site-container">
-              <p className="contact-page-hero-kicker">Roar Wellness</p>
-              <h1>Contact Us</h1>
-              <p>Reach out for a confidential conversation about care, recovery, and the next step for you or someone you care about.</p>
+              <div className="contact-page-hero-top">
+                <p className="contact-page-hero-kicker">Contact</p>
+                <a href="#contact-details" aria-label="Explore our contact details"><ArrowDown size={22} aria-hidden="true" /></a>
+              </div>
+              <h1 id="contact-page-title">Get in <em>Touch</em></h1>
+              <p>Start a conversation with Roar Wellness about care, recovery, and the next step for you or someone you care about.</p>
+              <div className="contact-page-divider" aria-hidden="true"><span>+</span></div>
             </div>
           </section>
-          <ContactSection
-            contactEmail={contactEmail}
-            contactPhone={contactPhone}
-            contactWhatsApp={contactWhatsApp}
-            contactAddress={contactAddress}
-            appearance="light"
-          />
+          <section id="contact-details" className="contact-details-showcase site-container" aria-labelledby="contact-details-title">
+            <div className="contact-details-image">
+              <img src="/images/about-roar-wellness.webp" alt="A welcoming space at Roar Wellness" />
+              <span>Roar Wellness · Chhattarpur, Delhi</span>
+            </div>
+            <div className="contact-details-copy">
+              <p className="eyebrow">We’re here to listen</p>
+              <h2 id="contact-details-title">A thoughtful first conversation can make all the difference.</h2>
+              <p className="contact-details-intro">Connect with our team in the way that feels most comfortable. Your enquiry will be treated with care and discretion.</p>
+              <div className="contact-details-list">
+                <div className="contact-details-row">
+                  <MapPin aria-hidden="true" />
+                  <div><span>Visit us</span><p>{contactAddress}</p><a href={`https://maps.google.com/?q=${encodeURIComponent(contactAddress)}`} target="_blank" rel="noreferrer">Get directions <ArrowUpRight size={14} aria-hidden="true" /></a></div>
+                </div>
+                <div className="contact-details-row">
+                  <Phone aria-hidden="true" />
+                  <div><span>Call us</span><a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}>{contactPhone}</a></div>
+                </div>
+                <div className="contact-details-row">
+                  <Mail aria-hidden="true" />
+                  <div><span>Email us</span><a href={`mailto:${contactEmail}`}>{contactEmail}</a></div>
+                </div>
+                <div className="contact-details-row">
+                  <MessageCircle aria-hidden="true" />
+                  <div><span>WhatsApp</span><a href={`https://wa.me/${contactWhatsApp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">{contactWhatsApp}</a></div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <AppointmentShowcase phone={contactPhone} />
+          <DetailTestimonialsFaq showTestimonials={false} />
         </main>
       );
     }
 
     return (
       <main className={`pb-20 pt-40 md:pb-24${selectedSlug ? " detail-content-theme" : ""}${selectedSlug === "about-roarwellness" ? " about-roarwellness-detail" : ""}`}>
-        {selectedItem && <nav aria-label="Breadcrumb" className="site-container px-5">
+        {selectedItem && !isAboutPage && <nav aria-label="Breadcrumb" className="site-container px-5">
           <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
             <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
             {selectedKind !== "page" && <li aria-hidden="true" className="text-beige">/</li>}
@@ -391,7 +445,15 @@ export default function InnerPagesPage({
           </ol>
         </nav>}
         {selectedItem ? <>
-          <section className="detail-hero-band mt-6" aria-labelledby="treatment-detail-title">
+          {isAboutPage
+            ? <section className="about-page-hero" aria-labelledby="about-page-title">
+              <div className="about-page-hero-content">
+                <p className="about-page-hero-kicker">Roar Wellness</p>
+                <h1 id="about-page-title">About Us</h1>
+                <a href="#about-story">Discover our story <span aria-hidden="true">↓</span></a>
+              </div>
+            </section>
+            : <section className="detail-hero-band mt-6" aria-labelledby="treatment-detail-title">
             <div className="site-container px-5">
               <div className={`detail-hero${image ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
               <div className="detail-hero-copy">
@@ -405,11 +467,11 @@ export default function InnerPagesPage({
               {image && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial" : ""}`}><img src={image} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
-          </section>
+          </section>}
 
-          <div className="site-container px-5">
-            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"} mt-10 md:mt-14`}>
-              <article className="detail-article">
+          <div className={isAboutPage ? "about-content-wrap" : "site-container px-5"}>
+            <div id={isAboutPage ? "about-story" : undefined} className={`${isAboutPage ? "about-content-layout" : "detail-layout"} ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"}${isAboutPage ? "" : " mt-10 md:mt-14"}`}>
+              <article className={`detail-article${isAboutPage ? " about-detail-article" : ""}`}>
                 {isVideosPage
                   ? pageVideos.length
                     ? <GalleryVideoGrid videos={pageVideos} gridClassName="cms-videos-page-grid" />
@@ -445,7 +507,7 @@ export default function InnerPagesPage({
 
           </div>
 
-          {selectedKind === "service" && <AppointmentShowcase phone={contactPhone} />}
+          {(selectedKind === "service" || isAboutPage) && <AppointmentShowcase phone={contactPhone} />}
 
           {!isExpertsPage && <DetailTestimonialsFaq />}
 

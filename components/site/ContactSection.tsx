@@ -10,6 +10,7 @@ interface ContactSectionProps {
   contactAddress: string;
   headingLevel?: "h1" | "h2";
   appearance?: "standard" | "light";
+  showContactDetails?: boolean;
 }
 
 export function ContactSection({
@@ -19,6 +20,7 @@ export function ContactSection({
   contactAddress,
   headingLevel = "h2",
   appearance = "standard",
+  showContactDetails = true,
 }: ContactSectionProps) {
   const Heading = headingLevel;
 
@@ -56,7 +58,7 @@ export function ContactSection({
                 <a href="https://www.linkedin.com/in/roarwellness/" target="_blank" rel="noreferrer" aria-label="Roar Wellness on LinkedIn"><BriefcaseBusiness size={18} aria-hidden="true" /></a>
                 <a href={`https://wa.me/${contactWhatsApp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" aria-label="Chat with Roar Wellness on WhatsApp"><MessageCircle size={18} aria-hidden="true" /></a>
               </div>
-              <div className="contact-details lets-talk-contact-details" aria-label="Contact details">
+              {showContactDetails && <div className="contact-details lets-talk-contact-details" aria-label="Contact details">
                 <div className="contact-detail">
                   <Phone size={20} aria-hidden="true" />
                   <div><p>Call us</p><a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}>{contactPhone}</a></div>
@@ -73,7 +75,7 @@ export function ContactSection({
                   <MessageCircle size={20} aria-hidden="true" />
                   <div><p>WhatsApp</p><a href={`https://wa.me/${contactWhatsApp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">{contactWhatsApp}</a></div>
                 </div>
-              </div>
+              </div>}
             </div>
 
             <form className="lets-talk-form" onSubmit={handleContactSubmit}>

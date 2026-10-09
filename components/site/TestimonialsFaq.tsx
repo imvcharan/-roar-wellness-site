@@ -122,20 +122,20 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
 
 export function FaqSection({ faqs }: { faqs: Faq[] }) {
   return (
-    <section id="faq" className="bg-sand px-6 py-20 md:px-12 md:py-28">
+    <section id="faq" className="site-faq px-6 py-20 md:px-12 md:py-28">
       <div className="site-container grid gap-14 md:grid-cols-[.7fr_1.3fr]">
         <div>
-          <p className="eyebrow mb-5 text-coral">FAQ&apos;s</p>
-          <h2 className="section-title text-olive">Healing starts <em>with clarity</em></h2>
+          <p className="site-faq-eyebrow eyebrow mb-5">FAQ&apos;s</p>
+          <h2 className="site-faq-title section-title">Healing starts <em>with clarity</em></h2>
         </div>
-        <div className="border-t border-olive/20">
+        <div className="site-faq-list">
           {faqs.map(([question, answer]) => (
-            <details key={question} id={faqAnchorId(question)} className="group border-b border-olive/20 py-6">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-8 font-serif text-2xl text-olive">
+            <details key={question} id={faqAnchorId(question)} className="site-faq-item group py-6">
+              <summary className="site-faq-question flex cursor-pointer list-none items-center justify-between gap-8 font-serif text-2xl">
                 <span>{question}</span>
-                <span className="text-coral transition-transform group-open:rotate-45">+</span>
+                <span className="site-faq-plus transition-transform group-open:rotate-45">+</span>
               </summary>
-              <p className="max-w-2xl pt-4 font-sans leading-7 text-olive/65">{answer}</p>
+              <p className="site-faq-answer max-w-2xl pt-4 font-sans leading-7">{answer}</p>
             </details>
           ))}
         </div>
