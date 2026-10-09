@@ -81,14 +81,6 @@ function getServiceImageFallback(item: CmsItem) {
   return "/images/Drug Addiction.png";
 }
 
-const serviceFaqs = [
-  ["How do I know which service is right for me?", "Every recovery journey is different. Contact our team for a confidential conversation and we can help you explore the support options that best fit your needs."],
-  ["Can I speak with someone before booking?", "Yes. Our team can answer your questions and explain what to expect before you decide on a service or appointment."],
-  ["Are services personalized to each person?", "Care is shaped around the individual, their circumstances, and their goals. Our team will discuss an appropriate next step with you."],
-  ["Can a family member ask about services?", "Yes. Families and caregivers are welcome to reach out for information and guidance on how to support someone they care about."],
-  ["How can I arrange an appointment?", "Use the appointment link below or contact our team by phone. We will help you find a suitable time and explain what to expect."],
-];
-
 function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slug: string; centerMedia?: boolean }) {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -523,18 +515,7 @@ export default function InnerPagesPage({
 
         <AppointmentShowcase phone={contactPhone} />
 
-        <section className="services-faq site-container" aria-labelledby="services-faq-title">
-          <div className="services-faq-heading">
-            <p className="eyebrow">FAQs</p>
-            <h2 id="services-faq-title">Healing starts <em>with clarity</em></h2>
-          </div>
-          <div className="services-faq-list">
-            {serviceFaqs.map(([question, answer]) => <details key={question}>
-              <summary>{question}<span aria-hidden="true">+</span></summary>
-              <p>{answer}</p>
-            </details>)}
-          </div>
-        </section>
+        <DetailTestimonialsFaq showTestimonials={false} />
       </> : <>
         <header className="archive-heading site-container">
           <p className="eyebrow text-terracotta">Roar Wellness</p>

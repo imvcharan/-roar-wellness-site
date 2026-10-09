@@ -1742,44 +1742,6 @@
   .services-filter-tabs button:focus-visible { outline: 3px solid #8d6b57; outline-offset: 4px; }
   .services-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
   .services-empty { padding: 2rem 0; color: rgb(81 72 63 / .72); }
-  .services-faq {
-    display: grid;
-    grid-template-columns: minmax(15rem, .75fr) minmax(0, 1.25fr);
-    gap: clamp(2.5rem, 8vw, 8rem);
-    padding-top: clamp(5rem, 10vw, 9rem);
-    padding-bottom: clamp(5rem, 10vw, 9rem);
-  }
-  .services-faq-heading h2 {
-    max-width: 28rem;
-    margin-top: 1rem;
-    color: #51483f;
-    font-family: var(--font-serif);
-    font-size: clamp(2.6rem, 5vw, 4.5rem);
-    font-weight: 400;
-    letter-spacing: -.06em;
-    line-height: .98;
-  }
-  .services-faq-list { border-top: 1px solid #dad3be; }
-  .services-faq-list details { border-bottom: 1px solid #dad3be; }
-  .services-faq-list summary {
-    display: flex;
-    min-height: 4.5rem;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1.1rem 0;
-    color: #51483f;
-    font-family: var(--font-serif);
-    font-size: clamp(1rem, 1.6vw, 1.3rem);
-    line-height: 1.35;
-    list-style: none;
-    cursor: pointer;
-  }
-  .services-faq-list summary::-webkit-details-marker { display: none; }
-  .services-faq-list summary span { flex: 0 0 auto; color: #8d6b57; font-family: var(--font-body); font-size: 1.5rem; transition: transform .2s ease; }
-  .services-faq-list details[open] summary span { transform: rotate(45deg); }
-  .services-faq-list summary:focus-visible { outline: 2px solid #8d6b57; outline-offset: 4px; }
-  .services-faq-list details > p { max-width: 38rem; padding: 0 2rem 1.35rem 0; color: rgb(81 72 63 / .72); font-size: .86rem; line-height: 1.7; }
   .content-archive-services .archive-heading,
   .content-archive-blog .archive-heading { border-color: #dad3be; }
   .content-archive-services .archive-heading > .eyebrow,
@@ -1957,7 +1919,6 @@
     .services-gallery-heading { align-items: flex-start; flex-direction: column; gap: 1rem; }
     .services-gallery-heading > p { max-width: 32rem; }
     .services-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
-    .services-faq { grid-template-columns: 1fr; gap: 2rem; }
     .home-theme > .essence-section { padding-right: 0; padding-left: 0; }
     .home-theme .essence-section .site-container { width: 100%; max-width: none; margin: 0; }
     .essence-heading { padding-right: 1rem; padding-left: 1rem; }

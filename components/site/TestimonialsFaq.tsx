@@ -144,17 +144,19 @@ export function FaqSection({ faqs }: { faqs: Faq[] }) {
   );
 }
 
-export function DetailTestimonialsFaq() {
+export function DetailTestimonialsFaq({ showTestimonials = true }: { showTestimonials?: boolean }) {
   const [reviews, setReviews] = useState(defaultReviews);
   const [faqs, setFaqs] = useState(defaultFaqs);
 
   useEffect(() => {
     let mounted = true;
-    cmsRequest<{ data: Record<string, CmsHomeSection[]> }>("/api/content/home")
-      .then(({ data }) => {
-        if (mounted) setReviews((data.reviews || []).map((item) => [item.heading, item.body, item.image_url] as Review));
-      })
-      .catch((error: unknown) => console.error("Unable to load published testimonials.", error));
+    if (showTestimonials) {
+      cmsRequest<{ data: Record<string, CmsHomeSection[]> }>("/api/content/home")
+        .then(({ data }) => {
+          if (mounted) setReviews((data.reviews || []).map((item) => [item.heading, item.body, item.image_url] as Review));
+        })
+        .catch((error: unknown) => console.error("Unable to load published testimonials.", error));
+    }
     cmsRequest<{ data: CmsFaq[] }>("/api/content/faqs")
       .then(({ data }) => {
         if (mounted) setFaqs(data.map((faq) => [faq.question, faq.answer] as Faq));
@@ -166,7 +168,7 @@ export function DetailTestimonialsFaq() {
 
   return (
     <>
-      <TestimonialsSection reviews={reviews} />
+      {showTestimonials && <TestimonialsSection reviews={reviews} />}
       <FaqSection faqs={faqs} />
     </>
   );
