@@ -1,7 +1,7 @@
 "use client";
 
-import { type FormEvent } from "react";
 import { BriefcaseBusiness, Camera, Globe, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { AppointmentRequestForm } from "@/components/site/AppointmentRequestForm";
 
 interface ContactSectionProps {
   contactEmail: string;
@@ -24,22 +24,6 @@ export function ContactSection({
 }: ContactSectionProps) {
   const Heading = headingLevel;
 
-  const handleContactSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get("name")?.toString().trim() || "new enquiry";
-    const subject = `Website enquiry from ${name}`;
-    const body = [
-      `Name: ${name}`,
-      `Phone: ${formData.get("phone") || "Not provided"}`,
-      `Email: ${formData.get("email") || "Not provided"}`,
-      "",
-      "Message:",
-      formData.get("message") || "Not provided",
-    ].join("\n");
-    window.location.href = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
-
   return (
     <>
       <section id="contact" className={`lets-talk-band contact-section px-6 md:px-12 ${appearance === "light" ? "contact-section-light" : "text-cream"}`}>
@@ -48,7 +32,7 @@ export function ContactSection({
             <div className="lets-talk-copy">
               <Heading>Let’s Talk!</Heading>
               <p className="lets-talk-kicker">A confidential first conversation</p>
-              <p className="lets-talk-text">Get in touch with us using the enquiry form or contact details below.</p>
+              <p className="lets-talk-text">Tell us what kind of support you’re looking for, and our team will follow up privately.</p>
               <div className="lets-talk-socials">
                 <span>Connect with us</span>
               </div>
@@ -78,29 +62,7 @@ export function ContactSection({
               </div>}
             </div>
 
-            <form className="lets-talk-form" onSubmit={handleContactSubmit}>
-              <label>
-                <span>Name</span>
-                <input name="name" type="text" placeholder="Your name" autoComplete="name" required />
-              </label>
-              <div className="lets-talk-fields lets-talk-fields-two">
-                <label>
-                  <span>Phone</span>
-                  <input name="phone" type="tel" placeholder="Phone" autoComplete="tel" />
-                </label>
-                <label>
-                  <span>Email</span>
-                  <input name="email" type="email" placeholder="Your email" autoComplete="email" required />
-                </label>
-              </div>
-
-              <label className="lets-talk-message">
-                <span>Message</span>
-                <textarea name="message" placeholder="How can we help?" rows={6} required />
-              </label>
-
-              <button type="submit" className="lets-talk-button">Send enquiry</button>
-            </form>
+            <AppointmentRequestForm contactEmail={contactEmail} variant="contact" />
           </div>
         </div>
       </section>
