@@ -710,6 +710,8 @@
   .nav-item:hover > .nav-dropdown-columns,
   .nav-item:focus-within > .nav-dropdown-columns,
   .nav-item.is-expanded > .nav-dropdown-columns { display: grid; }
+  .nav-item.is-navigation-suppressed > .nav-dropdown,
+  .nav-item.is-navigation-suppressed > .nav-dropdown-columns { display: none !important; }
   .nav-dropdown::-webkit-scrollbar { width: 5px; }
   .nav-dropdown::-webkit-scrollbar-thumb { border-radius: 999px; background: rgb(117 71 122 / .42); }
   .nav-dropdown .nav-item { width: 100%; }

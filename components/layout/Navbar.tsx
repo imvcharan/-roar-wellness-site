@@ -114,9 +114,15 @@ const navigationLinks: NavigationLink[] = [
 function NavigationItem({
   link,
   onClick,
+  onNavigate,
+  menuOwner,
+  isMenuSuppressed = false,
 }: {
   link: NavigationLink;
   onClick?: () => void;
+  onNavigate?: () => void;
+  menuOwner?: string;
+  isMenuSuppressed?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pathname = usePathname();
@@ -125,6 +131,7 @@ function NavigationItem({
   const handleNavigate = () => {
     setIsExpanded(false);
     onClick?.();
+    onNavigate?.();
   };
   const content = (
     <span aria-hidden="true" className="rolling-nav-label">
@@ -140,9 +147,15 @@ function NavigationItem({
 
   return (
     <div
-      className={`nav-item${hasChildren ? " has-children" : ""}${isExpanded ? " is-expanded" : ""}`}
+      className={`nav-item${hasChildren ? " has-children" : ""}${isExpanded ? " is-expanded" : ""}${isMenuSuppressed ? " is-navigation-suppressed" : ""}`}
+      onClickCapture={(event) => {
+        if (link.label !== menuOwner || !hasChildren || !window.matchMedia("(min-width: 1101px)").matches) return;
+        if (event.target instanceof Element && event.target.closest("a")) onNavigate?.();
+      }}
       onMouseLeave={() => {
-        if (window.matchMedia("(min-width: 1101px)").matches) setIsExpanded(false);
+        if (window.matchMedia("(min-width: 1101px)").matches) {
+          setIsExpanded(false);
+        }
       }}
     >
       <div className="nav-item-trigger">
@@ -169,17 +182,17 @@ function NavigationItem({
             <>
               <div className="nav-dropdown-column nav-dropdown-pages" aria-label="About Roar Wellness pages">
                 {link.children?.map((child) => (
-                  <NavigationItem key={child.label} link={child} onClick={onClick} />
+                  <NavigationItem key={child.label} link={child} onClick={onClick} onNavigate={onNavigate} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
                 ))}
               </div>
               <div className="nav-dropdown-column nav-dropdown-locations" aria-label="Locations">
                 {link.secondaryChildren?.map((child) => (
-                  <NavigationItem key={child.label} link={child} onClick={onClick} />
+                  <NavigationItem key={child.label} link={child} onClick={onClick} onNavigate={onNavigate} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
                 ))}
               </div>
             </>
           ) : link.children?.map((child) => (
-            <NavigationItem key={child.label} link={child} onClick={onClick} />
+            <NavigationItem key={child.label} link={child} onClick={onClick} onNavigate={onNavigate} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
           ))}
         </div>
       )}
@@ -189,6 +202,11 @@ function NavigationItem({
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [suppressedMenu, setSuppressedMenu] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSuppressedMenu(sessionStorage.getItem("roarwellness-suppressed-nav-menu"));
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -199,7 +217,24 @@ export function Navbar() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!suppressedMenu) return;
+    const clearWhenPointerLeavesMenu = (event: PointerEvent) => {
+      const suppressedItem = document.querySelector(".header-desktop-links > .nav-item.is-navigation-suppressed");
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      if (suppressedItem && target && suppressedItem.contains(target)) return;
+      sessionStorage.removeItem("roarwellness-suppressed-nav-menu");
+      setSuppressedMenu(null);
+    };
+    document.addEventListener("pointermove", clearWhenPointerLeavesMenu);
+    return () => document.removeEventListener("pointermove", clearWhenPointerLeavesMenu);
+  }, [suppressedMenu]);
+
   const closeMobileMenu = () => setIsOpen(false);
+  const suppressDesktopMenu = (label: string) => {
+    sessionStorage.setItem("roarwellness-suppressed-nav-menu", label);
+    setSuppressedMenu(label);
+  };
   const desktopLinks = navigationLinks.slice(0, 5);
   const rightLinks = navigationLinks.slice(5);
 
@@ -207,11 +242,23 @@ export function Navbar() {
     <nav className={`site-nav${isOpen ? " is-mobile-open" : ""}`} aria-label="Main navigation">
       <div className="header-bar">
         <div className="header-desktop-links">
-          {desktopLinks.map((link) => <NavigationItem key={link.label} link={link} />)}
+          {desktopLinks.map((link) => <NavigationItem
+            key={link.label}
+            link={link}
+            menuOwner={link.label}
+            isMenuSuppressed={suppressedMenu === link.label}
+            onNavigate={link.children?.length ? () => suppressDesktopMenu(link.label) : undefined}
+          />)}
           <Link href="/" aria-label="Roar Wellness home" className="header-brand">
             <img src="/images/logo.png" alt="Roar Wellness" className="header-logo" />
           </Link>
-          {rightLinks.map((link) => <NavigationItem key={link.label} link={link} />)}
+          {rightLinks.map((link) => <NavigationItem
+            key={link.label}
+            link={link}
+            menuOwner={link.label}
+            isMenuSuppressed={suppressedMenu === link.label}
+            onNavigate={link.children?.length ? () => suppressDesktopMenu(link.label) : undefined}
+          />)}
         </div>
         <div className="header-mobile-row">
           <Link href="/#top" aria-label="Roar Wellness home" className="header-brand">
