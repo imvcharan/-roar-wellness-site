@@ -1174,7 +1174,7 @@
   .detail-service-hero-band { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
   .detail-hero-background { position: absolute; z-index: 0; inset: 0; overflow: hidden; background: #51483f; }
   .detail-hero-background::after { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .55)); content: ""; }
-  .detail-hero-background-slide { position: absolute; inset: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease; }
+  .detail-hero-background-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease; }
   .detail-hero-background-slide.is-active { opacity: 1; }
   .detail-service-hero-band > .site-container { position: relative; z-index: 2; }
   @media (prefers-reduced-motion: reduce) {
@@ -1922,6 +1922,19 @@
     .cms-experts-page .e-con.e-parent:has(.elementor-widget-image-box) > .e-con-inner > .e-con.e-child { grid-template-columns: 1fr; gap: .85rem; }
     .detail-hero { grid-template-columns: 1fr; }
     .detail-hero-copy { padding: 2.5rem 0; }
+    .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background-slide {
+      inset: 0 0 auto;
+      height: clamp(12rem, 58vw, 15rem);
+      object-position: center 42%;
+    }
+    .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background::after {
+      inset: 0 0 auto;
+      height: clamp(13rem, 64vw, 17rem);
+      background: linear-gradient(180deg, rgb(38 33 30 / .34), rgb(50 43 38 / .58) 68%, #51483f);
+    }
+    .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-copy {
+      padding: clamp(13rem, 60vw, 16rem) 0 2.5rem;
+    }
     .detail-hero-title { font-size: clamp(2.7rem, 12vw, 4rem); }
     .detail-hero-media { min-height: 14rem; }
     .detail-hero-image { min-height: 14rem; max-height: 22rem; }

@@ -97,7 +97,7 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
     return () => window.clearInterval(timer);
   }, [slideCount]);
 
-  return <div className="detail-hero-background" aria-hidden="true">
+  return <div className={`detail-hero-background${availableImages.length ? " detail-hero-background-has-images" : ""}`} aria-hidden="true">
     {availableImages.length
       ? availableImages.map((image, index) => <img
         className={`detail-hero-background-slide${index === activeIndex ? " is-active" : ""}`}
