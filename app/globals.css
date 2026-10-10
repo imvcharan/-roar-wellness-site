@@ -867,6 +867,19 @@
   .cms-page-content :is(h1, h2) { font-size: 2rem; }
   .cms-page-content h3 { font-size: 1.5rem; }
   .cms-page-content p { margin: .55rem 0; text-align: justify !important; text-align-last: start; text-justify: inter-word; }
+  .blog-helpline-card { margin: clamp(2rem, 5vw, 3.5rem) 0; border: 1px solid #dad3be; border-top: 3px solid #a1806e; background: linear-gradient(135deg, #fffcf5, #f3efe5); padding: clamp(1.15rem, 2.5vw, 1.8rem); box-shadow: 0 14px 36px rgb(81 72 63 / .08); }
+  .blog-helpline-header { margin-bottom: 1rem; }
+  .cms-page-content .blog-helpline-eyebrow { margin: 0 0 .3rem; color: #8d6b57; font-size: .62rem; font-weight: 700; letter-spacing: .15em; text-align: left !important; text-transform: uppercase; }
+  .cms-page-content .blog-helpline-title { margin: 0 !important; color: #51483f; font-size: clamp(1.55rem, 2.5vw, 2.15rem); }
+  .blog-helpline-links { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .55rem; }
+  .blog-helpline-link { display: flex; min-width: 0; min-height: 4.2rem; flex-direction: column; justify-content: center; gap: .25rem; border: 1px solid rgb(81 72 63 / .12); background: rgb(255 255 255 / .72); padding: .65rem .75rem; color: #51483f; text-decoration: none; transition: transform .2s ease, border-color .2s ease, background-color .2s ease, box-shadow .2s ease; }
+  .blog-helpline-link:hover { transform: translateY(-2px); border-color: #a1806e; background: #fff; box-shadow: 0 8px 20px rgb(81 72 63 / .1); }
+  .blog-helpline-link:focus-visible { outline: 2px solid #8d6b57; outline-offset: 3px; }
+  .blog-helpline-link-type { color: #8d6b57; font-size: .59rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .blog-helpline-link-value { overflow-wrap: anywhere; font-size: .78rem; font-weight: 600; line-height: 1.35; }
+  @media (max-width: 767px) {
+    .blog-helpline-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   .about-roarwellness-detail { padding-top: 0 !important; }
   .about-page-hero { position: relative; display: flex; min-height: min(100svh, 58rem); align-items: flex-end; overflow: hidden; background: #302b2a url("/images/about-roar-wellness.webp") center 48% / cover no-repeat; color: var(--color-cream); }
   .about-page-hero::before { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(19 16 15 / .14) 10%, rgb(19 16 15 / .12) 35%, rgb(19 16 15 / .78) 100%); content: ""; }

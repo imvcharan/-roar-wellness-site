@@ -208,6 +208,7 @@ function CmsPageContent({
   featuredImagePosition = "50% 50%",
   centerMedia = false,
   inlineCta = false,
+  blogHelpline = false,
   onHeadings,
 }: {
   html: string;
@@ -217,6 +218,7 @@ function CmsPageContent({
   featuredImagePosition?: string;
   centerMedia?: boolean;
   inlineCta?: boolean;
+  blogHelpline?: boolean;
   onHeadings?: Dispatch<SetStateAction<ContentHeading[]>>;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -321,6 +323,64 @@ function CmsPageContent({
 
     const syncContent = () => {
       removeEmbeddedSections();
+      if (blogHelpline && !content.querySelector(".blog-helpline-card")) {
+        const helplineHeading = Array.from(content.querySelectorAll<HTMLElement>("h2, h3, h4"))
+          .find((heading) => /^RoarWellness Helpline:/i.test(heading.textContent?.trim() || ""));
+        if (helplineHeading) {
+          const details = (helplineHeading.innerText || helplineHeading.textContent || "")
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .slice(1);
+          const contactItems = details.map((value) => {
+            if (/^\+?[\d\s().-]{7,}$/.test(value)) {
+              return { label: "Call us", value, href: `tel:${value.replace(/[^\d+]/g, "")}` };
+            }
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+              return { label: "Email us", value, href: `mailto:${value}` };
+            }
+            const domain = value.replace(/^https?:\/\//i, "").replace(/^www\./i, "");
+            return /^[\w.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(domain)
+              ? { label: "Visit our website", value, href: `https://${domain}` }
+              : null;
+          }).filter((item): item is { label: string; value: string; href: string } => item !== null);
+
+          if (contactItems.length) {
+            const card = document.createElement("section");
+            const header = document.createElement("div");
+            const eyebrow = document.createElement("p");
+            const links = document.createElement("div");
+            card.className = "blog-helpline-card";
+            header.className = "blog-helpline-header";
+            eyebrow.className = "blog-helpline-eyebrow";
+            eyebrow.textContent = "We're here when you need us";
+            helplineHeading.className = `${helplineHeading.className} blog-helpline-title`.trim();
+            helplineHeading.textContent = "RoarWellness Helpline";
+            links.className = "blog-helpline-links";
+            card.setAttribute("aria-label", "RoarWellness helpline contact details");
+            helplineHeading.replaceWith(card);
+            header.append(eyebrow, helplineHeading);
+            contactItems.forEach(({ label, value, href }) => {
+              const link = document.createElement("a");
+              const type = document.createElement("span");
+              const detail = document.createElement("span");
+              link.href = href;
+              link.className = "blog-helpline-link";
+              if (href.startsWith("https://")) {
+                link.target = "_blank";
+                link.rel = "noreferrer";
+              }
+              type.className = "blog-helpline-link-type";
+              type.textContent = label;
+              detail.className = "blog-helpline-link-value";
+              detail.textContent = value;
+              link.append(type, detail);
+              links.append(link);
+            });
+            card.append(header, links);
+          }
+        }
+      }
       const articleTitle = content.querySelector<HTMLElement>("h1");
       const contentHeadings = Array.from(content.querySelectorAll<HTMLElement>("h1, h2, h3"))
         .filter((heading) => heading !== articleTitle)
@@ -419,7 +479,7 @@ function CmsPageContent({
     const observer = new MutationObserver(syncContent);
     observer.observe(content, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [html, inlineCta, onHeadings, slug]);
+  }, [blogHelpline, html, inlineCta, onHeadings, slug]);
 
   const toggleFaq = (title: HTMLElement) => {
     const panel = title.parentElement?.querySelector<HTMLElement>(".accordion-content");
@@ -777,6 +837,7 @@ export default function InnerPagesPage({
                     featuredImagePosition={selectedItem.featured_image_position || "50% 50%"}
                     centerMedia={selectedKind === "blog" || selectedKind === "service"}
                     inlineCta={selectedKind === "service"}
+                    blogHelpline={selectedKind === "blog"}
                     onHeadings={selectedKind === "service" ? setServiceHeadings : undefined}
                   />}
               </article>
