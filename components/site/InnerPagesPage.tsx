@@ -651,6 +651,22 @@ export default function InnerPagesPage({
     }));
     const serviceItems = allItems.filter((item) => isServiceCategory(item.category_slug));
     const serviceIndex = serviceItems.findIndex((item) => item.slug === selectedSlug);
+    const breadcrumb = selectedItem && <nav aria-label="Breadcrumb" className={`site-container px-5${selectedKind === "service" ? " mt-4" : ""}`}>
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
+        <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
+        {selectedKind !== "page" && <li aria-hidden="true" className="text-beige">/</li>}
+        {selectedKind === "service" && <>
+          <li><Link href="/services/" className="transition-colors hover:text-terracotta">Services</Link></li>
+          <li aria-hidden="true" className="text-beige">/</li>
+          <li><Link href={`/services/?category=${encodeURIComponent(selectedCategorySlug || "")}`} className="transition-colors hover:text-terracotta">{selectedCategory}</Link></li>
+        </>}
+        {selectedKind === "blog" && <>
+          <li><Link href="/blog/" className="transition-colors hover:text-terracotta">Blog</Link></li>
+        </>}
+        <li aria-hidden="true" className="text-beige">/</li>
+        <li aria-current="page" className="font-semibold text-brown">{selectedItem.title}</li>
+      </ol>
+    </nav>;
 
     if (selectedItem && selectedKind === "page" && selectedSlug.toLowerCase() === "contact-us") {
       return (
@@ -705,22 +721,7 @@ export default function InnerPagesPage({
 
     return (
       <main className={`pb-20 pt-40 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
-        {selectedItem && <nav aria-label="Breadcrumb" className="site-container px-5">
-          <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
-            <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
-            {selectedKind !== "page" && <li aria-hidden="true" className="text-beige">/</li>}
-            {selectedKind === "service" && <>
-              <li><Link href="/services/" className="transition-colors hover:text-terracotta">Services</Link></li>
-              <li aria-hidden="true" className="text-beige">/</li>
-              <li><Link href={`/services/?category=${encodeURIComponent(selectedCategorySlug || "")}`} className="transition-colors hover:text-terracotta">{selectedCategory}</Link></li>
-            </>}
-            {selectedKind === "blog" && <>
-              <li><Link href="/blog/" className="transition-colors hover:text-terracotta">Blog</Link></li>
-            </>}
-            <li aria-hidden="true" className="text-beige">/</li>
-            <li aria-current="page" className="font-semibold text-brown">{selectedItem.title}</li>
-          </ol>
-        </nav>}
+        {selectedKind !== "service" && breadcrumb}
         {selectedItem ? <>
           <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} />}
@@ -738,6 +739,7 @@ export default function InnerPagesPage({
               </div>
             </div>
           </section>
+          {selectedKind === "service" && breadcrumb}
 
           <div className="site-container px-5">
             <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""} mt-10 md:mt-14`}>
