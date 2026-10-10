@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type SetStateAction, useEffect, useRef, useState } from "react";
+import { type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type SetStateAction, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getCmsCategoryLabel, getCmsContentHref, getCmsRouteKind, isLocationService, isServiceCategory } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
@@ -40,6 +40,74 @@ interface CmsCategory {
 interface ContentHeading {
   id: string;
   title: string;
+}
+
+function getCmsPageImages(html: string): string[] {
+  const images = new Set<string>();
+  const addImage = (value: string | undefined) => {
+    if (!value) return;
+    const source = value.trim().replace(/&amp;/g, "&");
+    if (/^(https?:\/\/|\/(?!\/))/.test(source)) images.add(source);
+  };
+
+  for (const tag of html.matchAll(/<img\b[^>]*>/gi)) {
+    const attributes = tag[0];
+    for (const name of ["src", "data-src", "data-lazy-src"]) {
+      const match = attributes.match(new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, "i"));
+      addImage(match?.[2]);
+    }
+  }
+  for (const match of html.matchAll(/background-image\s*:\s*url\(\s*(['"]?)(.*?)\1\s*\)/gi)) {
+    addImage(match[2]);
+  }
+  return [...images];
+}
+
+const serviceHeroColorPalettes = [
+  "linear-gradient(115deg, #3e372f 0%, #51483f 58%, #695f53 100%)",
+  "linear-gradient(115deg, #3b3531 0%, #65594c 55%, #857361 100%)",
+  "linear-gradient(115deg, #343933 0%, #4f5b4c 56%, #70806a 100%)",
+  "linear-gradient(115deg, #39333b 0%, #5b4e60 56%, #786a7e 100%)",
+];
+
+function ServiceHeroBackground({ html }: { html: string }) {
+  const images = useMemo(() => getCmsPageImages(html), [html]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
+  const availableImages = images.filter((image) => !failedImages.has(image));
+  const slideCount = availableImages.length || serviceHeroColorPalettes.length;
+
+  useEffect(() => {
+    setActiveIndex(0);
+    setFailedImages(new Set());
+  }, [html]);
+
+  useEffect(() => {
+    if (slideCount < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      setActiveIndex((index) => (index + 1) % slideCount);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [slideCount]);
+
+  return <div className="detail-hero-background" aria-hidden="true">
+    {availableImages.length
+      ? availableImages.map((image, index) => <img
+        className={`detail-hero-background-slide${index === activeIndex ? " is-active" : ""}`}
+        key={image}
+        src={image}
+        alt=""
+        loading={index === 0 ? "eager" : "lazy"}
+        onError={() => {
+          setActiveIndex(0);
+          setFailedImages((current) => new Set(current).add(image));
+        }}
+      />)
+      : <div
+        className="detail-hero-background-slide is-active"
+        style={{ backgroundImage: serviceHeroColorPalettes[activeIndex % serviceHeroColorPalettes.length] }}
+      />}
+  </div>;
 }
 
 const serviceImageFallbacks: Record<string, string> = {
@@ -253,11 +321,12 @@ function CmsPageContent({
 
     const syncContent = () => {
       removeEmbeddedSections();
-      const contentHeadings = Array.from(content.querySelectorAll<HTMLElement>("h2, h3"))
+      const articleTitle = content.querySelector<HTMLElement>("h1");
+      const contentHeadings = Array.from(content.querySelectorAll<HTMLElement>("h1, h2, h3"))
+        .filter((heading) => heading !== articleTitle)
         .filter((heading) => !heading.closest(".service-inline-cta"));
-      const headings = contentHeadings.filter((heading) => heading.tagName === "H2" || heading.tagName === "H3");
       const usedIds = new Set<string>();
-      const tocHeadings = headings.map((heading, index) => {
+      const tocHeadings = contentHeadings.map((heading, index) => {
         const title = heading.textContent?.trim() || "";
         const sluggedTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
         const baseId = heading.id || `service-section-${sluggedTitle || index + 1}`;
@@ -571,6 +640,15 @@ export default function InnerPagesPage({
     const relatedItems = allItems
       .filter((item) => item.slug !== selectedSlug && item.category_slug === selectedCategorySlug)
       .slice(0, 4);
+    const serviceCategoryRecommendations = [
+      { slug: "therapy", label: "Therapy" },
+      { slug: "treatments", label: "Treatments" },
+    ].map((category) => ({
+      ...category,
+      items: allItems
+        .filter((item) => item.slug !== selectedSlug && item.category_slug === category.slug)
+        .slice(0, 4),
+    }));
     const serviceItems = allItems.filter((item) => isServiceCategory(item.category_slug));
     const serviceIndex = serviceItems.findIndex((item) => item.slug === selectedSlug);
 
@@ -644,7 +722,8 @@ export default function InnerPagesPage({
           </ol>
         </nav>}
         {selectedItem ? <>
-          <section className="detail-hero-band mt-6" aria-labelledby="treatment-detail-title">
+          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
+            {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
               <div className="detail-hero-copy">
@@ -715,7 +794,18 @@ export default function InnerPagesPage({
                   <p className="therapy-infographic-caption">Personalised care, grounded in connection and compassion.</p>
                 </section>}
 
-                {relatedItems.length > 0 && <nav className="detail-sidebar-card detail-related" aria-label={`Related ${selectedKind === "blog" ? "articles" : selectedCategory.toLowerCase()}`}>
+                {selectedKind === "service" ? <div className="service-category-sidebar-grid">
+                  {serviceCategoryRecommendations.map((category) => <nav className="detail-sidebar-card detail-related" key={category.slug} aria-label={`Related ${category.label.toLowerCase()}`}>
+                    <p className="eyebrow">Keep exploring</p>
+                    <h2>{category.label}</h2>
+                    {category.items.length > 0 ? <ul>
+                      {category.items.map((item) => <li key={item.slug}>
+                        <a href={getCmsContentHref(item.slug, item.category_slug)}>{item.title}<ArrowUpRight size={15} aria-hidden="true" /></a>
+                      </li>)}
+                    </ul> : <p className="service-category-sidebar-empty">Explore more {category.label.toLowerCase()} services.</p>}
+                    <a className="detail-browse-link" href={`/services/?category=${encodeURIComponent(category.slug)}`}>Browse all {category.label.toLowerCase()} <span aria-hidden="true">→</span></a>
+                  </nav>)}
+                </div> : relatedItems.length > 0 && <nav className="detail-sidebar-card detail-related" aria-label={`Related ${selectedKind === "blog" ? "articles" : selectedCategory.toLowerCase()}`}>
                   <p className="eyebrow">Keep exploring</p>
                   <h2>Related {selectedKind === "blog" ? "articles" : selectedCategory.toLowerCase()}</h2>
                   <ul>
