@@ -135,12 +135,18 @@ function ServiceRecommendations({ items, currentSlug }: { items: CmsItem[]; curr
 function CmsPageContent({
   html,
   slug,
+  featuredImage,
+  featuredImageAlt = "",
+  featuredImagePosition = "50% 50%",
   centerMedia = false,
   inlineCta = false,
   onHeadings,
 }: {
   html: string;
   slug: string;
+  featuredImage?: string | null;
+  featuredImageAlt?: string;
+  featuredImagePosition?: string;
   centerMedia?: boolean;
   inlineCta?: boolean;
   onHeadings?: Dispatch<SetStateAction<ContentHeading[]>>;
@@ -190,12 +196,66 @@ function CmsPageContent({
         }
         section.remove();
       });
+
+      if (inlineCta) {
+        const fragmentNavigationSections = Array.from(pageRoot.querySelectorAll<HTMLElement>(".e-con.e-parent"))
+          .filter((section) => {
+            if (section.querySelector("h1, h2, h3, h4")) return false;
+            const links = Array.from(section.querySelectorAll<HTMLAnchorElement>("a"));
+            const fragmentLinks = links.filter((link) => link.getAttribute("href")?.startsWith("#"));
+            const widgets = Array.from(section.querySelectorAll<HTMLElement>(".elementor-widget"));
+            return fragmentLinks.length >= 2
+              && fragmentLinks.length === links.length
+              && fragmentLinks.every((link) => link.closest(".elementor-widget-button"))
+              && widgets.length > 0
+              && widgets.every((widget) => widget.classList.contains("elementor-widget-button"));
+          });
+        fragmentNavigationSections.forEach((section) => section.remove());
+
+        const seenHeadings = new Set<string>();
+        Array.from(pageRoot.querySelectorAll<HTMLElement>("h1")).forEach((heading) => {
+          const normalizedTitle = heading.textContent?.trim().replace(/\s+/g, " ").toLowerCase() || "";
+          if (!normalizedTitle) return;
+          if (!seenHeadings.has(normalizedTitle)) {
+            seenHeadings.add(normalizedTitle);
+            return;
+          }
+          const duplicate = heading.closest<HTMLElement>(".elementor-widget-heading") || heading;
+          duplicate.remove();
+        });
+      }
+
+      if (inlineCta && featuredImage) {
+        const heading = pageRoot.querySelector<HTMLElement>("h1");
+        if (heading) {
+          const headingBlock = heading.closest<HTMLElement>(".elementor-widget-heading") || heading;
+          let figure = pageRoot.querySelector<HTMLElement>(".service-article-featured-image");
+          if (!figure) {
+            figure = document.createElement("figure");
+            const image = document.createElement("img");
+            figure.className = "service-article-featured-image";
+            image.alt = featuredImageAlt;
+            image.loading = "lazy";
+            figure.append(image);
+          }
+          const image = figure.querySelector("img");
+          if (image) {
+            image.src = featuredImage;
+            image.alt = featuredImageAlt;
+            image.style.objectPosition = featuredImagePosition;
+          }
+          if (figure.parentElement !== headingBlock.parentElement || headingBlock.nextElementSibling !== figure) {
+            headingBlock.insertAdjacentElement("afterend", figure);
+          }
+        }
+      }
     };
 
     const syncContent = () => {
       removeEmbeddedSections();
-      const headings = Array.from(content.querySelectorAll<HTMLElement>("h2"))
+      const contentHeadings = Array.from(content.querySelectorAll<HTMLElement>("h2, h3"))
         .filter((heading) => !heading.closest(".service-inline-cta"));
+      const headings = contentHeadings.filter((heading) => heading.tagName === "H2" || heading.tagName === "H3");
       const usedIds = new Set<string>();
       const tocHeadings = headings.map((heading, index) => {
         const title = heading.textContent?.trim() || "";
@@ -216,36 +276,73 @@ function CmsPageContent({
         ? current
         : tocHeadings);
 
-      if (inlineCta && !content.querySelector(".service-inline-cta")) {
-        const cta = document.createElement("section");
-        const copy = document.createElement("div");
-        const kicker = document.createElement("p");
-        const title = document.createElement("h2");
-        const description = document.createElement("p");
-        const link = document.createElement("a");
-        const arrow = document.createElement("span");
-        cta.className = "service-inline-cta";
-        copy.className = "service-inline-cta-copy";
-        kicker.className = "service-inline-cta-kicker";
-        kicker.textContent = "A thoughtful next step";
-        title.id = `service-inline-cta-title-${slug}`;
-        title.textContent = "You don’t have to figure this out alone.";
-        description.textContent = "Talk with our team about care that feels right for you. Your first conversation is private and without pressure.";
-        link.href = "tel:+919319977207";
-        link.append(document.createTextNode("Speak with our team "));
-        arrow.setAttribute("aria-hidden", "true");
-        arrow.textContent = "→";
-        link.append(arrow);
-        copy.append(kicker, title, description, link);
-        cta.setAttribute("aria-labelledby", title.id);
-        cta.append(copy);
-        const midpoint = headings.length ? headings[Math.floor(headings.length / 2)] : null;
+      if (inlineCta) {
+        let cta = content.querySelector<HTMLElement>(".service-inline-cta");
+        if (!cta) {
+          cta = document.createElement("section");
+          const copy = document.createElement("div");
+          const kicker = document.createElement("p");
+          const title = document.createElement("h2");
+          const description = document.createElement("p");
+          const link = document.createElement("a");
+          const arrow = document.createElement("span");
+          cta.className = "service-inline-cta";
+          copy.className = "service-inline-cta-copy";
+          kicker.className = "service-inline-cta-kicker";
+          kicker.textContent = "A thoughtful next step";
+          title.id = `service-inline-cta-title-${slug}`;
+          title.textContent = "You don’t have to figure this out alone.";
+          description.textContent = "Talk with our team about care that feels right for you. Your first conversation is private and without pressure.";
+          link.href = "tel:+919319977207";
+          link.append(document.createTextNode("Speak with our team "));
+          arrow.setAttribute("aria-hidden", "true");
+          arrow.textContent = "→";
+          link.append(arrow);
+          copy.append(kicker, title, description, link);
+          cta.setAttribute("aria-labelledby", title.id);
+          cta.append(copy);
+        }
+        const targetHeadingIndex = Math.min(1, contentHeadings.length - 1);
+        const targetHeading = targetHeadingIndex >= 0 ? contentHeadings[targetHeadingIndex] : null;
+        const followingHeading = targetHeadingIndex >= 0 ? contentHeadings[targetHeadingIndex + 1] : null;
         const pageRoot = content.querySelector<HTMLElement>(":scope > .elementor") || content;
-        const contentBlocks = Array.from(pageRoot.children).filter((element) => !element.matches(".service-inline-cta"));
-        const insertionPoint = midpoint?.closest<HTMLElement>(".e-con.e-parent, .elementor-section, .elementor-top-section")
-          || contentBlocks[Math.floor(contentBlocks.length / 2)];
-        if (insertionPoint && insertionPoint !== content) insertionPoint.insertAdjacentElement("afterend", cta);
-        else content.append(cta);
+        const contentBlocks = Array.from(pageRoot.children).filter((element): element is HTMLElement =>
+          element instanceof HTMLElement && !element.matches(".service-inline-cta")
+        );
+        const getTopLevelBlock = (element: HTMLElement) => {
+          let block = element;
+          while (block.parentElement && block.parentElement !== pageRoot) block = block.parentElement;
+          return block.parentElement === pageRoot ? block : null;
+        };
+        const targetBlock = targetHeading ? getTopLevelBlock(targetHeading) : null;
+        const followingBlock = followingHeading ? getTopLevelBlock(followingHeading) : null;
+        const insertBefore = (parent: HTMLElement, reference: HTMLElement) => {
+          if (cta.parentElement !== parent || cta.nextElementSibling !== reference) parent.insertBefore(cta, reference);
+        };
+        const insertAfter = (reference: HTMLElement) => {
+          if (reference.nextElementSibling !== cta) reference.insertAdjacentElement("afterend", cta);
+        };
+
+        if (targetHeading && followingHeading) {
+          let commonParent: HTMLElement | null = targetHeading.parentElement;
+          while (commonParent && commonParent !== pageRoot && !commonParent.contains(followingHeading)) {
+            commonParent = commonParent.parentElement;
+          }
+          const followingHeadingBlock = followingHeading.closest<HTMLElement>(".elementor-widget-heading") || followingHeading;
+          const followingHeadingParent = followingHeadingBlock.parentElement;
+          if (commonParent && followingHeadingParent && commonParent.contains(followingHeadingBlock)) {
+            insertBefore(followingHeadingParent, followingHeadingBlock);
+          } else if (followingBlock && followingBlock !== targetBlock) {
+            insertBefore(pageRoot, followingBlock);
+          } else if (targetBlock) {
+            insertAfter(targetBlock);
+          } else {
+            if (cta.parentElement !== content) content.append(cta);
+          }
+        } else if (followingBlock && followingBlock !== targetBlock) insertBefore(pageRoot, followingBlock);
+        else if (targetBlock) insertAfter(targetBlock);
+        else if (contentBlocks.length) insertAfter(contentBlocks[Math.floor(contentBlocks.length / 2)]);
+        else if (cta.parentElement !== content) content.append(cta);
       }
     };
 
@@ -466,9 +563,10 @@ export default function InnerPagesPage({
     const pageVideos = isVideosPage
       ? getYouTubeVideos(selectedItem?.excerpt, selectedItem?.summary, selectedItem?.content, selectedItem?.description)
       : [];
-    const image = selectedItem?.featured_image_url || selectedItem?.image_url;
     const selectedCategorySlug = selectedItem?.category_slug;
     const selectedKind = detailKind ?? (selectedItem ? getCmsRouteKind(selectedItem.category_slug) : "service");
+    const image = selectedItem?.featured_image_url || selectedItem?.image_url;
+    const heroImage = selectedKind === "service" ? null : image;
     const selectedCategory = selectedItem ? getCmsCategoryLabel(selectedItem.category_slug) : "Content";
     const relatedItems = allItems
       .filter((item) => item.slug !== selectedSlug && item.category_slug === selectedCategorySlug)
@@ -548,7 +646,7 @@ export default function InnerPagesPage({
         {selectedItem ? <>
           <section className="detail-hero-band mt-6" aria-labelledby="treatment-detail-title">
             <div className="site-container px-5">
-              <div className={`detail-hero${image ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
+              <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
               <div className="detail-hero-copy">
                 <p className="detail-hero-kicker">{isExpertsPage ? "Meet the people behind your care" : selectedKind === "blog" ? "From the Roar Wellness journal" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
                 <h1 id="treatment-detail-title" className="detail-hero-title">{selectedItem.title}</h1>
@@ -557,7 +655,7 @@ export default function InnerPagesPage({
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "service" && <p className="detail-hero-note">Private, supportive, and without obligation</p>}
               </div>
-              {image && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial" : ""}`}><img src={image} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
+              {heroImage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial" : ""}`}><img src={heroImage} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
           </section>
@@ -593,6 +691,9 @@ export default function InnerPagesPage({
                   : (selectedItem.content || selectedItem.description) && <CmsPageContent
                     html={selectedItem.content || selectedItem.description || ""}
                     slug={selectedSlug}
+                    featuredImage={selectedKind === "service" ? image : null}
+                    featuredImageAlt={selectedItem.featured_image_alt || ""}
+                    featuredImagePosition={selectedItem.featured_image_position || "50% 50%"}
                     centerMedia={selectedKind === "blog" || selectedKind === "service"}
                     inlineCta={selectedKind === "service"}
                     onHeadings={selectedKind === "service" ? setServiceHeadings : undefined}

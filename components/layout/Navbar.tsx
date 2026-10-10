@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -118,8 +119,13 @@ function NavigationItem({
   onClick?: () => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const pathname = usePathname();
   const hasChildren = Boolean(link.children?.length);
   const className = "nav-link rolling-nav-link";
+  const handleNavigate = () => {
+    setIsExpanded(false);
+    onClick?.();
+  };
   const content = (
     <span aria-hidden="true" className="rolling-nav-label">
       {Array.from(link.label).map((character, index) => (
@@ -127,6 +133,10 @@ function NavigationItem({
       ))}
     </span>
   );
+
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [pathname]);
 
   return (
     <div
@@ -137,9 +147,9 @@ function NavigationItem({
     >
       <div className="nav-item-trigger">
         {link.href.startsWith("tel:") ? (
-          <a href={link.href} className={className} aria-label={link.label} onClick={onClick}>{content}</a>
+          <a href={link.href} className={className} aria-label={link.label} onClick={handleNavigate}>{content}</a>
         ) : (
-          <Link href={link.href} className={className} aria-label={link.label} onClick={onClick}>{content}</Link>
+          <Link href={link.href} className={className} aria-label={link.label} onClick={handleNavigate}>{content}</Link>
         )}
         {hasChildren && (
           <button

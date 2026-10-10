@@ -1105,13 +1105,18 @@
   .service-toc-card ol,
   .service-path-card ol { margin: 0; padding: 0; list-style: none; }
   .service-toc-card li { border-top: 1px solid rgb(81 72 63 / .13); }
-  .service-toc-card li a { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); align-items: start; gap: .4rem; padding: .62rem 0; color: rgb(81 72 63 / .8); font-size: .73rem; line-height: 1.4; text-decoration: none; }
-  .service-toc-card li a span { color: #a1806e; font-size: .62rem; font-weight: 700; }
-  .service-toc-card li a:hover { color: #8d6b57; }
+  .service-toc-card li a { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); align-items: start; gap: .4rem; margin-inline: -.5rem; border-left: 2px solid transparent; padding: .62rem .5rem; color: rgb(81 72 63 / .8); font-size: .73rem; line-height: 1.4; text-decoration: none; transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s ease; }
+  .service-toc-card li a span { color: #a1806e; font-size: .62rem; font-weight: 700; transition: color .2s ease; }
+  .service-toc-card li a:hover,
+  .service-toc-card li a:focus-visible { transform: translateX(.2rem); border-left-color: #a1806e; background: rgb(161 128 110 / .09); color: #51483f; }
+  .service-toc-card li a:hover span,
+  .service-toc-card li a:focus-visible span { color: #8d6b57; }
   .service-toc-card li a:focus-visible,
   .service-pagination-card:focus-visible { border-radius: .15rem; outline: 2px solid #a1806e; outline-offset: 3px; }
   .service-toc-empty { margin: 0; color: rgb(81 72 63 / .67); font-size: .74rem; line-height: 1.55; }
   .service-path-card { min-height: 17rem; background: #ede9dd; }
+  .cms-page-content .service-article-featured-image { margin: 1.25rem 0 2rem; overflow: hidden; background: #ede9dd; }
+  .cms-page-content .service-article-featured-image img { display: block; width: 100%; max-height: 28rem; aspect-ratio: 16 / 9; object-fit: cover; }
   .service-path-card h2 { max-width: 10ch; }
   .service-path-card ol { position: relative; z-index: 1; display: grid; gap: .8rem; }
   .service-path-card li { display: grid; grid-template-columns: 1.65rem minmax(0, 1fr); gap: .5rem; }
@@ -1550,13 +1555,14 @@
   .therapy-infographic-point-two { right: -2%; bottom: 25%; }
   .therapy-infographic-point-three { bottom: 10%; left: 12%; }
   .therapy-infographic-caption { max-width: 22rem; margin: .75rem auto 0; color: rgb(81 72 63 / .75); font-size: .72rem; line-height: 1.55; text-align: center; }
-  .service-inline-cta { position: relative; display: flex; min-height: 28rem; align-items: center; overflow: hidden; isolation: isolate; margin: clamp(2.5rem, 6vw, 5rem) 0; background: #51483f url("/images/facility-open-space.webp") center 48% / cover no-repeat; padding: clamp(2rem, 5vw, 4rem); color: #fffcf5; }
+  .service-inline-cta { position: relative; display: flex; min-height: 0; align-items: center; overflow: hidden; isolation: isolate; margin: clamp(2rem, 4vw, 3.5rem) 0; background: #51483f url("/images/facility-open-space.webp") center 48% / cover no-repeat; padding: clamp(1.25rem, 2.5vw, 1.75rem); color: #fffcf5; }
   .service-inline-cta::before { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, rgb(36 31 28 / .88), rgb(36 31 28 / .68) 58%, rgb(36 31 28 / .24)); content: ""; }
   .service-inline-cta-copy { max-width: 31rem; }
-  .service-inline-cta-kicker { margin: 0 0 .85rem; color: #e4d7cb; font-size: .65rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
-  .service-inline-cta h2 { max-width: 12ch; margin: 0; color: #fffcf5; font-family: var(--font-serif); font-size: clamp(2.25rem, 4.2vw, 3.7rem); font-weight: 400; letter-spacing: -.04em; line-height: .98; }
-  .service-inline-cta-copy > p:not(.service-inline-cta-kicker) { max-width: 27rem; margin: 1rem 0 1.35rem; color: rgb(255 252 245 / .82); font-size: .88rem; line-height: 1.65; }
-  .service-inline-cta a { display: inline-flex; min-height: 2.8rem; align-items: center; gap: .75rem; border: 1px solid rgb(255 252 245 / .45); background: #a1806e; padding: .7rem 1rem; color: #fffcf5; font-size: .77rem; font-weight: 650; text-decoration: none; transition: background .2s ease, transform .2s ease; }
+  .service-inline-cta-kicker { margin: 0 0 .5rem; color: #e4d7cb; font-size: .65rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+  .service-inline-cta h2 { max-width: 17ch; margin: 0; color: #fffcf5; font-family: var(--font-serif); font-size: clamp(1.9rem, 3vw, 2.7rem); font-weight: 400; letter-spacing: -.04em; line-height: .98; }
+  .detail-content-theme .cms-page-content .service-inline-cta h2 { margin: 0 !important; color: #fffcf5; }
+  .service-inline-cta-copy > p:not(.service-inline-cta-kicker) { max-width: 32rem; margin: .6rem 0 .8rem; color: rgb(255 252 245 / .82); font-size: .88rem; line-height: 1.5; }
+  .service-inline-cta a { display: inline-flex; min-height: 2.55rem; align-items: center; gap: .75rem; border: 1px solid rgb(255 252 245 / .45); background: #a1806e; padding: .6rem .9rem; color: #fffcf5; font-size: .77rem; font-weight: 650; text-decoration: none; transition: background .2s ease, transform .2s ease; }
   .service-inline-cta a:hover { transform: translateY(-2px); background: #8d6b57; }
   .service-inline-cta a:focus-visible { outline: 2px solid #fffcf5; outline-offset: 3px; }
   .service-pagination-section { margin-top: clamp(2.5rem, 5vw, 4.5rem); margin-bottom: clamp(3rem, 6vw, 5rem); border-top: 1px solid #dad3be; padding-top: clamp(1.5rem, 3vw, 2.5rem); }
@@ -2326,7 +2332,7 @@
     .detail-layout.detail-service-layout { grid-template-columns: minmax(0, 1fr); }
     .detail-service-layout .detail-sidebar { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
     .service-detail-left { position: static; }
-    .service-inline-cta { min-height: 23rem; margin-block: 2rem; padding: 1.5rem; }
+    .service-inline-cta { min-height: 0; margin-block: 2rem; padding: 1rem; }
     .service-pagination-header { align-items: center; }
     .service-recommendation-grid { grid-template-columns: minmax(0, 1fr); }
     .service-recommendation-card { min-height: 8.5rem; grid-template-columns: 6.5rem minmax(0, 1fr) 1.8rem; gap: .75rem; padding: .65rem; }
