@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type SetStateAction, useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getCmsCategoryLabel, getCmsContentHref, getCmsRouteKind, isLocationService, isServiceCategory } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { cmsRequest } from "@/services/cms-api";
@@ -35,6 +35,11 @@ interface CmsCategory {
   id: string;
   name: string;
   slug: string;
+}
+
+interface ContentHeading {
+  id: string;
+  title: string;
 }
 
 const serviceImageFallbacks: Record<string, string> = {
@@ -82,12 +87,70 @@ function getServiceImageFallback(item: CmsItem) {
   return "/images/Drug Addiction.png";
 }
 
-function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slug: string; centerMedia?: boolean }) {
+function ServiceRecommendations({ items, currentSlug }: { items: CmsItem[]; currentSlug: string }) {
+  const [page, setPage] = useState(0);
+  const pageCount = Math.ceil(items.length / 2);
+  const visibleItems = items.slice(page * 2, page * 2 + 2);
+  const canNavigate = pageCount > 1;
+  const showPage = (nextPage: number) => setPage((nextPage + pageCount) % pageCount);
+
+  useEffect(() => setPage(0), [currentSlug]);
+
+  return <section className="service-pagination-section site-container px-5" aria-labelledby="service-pagination-title">
+    <header className="service-pagination-header">
+      <div className="service-pagination-heading">
+        <p className="eyebrow">Keep exploring</p>
+        <h2 id="service-pagination-title">More services</h2>
+      </div>
+      {canNavigate && <div className="service-pagination-controls" aria-label="Browse more services">
+        <span aria-live="polite">{String(page + 1).padStart(2, "0")} <i /> {String(pageCount).padStart(2, "0")}</span>
+        <button type="button" aria-label="Show previous services" onClick={() => showPage(page - 1)}>
+          <ArrowLeft size={17} aria-hidden="true" />
+        </button>
+        <button type="button" aria-label="Show next services" onClick={() => showPage(page + 1)}>
+          <ArrowRight size={17} aria-hidden="true" />
+        </button>
+      </div>}
+    </header>
+    <div className="service-recommendation-grid" aria-live="polite">
+      {visibleItems.map((item) => {
+        const excerpt = normalizeCmsPlainText(item.excerpt || item.summary || item.description || "")
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        return <Link className="service-recommendation-card" href={getCmsContentHref(item.slug, item.category_slug)} key={item.slug}>
+          <img src={item.featured_image_url || item.image_url || getServiceImageFallback(item)} alt={item.featured_image_alt || ""} />
+          <span className="service-recommendation-copy">
+            <span className="service-recommendation-category">{getCmsCategoryLabel(item.category_slug)}</span>
+            <strong>{item.title}</strong>
+            {excerpt && <span className="service-recommendation-excerpt">{excerpt}</span>}
+          </span>
+          <span className="service-recommendation-arrow" aria-hidden="true"><ArrowUpRight size={18} /></span>
+        </Link>;
+      })}
+    </div>
+  </section>;
+}
+
+function CmsPageContent({
+  html,
+  slug,
+  centerMedia = false,
+  inlineCta = false,
+  onHeadings,
+}: {
+  html: string;
+  slug: string;
+  centerMedia?: boolean;
+  inlineCta?: boolean;
+  onHeadings?: Dispatch<SetStateAction<ContentHeading[]>>;
+}) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const content = contentRef.current;
     if (!content) return;
+    onHeadings?.((current) => current.length ? [] : current);
 
     const removeEmbeddedSections = () => {
       ["Our Therapy", "Other Services"].forEach((headingText) => {
@@ -129,11 +192,68 @@ function CmsPageContent({ html, slug, centerMedia = false }: { html: string; slu
       });
     };
 
-    removeEmbeddedSections();
-    const observer = new MutationObserver(removeEmbeddedSections);
+    const syncContent = () => {
+      removeEmbeddedSections();
+      const headings = Array.from(content.querySelectorAll<HTMLElement>("h2"))
+        .filter((heading) => !heading.closest(".service-inline-cta"));
+      const usedIds = new Set<string>();
+      const tocHeadings = headings.map((heading, index) => {
+        const title = heading.textContent?.trim() || "";
+        const sluggedTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const baseId = heading.id || `service-section-${sluggedTitle || index + 1}`;
+        let id = baseId;
+        let suffix = 2;
+        while (usedIds.has(id)) {
+          id = `${baseId}-${suffix}`;
+          suffix += 1;
+        }
+        if (heading.id !== id) heading.id = id;
+        usedIds.add(id);
+        return { id, title };
+      }).filter((heading) => heading.title);
+      onHeadings?.((current) => current.length === tocHeadings.length
+        && current.every((heading, index) => heading.id === tocHeadings[index].id && heading.title === tocHeadings[index].title)
+        ? current
+        : tocHeadings);
+
+      if (inlineCta && !content.querySelector(".service-inline-cta")) {
+        const cta = document.createElement("section");
+        const copy = document.createElement("div");
+        const kicker = document.createElement("p");
+        const title = document.createElement("h2");
+        const description = document.createElement("p");
+        const link = document.createElement("a");
+        const arrow = document.createElement("span");
+        cta.className = "service-inline-cta";
+        copy.className = "service-inline-cta-copy";
+        kicker.className = "service-inline-cta-kicker";
+        kicker.textContent = "A thoughtful next step";
+        title.id = `service-inline-cta-title-${slug}`;
+        title.textContent = "You don’t have to figure this out alone.";
+        description.textContent = "Talk with our team about care that feels right for you. Your first conversation is private and without pressure.";
+        link.href = "tel:+919319977207";
+        link.append(document.createTextNode("Speak with our team "));
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = "→";
+        link.append(arrow);
+        copy.append(kicker, title, description, link);
+        cta.setAttribute("aria-labelledby", title.id);
+        cta.append(copy);
+        const midpoint = headings.length ? headings[Math.floor(headings.length / 2)] : null;
+        const pageRoot = content.querySelector<HTMLElement>(":scope > .elementor") || content;
+        const contentBlocks = Array.from(pageRoot.children).filter((element) => !element.matches(".service-inline-cta"));
+        const insertionPoint = midpoint?.closest<HTMLElement>(".e-con.e-parent, .elementor-section, .elementor-top-section")
+          || contentBlocks[Math.floor(contentBlocks.length / 2)];
+        if (insertionPoint && insertionPoint !== content) insertionPoint.insertAdjacentElement("afterend", cta);
+        else content.append(cta);
+      }
+    };
+
+    syncContent();
+    const observer = new MutationObserver(syncContent);
     observer.observe(content, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [html]);
+  }, [html, inlineCta, onHeadings, slug]);
 
   const toggleFaq = (title: HTMLElement) => {
     const panel = title.parentElement?.querySelector<HTMLElement>(".accordion-content");
@@ -209,6 +329,7 @@ export default function InnerPagesPage({
   const [search, setSearch] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(detailSlug ?? null);
   const [selectedItem, setSelectedItem] = useState<CmsItem | null>(null);
+  const [serviceHeadings, setServiceHeadings] = useState<ContentHeading[]>([]);
   const [pagesMessage, setPagesMessage] = useState("Loading published content...");
   const [detailMessage, setDetailMessage] = useState("Loading page...");
   const [contactSettings, setContactSettings] = useState<ContactSettings>({});
@@ -352,6 +473,8 @@ export default function InnerPagesPage({
     const relatedItems = allItems
       .filter((item) => item.slug !== selectedSlug && item.category_slug === selectedCategorySlug)
       .slice(0, 4);
+    const serviceItems = allItems.filter((item) => isServiceCategory(item.category_slug));
+    const serviceIndex = serviceItems.findIndex((item) => item.slug === selectedSlug);
 
     if (selectedItem && selectedKind === "page" && selectedSlug.toLowerCase() === "contact-us") {
       return (
@@ -440,7 +563,28 @@ export default function InnerPagesPage({
           </section>
 
           <div className="site-container px-5">
-            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"} mt-10 md:mt-14`}>
+            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""} mt-10 md:mt-14`}>
+              {selectedKind === "service" && <aside className="service-detail-left" aria-label="On this page and care approach">
+                {serviceHeadings.length > 0 && <nav className="service-toc-card" aria-label="On this page">
+                  <p className="eyebrow">Explore this guide</p>
+                  <h2>On this page</h2>
+                  <ol>{serviceHeadings.map((heading, index) => <li key={heading.id}>
+                    <a href={`#${encodeURIComponent(heading.id)}`}><span>{String(index + 1).padStart(2, "0")}</span>{heading.title}</a>
+                  </li>)}</ol>
+                </nav>}
+
+                <section className="service-path-card" aria-labelledby="service-path-title">
+                  <p className="eyebrow">Our approach</p>
+                  <h2 id="service-path-title">Care, one step at a time</h2>
+                  <ol>
+                    <li><span>01</span><div><strong>Listen</strong><p>We begin with your story.</p></div></li>
+                    <li><span>02</span><div><strong>Plan</strong><p>Explore options together.</p></div></li>
+                    <li><span>03</span><div><strong>Support</strong><p>Move forward at your pace.</p></div></li>
+                  </ol>
+                  <div className="service-path-orbit" aria-hidden="true"><span /><span /><span /></div>
+                </section>
+              </aside>}
+
               <article className="detail-article">
                 {isVideosPage
                   ? pageVideos.length
@@ -450,16 +594,24 @@ export default function InnerPagesPage({
                     html={selectedItem.content || selectedItem.description || ""}
                     slug={selectedSlug}
                     centerMedia={selectedKind === "blog" || selectedKind === "service"}
+                    inlineCta={selectedKind === "service"}
+                    onHeadings={selectedKind === "service" ? setServiceHeadings : undefined}
                   />}
               </article>
 
               <aside className="detail-sidebar" aria-label="Related information">
-                {selectedKind === "service" && <section className="detail-sidebar-card detail-help-card">
-                  <p className="eyebrow">Here for you</p>
-                  <h2>Not sure where to start?</h2>
-                  <p>Speak with our team about care options and the next step that feels right for you.</p>
-                  <a className="detail-sidebar-action" href="tel:+919319977207"><Phone size={16} aria-hidden="true" />Call +91 93199 77207</a>
-                  <a className="detail-sidebar-email" href="mailto:help@roarwellness.org"><Mail size={15} aria-hidden="true" />Email our team</a>
+                {selectedKind === "service" && <section className="therapy-infographic-card" aria-labelledby="therapy-infographic-title">
+                  <p className="eyebrow">Therapy at Roar</p>
+                  <h2 id="therapy-infographic-title">A space to find your way forward.</h2>
+                  <div className="therapy-infographic" aria-hidden="true">
+                    <span className="therapy-infographic-ring therapy-infographic-ring-outer" />
+                    <span className="therapy-infographic-ring therapy-infographic-ring-inner" />
+                    <span className="therapy-infographic-core">You</span>
+                    <span className="therapy-infographic-point therapy-infographic-point-one">Listen</span>
+                    <span className="therapy-infographic-point therapy-infographic-point-two">Understand</span>
+                    <span className="therapy-infographic-point therapy-infographic-point-three">Grow</span>
+                  </div>
+                  <p className="therapy-infographic-caption">Personalised care, grounded in connection and compassion.</p>
                 </section>}
 
                 {relatedItems.length > 0 && <nav className="detail-sidebar-card detail-related" aria-label={`Related ${selectedKind === "blog" ? "articles" : selectedCategory.toLowerCase()}`}>
@@ -476,6 +628,12 @@ export default function InnerPagesPage({
             </div>
 
           </div>
+
+          {selectedKind === "service" && serviceIndex >= 0 && serviceItems.length > 1 && <ServiceRecommendations
+            key={selectedSlug}
+            currentSlug={selectedSlug}
+            items={serviceItems.filter((item) => item.slug !== selectedSlug)}
+          />}
 
           {selectedKind === "service" && <AppointmentShowcase phone={contactPhone} />}
 
