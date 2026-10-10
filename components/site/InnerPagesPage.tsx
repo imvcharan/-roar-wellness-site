@@ -787,7 +787,7 @@ export default function InnerPagesPage({
     if (isAboutPage) return <AboutPage phone={contactPhone} />;
 
     return (
-      <main className={`pb-20 ${selectedKind === "service" ? "pt-32" : "pt-40"} md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
+      <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
         {selectedKind !== "service" && selectedKind !== "blog" && breadcrumb}
         {selectedItem ? <>
           <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
