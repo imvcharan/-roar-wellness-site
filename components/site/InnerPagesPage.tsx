@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type SetStateAction, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getCmsCategoryLabel, getCmsContentHref, getCmsRouteKind, isLocationService, isServiceCategory } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { cmsRequest } from "@/services/cms-api";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
 import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
+import { AppointmentRequestForm } from "@/components/site/AppointmentRequestForm";
 import { AboutPage } from "@/components/site/AboutPage";
 import { ContactSection } from "@/components/site/ContactSection";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
@@ -70,8 +71,14 @@ const serviceHeroColorPalettes = [
   "linear-gradient(115deg, #39333b 0%, #5b4e60 56%, #786a7e 100%)",
 ];
 
-function ServiceHeroBackground({ html }: { html: string }) {
-  const images = useMemo(() => getCmsPageImages(html), [html]);
+function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
+  const images = useMemo(() => slug === "alcohol-addiction"
+    ? [
+      "/images/alcohol-addiction-hero-01.jpg",
+      "/images/alcohol-addiction-hero-02.jpg",
+      "/images/alcohol-addiction-hero-03.jpg",
+    ]
+    : getCmsPageImages(html), [html, slug]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   const availableImages = images.filter((image) => !failedImages.has(image));
@@ -711,7 +718,7 @@ export default function InnerPagesPage({
     }));
     const serviceItems = allItems.filter((item) => isServiceCategory(item.category_slug));
     const serviceIndex = serviceItems.findIndex((item) => item.slug === selectedSlug);
-    const breadcrumb = selectedItem && <nav aria-label="Breadcrumb" className={`site-container px-5${selectedKind === "service" ? " mt-4" : ""}`}>
+    const breadcrumb = selectedItem && <nav aria-label="Breadcrumb" className={`site-container px-5${selectedKind === "service" || selectedKind === "blog" ? " mt-4" : ""}`}>
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
         <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
         {selectedKind !== "page" && <li aria-hidden="true" className="text-beige">/</li>}
@@ -781,10 +788,10 @@ export default function InnerPagesPage({
 
     return (
       <main className={`pb-20 ${selectedKind === "service" ? "pt-32" : "pt-40"} md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
-        {selectedKind !== "service" && breadcrumb}
+        {selectedKind !== "service" && selectedKind !== "blog" && breadcrumb}
         {selectedItem ? <>
           <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
-            {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} />}
+            {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
               <div className="detail-hero-copy">
@@ -795,11 +802,11 @@ export default function InnerPagesPage({
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "service" && <p className="detail-hero-note">Private, supportive, and without obligation</p>}
               </div>
-              {heroImage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial" : ""}`}><img src={heroImage} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
+              {heroImage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial blog-hero-image-frame" : ""}`}><img src={heroImage} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
           </section>
-          {selectedKind === "service" && breadcrumb}
+          {(selectedKind === "service" || selectedKind === "blog") && breadcrumb}
 
           <div className="site-container px-5">
             <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""} mt-10 md:mt-14`}>
@@ -842,7 +849,7 @@ export default function InnerPagesPage({
                   />}
               </article>
 
-              <aside className="detail-sidebar" aria-label="Related information">
+              <aside className={`detail-sidebar${selectedKind === "blog" ? " blog-detail-sidebar" : ""}`} aria-label={selectedKind === "blog" ? "Related articles and appointment request" : "Related information"}>
                 {selectedKind === "service" && <section className="therapy-infographic-card" aria-labelledby="therapy-infographic-title">
                   <p className="eyebrow">Therapy at Roar</p>
                   <h2 id="therapy-infographic-title">A space to find your way forward.</h2>
@@ -857,7 +864,33 @@ export default function InnerPagesPage({
                   <p className="therapy-infographic-caption">Personalised care, grounded in connection and compassion.</p>
                 </section>}
 
-                {selectedKind === "service" ? <div className="service-category-sidebar-grid">
+                {selectedKind === "blog" && relatedItems.length > 0 && <nav className="detail-sidebar-card blog-related-card" aria-labelledby="blog-related-title">
+                  <p className="eyebrow">Continue reading</p>
+                  <h2 id="blog-related-title">Related stories</h2>
+                  <ul>
+                    {relatedItems.map((item) => {
+                      const relatedImage = item.featured_image_url || item.image_url;
+                      return <li key={item.slug}>
+                        <Link className="blog-related-link" href={getCmsContentHref(item.slug, item.category_slug)}>
+                          <span className={`blog-related-thumb${relatedImage ? "" : " blog-related-thumb-placeholder"}`}>
+                            {relatedImage
+                              ? <img src={relatedImage} alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
+                              : <BookOpen size={20} aria-hidden="true" />}
+                          </span>
+                          <span className="blog-related-copy"><span className="blog-related-title">{item.title}</span><span className="blog-related-action">View full post</span></span>
+                          <ArrowUpRight className="blog-related-arrow" size={17} aria-hidden="true" />
+                        </Link>
+                      </li>;
+                    })}
+                  </ul>
+                </nav>}
+
+                {selectedKind === "blog" ? <section className="detail-sidebar-card blog-appointment-card" aria-labelledby="blog-appointment-title">
+                  <p className="eyebrow">A thoughtful next step</p>
+                  <h2 id="blog-appointment-title">Request an appointment</h2>
+                  <p className="blog-appointment-intro">Share a few details and our team will get in touch privately.</p>
+                  <AppointmentRequestForm contactEmail={contactEmail} />
+                </section> : selectedKind === "service" ? <div className="service-category-sidebar-grid">
                   {serviceCategoryRecommendations.map((category) => <nav className="detail-sidebar-card detail-related" key={category.slug} aria-label={`Related ${category.label.toLowerCase()}`}>
                     <p className="eyebrow">Keep exploring</p>
                     <h2>{category.label}</h2>
@@ -868,15 +901,15 @@ export default function InnerPagesPage({
                     </ul> : <p className="service-category-sidebar-empty">Explore more {category.label.toLowerCase()} services.</p>}
                     <a className="detail-browse-link" href={`/services/?category=${encodeURIComponent(category.slug)}`}>Browse all {category.label.toLowerCase()} <span aria-hidden="true">→</span></a>
                   </nav>)}
-                </div> : relatedItems.length > 0 && <nav className="detail-sidebar-card detail-related" aria-label={`Related ${selectedKind === "blog" ? "articles" : selectedCategory.toLowerCase()}`}>
+                </div> : relatedItems.length > 0 && <nav className="detail-sidebar-card detail-related" aria-label={`Related ${selectedCategory.toLowerCase()}`}>
                   <p className="eyebrow">Keep exploring</p>
-                  <h2>Related {selectedKind === "blog" ? "articles" : selectedCategory.toLowerCase()}</h2>
+                  <h2>Related {selectedCategory.toLowerCase()}</h2>
                   <ul>
                     {relatedItems.map((item) => <li key={item.slug}>
                       <a href={getCmsContentHref(item.slug, item.category_slug)}>{item.title}<ArrowUpRight size={15} aria-hidden="true" /></a>
                     </li>)}
                   </ul>
-                  <a className="detail-browse-link" href={selectedKind === "blog" ? "/blog/" : "/services/"}>Browse {selectedKind === "blog" ? "all articles" : "all services"} <span aria-hidden="true">→</span></a>
+                  <a className="detail-browse-link" href="/services/">Browse all services <span aria-hidden="true">→</span></a>
                 </nav>}
               </aside>
             </div>
