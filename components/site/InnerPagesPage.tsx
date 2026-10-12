@@ -74,17 +74,21 @@ const serviceHeroColorPalettes = [
 ];
 
 function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
-  const images = useMemo(() => slug === "alcohol-addiction"
-    ? [
+  const images = useMemo(() => {
+    if (slug === "alcohol-addiction") {
+      return [
       "/images/alcohol-addiction-hero-01.jpg",
       "/images/alcohol-addiction-hero-02.jpg",
       "/images/alcohol-addiction-hero-03.jpg",
-    ]
-    : getCmsPageImages(html), [html, slug]);
+      ];
+    }
+    const pageImages = getCmsPageImages(html);
+    return pageImages.length ? pageImages : ["/images/facility-open-space.webp"];
+  }, [html, slug]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   const availableImages = images.filter((image) => !failedImages.has(image));
-  const slideCount = availableImages.length || serviceHeroColorPalettes.length;
+  const slideCount = availableImages.length;
 
   useEffect(() => {
     setActiveIndex(0);
@@ -112,10 +116,17 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
           setFailedImages((current) => new Set(current).add(image));
         }}
       />)
-      : <div
-        className="detail-hero-background-slide is-active"
-        style={{ backgroundImage: serviceHeroColorPalettes[activeIndex % serviceHeroColorPalettes.length] }}
-      />}
+      : failedImages.has("/images/facility-open-space.webp")
+        ? <div
+          className="detail-hero-background-slide is-active"
+          style={{ backgroundImage: serviceHeroColorPalettes[activeIndex % serviceHeroColorPalettes.length] }}
+        />
+        : <img
+          className="detail-hero-background-slide is-active"
+          src="/images/facility-open-space.webp"
+          alt=""
+          onError={() => setFailedImages((current) => new Set(current).add("/images/facility-open-space.webp"))}
+        />}
   </div>;
 }
 
@@ -1049,7 +1060,7 @@ export default function InnerPagesPage({
     return (
       <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
         {selectedItem ? <>
-          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
+          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage ? " detail-hero-band-fallback-image" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>

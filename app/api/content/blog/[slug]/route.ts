@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findContentBySlug, listContent, toPublicContent } from "@/lib/cms-db";
+import { findContentBySlug, listContent, toPublicBlogContent } from "@/lib/cms-db";
 
 export const runtime = "nodejs";
 
@@ -11,6 +11,6 @@ export async function GET(
   listContent();
   const item = findContentBySlug(slug);
   return item?.category_slug === "blog"
-    ? NextResponse.json({ data: toPublicContent(item) }, { headers: { "Cache-Control": "no-store, max-age=0" } })
+    ? NextResponse.json({ data: toPublicBlogContent(item) }, { headers: { "Cache-Control": "no-store, max-age=0" } })
     : NextResponse.json({ error: "Published article was not found." }, { status: 404 });
 }

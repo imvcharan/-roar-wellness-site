@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { homepageSeeds } from "@/lib/homepage-seed-data";
+import { getCmsContentImage } from "@/lib/cms-content-image";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
 import { getCmsContentHref } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
@@ -807,6 +808,33 @@ function openDatabase(): DatabaseSync {
       throw error;
     }
   }
+  const postFeaturedImagesMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'wordpress-post-featured-images-v2'",
+  ).get();
+  if (!postFeaturedImagesMigration) {
+    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
+      items: Record<string, unknown>[];
+    };
+    const updateImage = database.prepare(`
+      UPDATE content
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE slug = ? AND (image_url IS NULL OR image_url = '')
+    `);
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      for (const row of snapshot.items) {
+        if (row.post_type !== "post") continue;
+        const imageUrl = typeof row.image_url === "string" ? row.image_url.trim() : "";
+        const slug = typeof row.slug === "string" ? row.slug : "";
+        if (imageUrl && slug) updateImage.run(imageUrl, slug);
+      }
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-post-featured-images-v2')").run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
   return database;
 }
 
@@ -921,5 +949,14 @@ export function toPublicContent(item: CmsContent) {
     featured_image_url: item.image_url,
     featured_image_alt: item.image_alt_text,
     featured_image_position: item.image_position,
+  };
+}
+
+export function toPublicBlogContent(item: CmsContent) {
+  const imageUrl = item.image_url || getCmsContentImage(item.content);
+  return {
+    ...toPublicContent(item),
+    image_url: imageUrl,
+    featured_image_url: imageUrl,
   };
 }

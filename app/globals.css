@@ -1288,6 +1288,9 @@
       linear-gradient(115deg, #3e372f 0%, #51483f 58%, #695f53 100%);
     color: var(--color-cream);
   }
+  .detail-hero-band-fallback-image { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
+  .detail-hero-band-fallback-image::before { position: absolute; z-index: 0; inset: 0; background: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .55)), url("/images/facility-open-space.webp") center 48% / cover; content: ""; }
+  .detail-hero-band-fallback-image > .site-container { position: relative; z-index: 1; }
   .detail-service-hero-band { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
   .detail-hero-background { position: absolute; z-index: 0; inset: 0; overflow: hidden; background: #51483f; }
   .detail-hero-background::after { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .55)); content: ""; }
@@ -1377,10 +1380,14 @@
     line-height: 1.5;
   }
   .contact-page-hero {
+    position: relative;
+    isolation: isolate;
     overflow: hidden;
     padding-top: clamp(8.5rem, 15vw, 12rem);
     color: #51483f;
+    background: #f3f0e7;
   }
+  .contact-page-hero::before { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, rgb(255 252 245 / .9), rgb(255 252 245 / .74) 55%, rgb(255 252 245 / .4)), url("/images/about-roar-wellness.webp") center 48% / cover; content: ""; }
   .contact-page-hero-top { display: flex; align-items: center; justify-content: space-between; }
   .contact-page-hero-kicker { display: inline-flex; margin: 0; border-radius: .18rem; background: #a1806e; color: #fffcf5; padding: .38rem .7rem; font-size: .72rem; font-weight: 600; }
   .contact-page-hero-top > a { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 1px solid rgb(81 72 63 / .2); border-radius: 50%; color: #51483f; transition: background .25s ease, color .25s ease, transform .25s ease; }
@@ -2221,7 +2228,17 @@
     .privacy-consent-actions { display: grid; grid-template-columns: 1fr 1fr; }
     .privacy-consent-actions button { padding-right: .5rem; padding-left: .5rem; }
   }
-  .gallery-page { min-height: 100vh; padding: 12rem 1.5rem 5rem; background: var(--color-cream); }
+  .gallery-page {
+    --color-olive: #51483f;
+    --color-coral: #a1806e;
+    --color-terracotta: #a1806e;
+    --color-cream: #fffcf5;
+    --color-sand: #ede9dd;
+    min-height: 100vh;
+    padding: 12rem 1.5rem 5rem;
+    overflow-x: clip;
+    background: var(--color-cream);
+  }
   .content-archive { padding-top: 10rem; padding-bottom: 5rem; }
   .content-archive-services,
   .content-archive-blog { --archive-accent: #a1806e; --archive-accent-hover: #51483f; }
@@ -2236,8 +2253,10 @@
       linear-gradient(115deg, #3e372f 0%, #51483f 58%, #695f53 100%);
     color: #fffcf5;
   }
+  .page-hero-band::before { position: absolute; z-index: 0; inset: 0; background: linear-gradient(105deg, rgb(40 34 31 / .82), rgb(66 56 48 / .64) 58%, rgb(67 57 50 / .48)), url("/images/facility-open-space.webp") center 48% / cover; content: ""; }
   .page-hero-inner {
     position: relative;
+    z-index: 1;
     display: flex;
     min-height: min(25rem, 70vh);
     flex-direction: column;
@@ -2416,7 +2435,8 @@
   .content-archive-services :is(.archive-tab, .archive-item-action, .archive-item-image):focus-visible,
   .content-archive-blog :is(.archive-tab, .archive-item-action, .archive-item-image):focus-visible { outline: 3px solid #a1806e; outline-offset: 3px; }
   .content-archive-blog.blog-page { width: 100%; overflow: hidden; padding: 0 0 0; background: #fffcf5; color: #51483f; }
-  .blog-page-hero { display: flex; width: min(calc(100% - clamp(2rem, 5vw, 5rem)), 90rem); min-height: 40rem; flex-direction: column; justify-content: space-between; margin: 0 auto; padding: clamp(10rem, 18vh, 13rem) 0 clamp(3rem, 7vh, 5rem); }
+  .blog-page-hero { position: relative; isolation: isolate; display: flex; width: min(calc(100% - clamp(2rem, 5vw, 5rem)), 90rem); min-height: 40rem; flex-direction: column; justify-content: space-between; margin: 0 auto; padding: clamp(10rem, 18vh, 13rem) 0 clamp(3rem, 7vh, 5rem); }
+  .blog-page-hero::before { position: absolute; z-index: -1; inset: 0 calc((min(90rem, 100vw) - 100vw) / 2); background: linear-gradient(90deg, rgb(255 252 245 / .94), rgb(255 252 245 / .82) 52%, rgb(255 252 245 / .56)), url("/images/recovery-at-your-pace.webp") center 42% / cover; content: ""; }
   .blog-page-hero-top { display: flex; align-items: center; justify-content: space-between; gap: 2rem; animation: blogHeroRise .7s cubic-bezier(.2,.7,.2,1) both; }
   .blog-page-kicker { margin: 0; border-radius: .2rem; background: #a1806e; padding: .45rem .7rem; color: #fffcf5; font-size: .7rem; font-weight: 650; letter-spacing: .08em; }
   .blog-page-hero-note { max-width: 18rem; margin: 0; color: rgb(81 72 63 / .7); font-size: .82rem; line-height: 1.6; text-align: right; }
@@ -2563,7 +2583,8 @@
   .archive-item-action { display: inline-flex; min-height: 2.4rem; align-items: center; justify-content: center; gap: .45rem; border: 1px solid rgb(81 72 63 / .24); border-radius: .15rem; padding: .55rem .75rem; color: var(--color-brown); font-size: .69rem; font-weight: 600; white-space: nowrap; transition: border-color .2s ease, background .2s ease, color .2s ease; }
   .archive-item-action:hover { border-color: var(--color-olive); background: var(--color-olive); color: var(--color-cream); }
   .archive-empty { border: 1px solid var(--color-beige); background: #fffdfa; padding: 2.5rem 1rem; color: var(--color-brown-muted); text-align: center; }
-  .gallery-page-header { max-width: 900px; margin: 0 auto 4rem; text-align: center; }
+  .gallery-page-header { position: relative; isolation: isolate; max-width: 900px; margin: 0 auto 4rem; text-align: center; }
+  .gallery-page-header::before { position: absolute; z-index: -1; inset: -3rem -50vw; background: linear-gradient(0deg, rgb(255 252 245 / .94), rgb(255 252 245 / .78)), url("/images/facility-yoga-meditation.webp") center 45% / cover; content: ""; }
   .gallery-page-header .section-title { margin: 1.25rem auto 0; }
   .gallery-page-intro { max-width: 34rem; margin: 1.75rem auto 0; color: rgb(81 72 63 / .7); font-size: 1rem; line-height: 1.6; }
   .gallery-tabs { display: flex; justify-content: center; gap: .5rem; margin: -1.5rem auto 2.5rem; }

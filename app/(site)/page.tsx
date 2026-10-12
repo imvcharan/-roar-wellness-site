@@ -347,6 +347,7 @@ export default function Home() {
           title="Roar Wellness hero background"
           src="https://www.youtube.com/embed/zmzAImnceg8?autoplay=1&mute=1&controls=0&loop=1&playlist=zmzAImnceg8&playsinline=1&rel=0"
           allow="autoplay; encrypted-media"
+          referrerPolicy="origin"
           className="hero-video"
           aria-hidden="true"
         />

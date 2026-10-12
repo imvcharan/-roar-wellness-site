@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getCmsContentImage } from "@/lib/cms-content-image";
 import { findContentBySlug, findPublishedContentRedirect, listContent, type CmsContent } from "@/lib/cms-db";
 import { getCmsContentHref, getCmsContentRoutePath, getCmsRouteKind } from "@/lib/cms-routes";
 
@@ -29,6 +30,7 @@ export function resolvePublishedRouteContent(slug: string, kind: CmsRouteKind): 
 
 export function getRouteContentMetadata(item: CmsContent | undefined, canonical: string): Metadata {
   if (!item) return { title: "Page not found | Roar Wellness" };
+  const imageUrl = item.image_url || (getCmsRouteKind(item.category_slug) === "blog" ? getCmsContentImage(item.content) : null);
   const title = item.seo_title || `${item.title} | Roar Wellness`;
   const defaultDescription = item.slug === "videos"
     ? "Watch Roar Wellness videos about recovery, addiction treatment, mental healthcare, and life at our rehabilitation centre in Delhi."
@@ -53,13 +55,13 @@ export function getRouteContentMetadata(item: CmsContent | undefined, canonical:
       ...(description ? { description } : {}),
       url: canonical,
       type: "article",
-      ...(item.image_url ? { images: [item.image_url] } : {}),
+      ...(imageUrl ? { images: [imageUrl] } : {}),
     },
     twitter: {
-      card: item.image_url ? "summary_large_image" : "summary",
+      card: imageUrl ? "summary_large_image" : "summary",
       title,
       ...(description ? { description } : {}),
-      ...(item.image_url ? { images: [item.image_url] } : {}),
+      ...(imageUrl ? { images: [imageUrl] } : {}),
     },
   };
 }
