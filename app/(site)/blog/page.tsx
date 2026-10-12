@@ -29,7 +29,7 @@ function formatPublishedDate(value: string | null) {
   return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(date);
 }
 
-export default function BlogPage() {
+export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: string }) {
   const [posts, setPosts] = useState<BlogEntry[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [message, setMessage] = useState("Loading published articles...");
@@ -114,7 +114,7 @@ export default function BlogPage() {
     <main ref={pageRef} className="content-archive content-archive-blog blog-page">
       <header className="blog-page-hero">
         <div className="blog-page-hero-top">
-          <p className="blog-page-kicker">Roar Wellness Journal</p>
+          <p className="blog-page-kicker">Roar Wellness {sectionLabel}</p>
           <p className="blog-page-hero-note">Care, recovery &amp; the wisdom to keep growing.</p>
         </div>
         <div className="blog-page-hero-bottom">
@@ -123,6 +123,14 @@ export default function BlogPage() {
         </div>
         <p className="blog-page-intro">Thoughtful perspectives on recovery, mental wellbeing, and the journey toward lasting change.</p>
       </header>
+
+      <nav aria-label="Breadcrumb" className="blog-page-breadcrumb site-container">
+        <ol>
+          <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page">{sectionLabel}</li>
+        </ol>
+      </nav>
 
       <div className="blog-page-divider" aria-hidden="true"><span>+</span></div>
 

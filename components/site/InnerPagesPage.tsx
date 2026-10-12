@@ -207,6 +207,256 @@ function ServiceRecommendations({ items, currentSlug }: { items: CmsItem[]; curr
   </section>;
 }
 
+function SubstanceAbuseGuide() {
+  return <div className="substance-guide">
+    <section className="substance-impact-section" aria-labelledby="substance-impact-title">
+      <div className="substance-guide-heading">
+        <p className="eyebrow">Understanding substance use</p>
+        <h2 id="substance-impact-title">How can substance use affect everyday life?</h2>
+        <p>Every person’s experience is different. Substance use can affect wellbeing and the people around someone; the type and extent of impact varies with each situation.</p>
+      </div>
+      <div className="substance-impact-grid">
+        <article className="substance-impact-card">
+          <span aria-hidden="true">01</span>
+          <h3>Personal wellbeing</h3>
+          <p>Changes in sleep, mood, health, or daily routines may be a sign that extra support could help.</p>
+        </article>
+        <article className="substance-impact-card">
+          <span aria-hidden="true">02</span>
+          <h3>Relationships</h3>
+          <p>Communication, trust, and family responsibilities can come under strain. Compassionate support can help people talk through what is happening.</p>
+        </article>
+        <article className="substance-impact-card">
+          <span aria-hidden="true">03</span>
+          <h3>Work, studies &amp; community</h3>
+          <p>Focus, attendance, finances, and social connections may be affected. A practical first step can be speaking with a qualified professional.</p>
+        </article>
+      </div>
+    </section>
+
+    <section className="substance-alcohol-panel" aria-labelledby="substance-alcohol-title">
+      <div className="substance-alcohol-copy">
+        <p className="eyebrow">A compassionate perspective</p>
+        <h2 id="substance-alcohol-title">About alcohol use</h2>
+        <p>Alcohol use may be worth discussing with a health professional when it feels difficult to control or starts affecting health, relationships, or everyday responsibilities. These experiences are not a diagnosis; a qualified professional can help someone understand their situation and options.</p>
+        <Link href="/contact-us" className="substance-guide-link">Talk with our team <ArrowUpRight size={16} aria-hidden="true" /></Link>
+      </div>
+      <div className="substance-alcohol-signs">
+        <h3>Some reasons to reach out</h3>
+        <ul>
+          <li>Drinking more, or for longer, than intended</li>
+          <li>Finding it difficult to cut down</li>
+          <li>Continuing to drink despite problems in daily life</li>
+        </ul>
+        <p>If you are concerned about yourself or someone close to you, a confidential conversation with a qualified professional can help clarify next steps.</p>
+      </div>
+    </section>
+  </div>;
+}
+
+const twelveStepPhases = [
+  {
+    range: "01–03",
+    title: "Recognise & seek support",
+    description: "Acknowledge that substance use has become difficult to manage, stay open to help, and consider what support could look like.",
+    steps: [
+      { number: "01", text: "Recognise the impact and limits of trying to manage alone." },
+      { number: "02", text: "Allow room for hope and support beyond yourself." },
+      { number: "03", text: "Choose to engage with a recovery path that fits your beliefs and needs." },
+    ],
+  },
+  {
+    range: "04–09",
+    title: "Reflect & repair",
+    description: "With guidance, look honestly at patterns, share that reflection with a trusted person, and take appropriate steps to repair harm.",
+    steps: [
+      { number: "04", text: "Take an honest personal inventory." },
+      { number: "05", text: "Share reflections with a trusted guide or professional." },
+      { number: "06", text: "Become willing to address unhelpful patterns." },
+      { number: "07", text: "Seek help to put constructive changes into practice." },
+      { number: "08", text: "Consider who may have been affected and how." },
+      { number: "09", text: "Make amends where it is safe and appropriate to do so." },
+    ],
+  },
+  {
+    range: "10–12",
+    title: "Practise & connect",
+    description: "Continue regular reflection, nurture a source of meaning, and share encouragement with others when ready.",
+    steps: [
+      { number: "10", text: "Keep reviewing choices and make timely repairs." },
+      { number: "11", text: "Develop a regular practice of reflection or spiritual connection." },
+      { number: "12", text: "Carry lessons forward and offer support to others in recovery." },
+    ],
+  },
+];
+
+function TwelveStepProgramGuide() {
+  return <div className="twelve-step-guide">
+    <section className="twelve-step-intro" aria-labelledby="twelve-step-intro-title">
+      <div>
+        <p className="eyebrow">A peer-support framework</p>
+        <h2 id="twelve-step-intro-title">A path built on reflection, connection, and continued support.</h2>
+      </div>
+      <p>The 12-step approach is a structured peer-support framework used by some recovery communities. People experience it differently, and it may be combined with professional treatment. It is not the only route to recovery.</p>
+    </section>
+
+    <section className="twelve-step-video" aria-labelledby="twelve-step-video-title">
+      <div className="twelve-step-video-copy">
+        <p className="eyebrow">Start with understanding</p>
+        <h2 id="twelve-step-video-title">Who is an alcoholic?</h2>
+        <p>Watch the original Roar Wellness video, then explore the framework below at your own pace.</p>
+      </div>
+      <GalleryVideoGrid
+        videos={[{ id: "wH275G1VsKM", title: "Who is an alcoholic? | Roar Wellness" }]}
+        gridClassName="twelve-step-video-grid"
+      />
+    </section>
+
+    <section className="twelve-step-phases" aria-labelledby="twelve-step-phases-title">
+      <header className="twelve-step-section-heading">
+        <p className="eyebrow">The framework at a glance</p>
+        <h2 id="twelve-step-phases-title">Twelve steps, three broad phases</h2>
+        <p>This is a plain-language overview, not a substitute for a programme guide or support from a qualified professional.</p>
+      </header>
+      <div className="twelve-step-phase-grid">
+        {twelveStepPhases.map((phase) => (
+          <article className="twelve-step-phase-card" key={phase.range}>
+            <span className="twelve-step-phase-range">STEPS {phase.range}</span>
+            <h3>{phase.title}</h3>
+            <p className="twelve-step-phase-description">{phase.description}</p>
+            <ol>
+              {phase.steps.map((step) => <li key={step.number}><span aria-hidden="true">{step.number}</span>{step.text}</li>)}
+            </ol>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <aside className="twelve-step-note" aria-label="Choosing recovery support">
+      <div>
+        <p className="eyebrow">Your recovery is personal</p>
+        <h2>Find support that respects your needs.</h2>
+        <p>Peer groups, counselling, medical care, and other supports can play different roles. A qualified professional can help you discuss safe and suitable options for your circumstances.</p>
+      </div>
+      <Link href="/contact-us" className="substance-guide-link">Talk with our team <ArrowUpRight size={16} aria-hidden="true" /></Link>
+    </aside>
+  </div>;
+}
+
+const aaReflectionQuestions = [
+  "Do you lose time from work because of drinking or substance use?",
+  "Is drinking or substance use making your home life unhappy?",
+  "Do you use or drink because you feel shy or uncomfortable with other people?",
+  "Is drinking or substance use affecting your reputation?",
+  "Have you ever felt remorse after drinking or using?",
+  "Have you had financial difficulties as a result of drinking or substance use?",
+  "Do you turn to people or places that concern you when drinking or using?",
+  "Does drinking or substance use make you less attentive to your family's wellbeing?",
+  "Has your ambition or interest in activities decreased since drinking or using?",
+  "Do you feel a strong urge to drink or use at a particular time?",
+  "Has your efficiency or ability to manage daily tasks decreased?",
+  "Is drinking or substance use putting your job or business at risk?",
+  "Do you drink or use to escape worries or troubles?",
+  "Do you drink or use alone?",
+  "Have you ever had a memory lapse after drinking or using?",
+  "Has a physician ever treated you for concerns related to drinking or substance use?",
+  "Do you drink or use to feel more confident?",
+  "Have you ever been in a hospital or institution because of drinking or substance use?",
+  "Have you tried to cut down or stop and found it difficult?",
+  "Have you continued drinking or using despite problems it caused?",
+];
+
+function AaTwentyQuestionsGuide() {
+  const [answers, setAnswers] = useState<Record<number, "yes" | "no">>({});
+  const answeredCount = Object.keys(answers).length;
+  const yesCount = Object.values(answers).filter((answer) => answer === "yes").length;
+
+  return <div className="aa-reflection-guide">
+    <section className="aa-reflection-intro" aria-labelledby="aa-reflection-title">
+      <div>
+        <p className="eyebrow">A private moment of reflection</p>
+        <h2 id="aa-reflection-title">Take these questions one at a time.</h2>
+      </div>
+      <div className="aa-reflection-intro-copy">
+        <p>These questions are a prompt to reflect on how drinking or substance use may be affecting life. They are not a diagnostic test, and your answers stay in this page only.</p>
+        <a href="#aa-reflection-questions">Begin the self-check <ArrowDown size={15} aria-hidden="true" /></a>
+      </div>
+    </section>
+
+    <section className="aa-reflection-tool" id="aa-reflection-questions" aria-labelledby="aa-reflection-list-title">
+      <header className="aa-reflection-toolbar">
+        <div>
+          <p className="eyebrow">No score. No judgement.</p>
+          <h2 id="aa-reflection-list-title">20 questions to consider</h2>
+        </div>
+        <div className="aa-reflection-progress" aria-live="polite">
+          <span>{answeredCount} <span>/ 20 answered</span></span>
+          <div
+            className="aa-reflection-progress-track"
+            role="progressbar"
+            aria-label="Questions answered"
+            aria-valuemin={0}
+            aria-valuemax={20}
+            aria-valuenow={answeredCount}
+          ><span style={{ width: `${answeredCount * 5}%` }} /></div>
+        </div>
+      </header>
+
+      <ol className="aa-question-list">
+        {aaReflectionQuestions.map((question, index) => {
+          const answer = answers[index];
+          return <li className={`aa-question-card${answer ? " is-answered" : ""}`} key={question}>
+            <span className="aa-question-number">{String(index + 1).padStart(2, "0")}</span>
+            <p>{question}</p>
+            <div className="aa-answer-options" role="group" aria-label={`Answer question ${index + 1}`}>
+              {(["yes", "no"] as const).map((option) => (
+                <button
+                  type="button"
+                  key={option}
+                  aria-pressed={answer === option}
+                  onClick={() => setAnswers((current) => ({ ...current, [index]: option }))}
+                >{option === "yes" ? "Yes" : "No"}</button>
+              ))}
+            </div>
+          </li>;
+        })}
+      </ol>
+
+      {answeredCount > 0 && <aside className="aa-reflection-response" aria-live="polite">
+        <span className="aa-reflection-response-count">{yesCount}</span>
+        <div>
+          <h3>{answeredCount === 20 ? "Thank yourself for taking the time." : "Your reflection is yours."}</h3>
+          <p>{answeredCount === 20
+            ? "There is no pass or fail and this count does not indicate a diagnosis. If any answer leaves you concerned, consider speaking with a qualified health professional."
+            : `${answeredCount} of 20 answered. Your responses are not saved or sent anywhere.`}</p>
+        </div>
+        <button type="button" className="aa-reflection-reset" onClick={() => setAnswers({})}>Clear answers</button>
+      </aside>}
+    </section>
+
+    <section className="aa-reflection-video" aria-labelledby="aa-reflection-video-title">
+      <div className="aa-reflection-video-copy">
+        <p className="eyebrow">A little more context</p>
+        <h2 id="aa-reflection-video-title">What is Addiction?</h2>
+        <p>Watch this short Roar Wellness video as another starting point for learning and reflection.</p>
+      </div>
+      <GalleryVideoGrid
+        videos={[{ id: "1XJE-buAzyM", title: "What is Addiction | Roar Wellness" }]}
+        gridClassName="aa-reflection-video-grid"
+      />
+    </section>
+
+    <aside className="aa-reflection-support">
+      <div>
+        <p className="eyebrow">You don’t have to figure it out alone</p>
+        <h2>A conversation can be a first step.</h2>
+        <p>If you have concerns about your drinking or substance use, a qualified professional can help you explore support options without judgement.</p>
+      </div>
+      <Link href="/contact-us" className="substance-guide-link">Talk with our team <ArrowUpRight size={16} aria-hidden="true" /></Link>
+    </aside>
+  </div>;
+}
+
 function CmsPageContent({
   html,
   slug,
@@ -691,14 +941,21 @@ export default function InnerPagesPage({
     const isVideosPage = selectedItem?.slug === "videos";
     const isExpertsPage = selectedSlug.toLowerCase() === "drug-alcohol-rehabilitation-experts";
     const isAboutPage = selectedSlug === "about-roarwellness";
+    const isTwelveStepPage = selectedSlug.toLowerCase() === "12-step-program-delhi";
+    const isAaQuestionsPage = selectedSlug.toLowerCase() === "aa-20-questions";
     const summary = isExpertsPage
       ? "Meet the experienced clinicians and recovery professionals who guide care at Roar Wellness."
+      : isTwelveStepPage
+        ? "Explore a balanced introduction to the 12-step peer-support framework and the role connection can play in recovery."
+      : isAaQuestionsPage
+        ? "A private, non-diagnostic set of questions to help you reflect on how drinking or substance use may be affecting everyday life."
       : !isVideosPage && (selectedItem?.excerpt || selectedItem?.summary)
         ? normalizeCmsPlainText(selectedItem.excerpt || selectedItem.summary || "")
         : null;
     const pageVideos = isVideosPage
       ? getYouTubeVideos(selectedItem?.excerpt, selectedItem?.summary, selectedItem?.content, selectedItem?.description)
       : [];
+    const isSubstanceAbusePage = selectedSlug.toLowerCase() === "about-substance-abuse";
     const selectedCategorySlug = selectedItem?.category_slug;
     const selectedKind = detailKind ?? (selectedItem ? getCmsRouteKind(selectedItem.category_slug) : "service");
     const image = selectedItem?.featured_image_url || selectedItem?.image_url;
@@ -718,7 +975,7 @@ export default function InnerPagesPage({
     }));
     const serviceItems = allItems.filter((item) => isServiceCategory(item.category_slug));
     const serviceIndex = serviceItems.findIndex((item) => item.slug === selectedSlug);
-    const breadcrumb = selectedItem && <nav aria-label="Breadcrumb" className={`site-container px-5${selectedKind === "service" || selectedKind === "blog" ? " mt-4" : ""}`}>
+    const breadcrumb = selectedItem && <nav aria-label="Breadcrumb" className="site-container mt-4 px-5">
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
         <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
         {selectedKind !== "page" && <li aria-hidden="true" className="text-beige">/</li>}
@@ -788,7 +1045,6 @@ export default function InnerPagesPage({
 
     return (
       <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
-        {selectedKind !== "service" && selectedKind !== "blog" && breadcrumb}
         {selectedItem ? <>
           <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
@@ -806,7 +1062,7 @@ export default function InnerPagesPage({
               </div>
             </div>
           </section>
-          {(selectedKind === "service" || selectedKind === "blog") && breadcrumb}
+          {breadcrumb}
 
           <div className="site-container px-5">
             <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""} mt-10 md:mt-14`}>
@@ -832,7 +1088,24 @@ export default function InnerPagesPage({
               </aside>}
 
               <article className="detail-article">
-                {isVideosPage
+                {isSubstanceAbusePage && <section className="about-addiction-video" aria-labelledby="about-addiction-video-title">
+                  <div className="about-addiction-video-copy">
+                    <p className="eyebrow">Fact about substance</p>
+                    <h2 id="about-addiction-video-title">What is Addiction?</h2>
+                    <p>An introduction to addiction from Roar Wellness. Watch to learn more about the subject and start a thoughtful conversation about support and recovery.</p>
+                  </div>
+                  <GalleryVideoGrid
+                    videos={[{ id: "1XJE-buAzyM", title: "What is Addiction" }]}
+                    gridClassName="about-addiction-video-grid"
+                  />
+                </section>}
+                {isSubstanceAbusePage
+                  ? <SubstanceAbuseGuide />
+                  : isTwelveStepPage
+                    ? <TwelveStepProgramGuide />
+                    : isAaQuestionsPage
+                      ? <AaTwentyQuestionsGuide />
+                  : isVideosPage
                   ? pageVideos.length
                     ? <GalleryVideoGrid videos={pageVideos} gridClassName="cms-videos-page-grid" />
                     : <p role="status">Videos are temporarily unavailable. Please check back soon.</p>
