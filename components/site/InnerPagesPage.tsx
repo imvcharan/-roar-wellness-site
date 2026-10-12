@@ -949,6 +949,14 @@ export default function InnerPagesPage({
           </div>
         </header>
 
+        <nav aria-label="Breadcrumb" className="site-container mt-4 px-5">
+          <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
+            <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
+            <li aria-hidden="true" className="text-beige">/</li>
+            <li aria-current="page" className="font-semibold text-brown">Services</li>
+          </ol>
+        </nav>
+
         <div className="services-divider" aria-hidden="true"><span>+</span></div>
 
         <section id="browse-services" className="services-gallery site-container" aria-labelledby="services-gallery-title">

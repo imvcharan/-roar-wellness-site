@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { FaqSection, type Faq } from "@/components/site/TestimonialsFaq";
 import { cmsRequest } from "@/services/cms-api";
 
@@ -39,6 +40,13 @@ export default function FaqsPageContent() {
           <p className="page-hero-description">Clear, considered answers about treatment, rehabilitation, and recovery.</p>
         </div>
       </header>
+      <nav aria-label="Breadcrumb" className="site-container mt-4 px-5">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
+          <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
+          <li aria-hidden="true" className="text-beige">/</li>
+          <li aria-current="page" className="font-semibold text-brown">FAQs</li>
+        </ol>
+      </nav>
       {faqs.length
         ? <FaqSection faqs={faqs} />
         : <p role="status" className="site-container px-5 pb-16 text-center text-brown-muted">{message}</p>}

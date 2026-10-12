@@ -2100,6 +2100,8 @@
   .content-archive-services,
   .content-archive-blog { --archive-accent: #a1806e; --archive-accent-hover: #51483f; }
   .content-archive-services { overflow: hidden; padding-top: 0; padding-bottom: 0; }
+  .content-archive-services .page-hero-band,
+  .faq-page .page-hero-band { margin-top: 8rem; }
   .page-hero-band {
     position: relative;
     overflow: hidden;
@@ -2111,11 +2113,11 @@
   .page-hero-inner {
     position: relative;
     display: flex;
-    min-height: min(39rem, 82vh);
+    min-height: min(25rem, 70vh);
     flex-direction: column;
     justify-content: center;
-    padding-top: 10rem;
-    padding-bottom: 5rem;
+    padding-top: 4rem;
+    padding-bottom: 4rem;
   }
   .page-hero-kicker {
     display: inline-flex;
@@ -2170,7 +2172,7 @@
     position: relative;
     width: min(calc(100% - clamp(2rem, 4vw, 4rem)), var(--site-content-width));
     height: 1px;
-    margin: 0 auto clamp(4.5rem, 8vw, 7rem);
+    margin: clamp(2rem, 4vw, 3rem) auto clamp(4.5rem, 8vw, 7rem);
     background: #dad3be;
   }
   .services-divider span {
@@ -2520,7 +2522,9 @@
     .archive-item-has-image .archive-item-action { grid-column: 3; }
     .archive-item-number { font-size: .85rem; }
     .content-archive.content-archive-services { padding-top: 0; }
-    .page-hero-inner { min-height: 34rem; padding-top: 8.5rem; padding-bottom: 4rem; }
+    .content-archive-services .page-hero-band,
+    .faq-page .page-hero-band { margin-top: 8rem; }
+    .page-hero-inner { min-height: 28rem; padding-top: 4rem; padding-bottom: 4rem; }
     .services-hero-scroll { right: 1rem; bottom: 3rem; }
     .services-gallery-heading { align-items: flex-start; flex-direction: column; gap: 1rem; }
     .services-gallery-heading > p { max-width: 32rem; }
