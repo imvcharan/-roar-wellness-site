@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase, getCmsSettings } from "@/lib/cms-db";
-import { isCmsAdmin } from "@/lib/cms-auth";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,9 @@ export async function PUT(request: Request) {
   } catch (error) {
     database.exec("ROLLBACK");
     throw error;
+  }
+  if (pairs.length) {
+    recordCmsAudit(await getCmsUserId(), request, "settings.update", "settings", null, `Updated site settings: ${pairs.map(([key]) => key).join(", ")}.`);
   }
   return NextResponse.json({ data: getCmsSettings() });
 }

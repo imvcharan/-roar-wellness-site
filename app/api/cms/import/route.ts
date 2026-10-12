@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { findContentBySlug, getCmsDatabase, listCategories, recordContentRevision } from "@/lib/cms-db";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
@@ -146,5 +147,6 @@ export async function POST(request: Request) {
     database.exec("ROLLBACK");
     return NextResponse.json({ error: error instanceof Error ? error.message : "Import failed; no changes were made." }, { status: 400 });
   }
+  recordCmsAudit(importingUser, request, "content.import", "content", null, `Imported ${imported} content items.`);
   return NextResponse.json({ data: { imported, categories: bySlug.size - existingCategories.length, skippedDuplicates: rows.length - importRows.length } });
 }

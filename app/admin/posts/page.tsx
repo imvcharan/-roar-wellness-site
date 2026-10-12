@@ -119,6 +119,7 @@ export default function PostsPage() {
   const [form, setForm] = useState<EntryForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [activePanel, setActivePanel] = useState<"library" | "editor" | null>(null);
   const [error, setError] = useState("");
@@ -163,6 +164,7 @@ export default function PostsPage() {
 
   useEffect(() => {
     setFilter("all");
+    setStatusFilter("all");
     setSearch("");
     setActivePanel(null);
     setEditingId(null);
@@ -181,11 +183,12 @@ export default function PostsPage() {
   const visibleEntries = useMemo(
     () => sectionEntries.filter((entry) => {
       const matchesCategory = filter === "all" || entry.category_id === filter;
+      const matchesStatus = statusFilter === "all" || entry.status === statusFilter;
       const query = search.trim().toLowerCase();
       const matchesSearch = !query || `${entry.title} ${entry.slug}`.toLowerCase().includes(query);
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesStatus && matchesSearch;
     }),
-    [sectionEntries, filter, search],
+    [sectionEntries, filter, search, statusFilter],
   );
 
   const resetForm = () => {
@@ -350,6 +353,12 @@ export default function PostsPage() {
               <label className="text-sm font-medium text-cms-text">
                 Search {sectionConfig.singular}
                 <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Title or slug" className="ml-2 rounded-lg border border-cms-border px-3 py-2" />
+              </label>
+              <label className="text-sm font-medium text-cms-text">
+                Status
+                <select className="ml-2 rounded-lg border border-cms-border bg-white px-3 py-2" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                  <option value="all">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option>
+                </select>
               </label>
               {sectionCategories.length > 1 && <label className="text-sm font-medium text-cms-text">
                 Filter by category

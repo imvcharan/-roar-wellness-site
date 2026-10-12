@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { canEditCms, getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import {
   findCategory,
@@ -69,6 +70,7 @@ export async function PUT(
     database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
       .run(crypto.randomUUID(), id, JSON.stringify(findContentById(id)), updatedBy);
     database.exec("COMMIT");
+    recordCmsAudit(updatedBy, request, "content.update", "content", id, `Updated content “${input.title}” (${previous.status} → ${input.status}).`);
     return NextResponse.json({ data: toPublicContent(findContentById(id)!) });
   } catch (error) {
     if (database.isTransaction) database.exec("ROLLBACK");
@@ -80,7 +82,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!await canEditCms()) {
@@ -92,5 +94,6 @@ export async function DELETE(
   const existing = findContentById(id);
   if (!existing) return NextResponse.json({ error: "Content not found." }, { status: 404 });
   getCmsDatabase().prepare("DELETE FROM content WHERE id = ?").run(id);
+  recordCmsAudit(await getCmsUserId(), request, "content.delete", "content", id, `Deleted content “${existing.title}”.`);
   return NextResponse.json({ data: { deleted: true } });
 }

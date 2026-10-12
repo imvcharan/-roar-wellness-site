@@ -32,7 +32,7 @@ export function ContactSection({
             <div className="lets-talk-copy">
               <Heading>Let’s Talk!</Heading>
               <p className="lets-talk-kicker">A confidential first conversation</p>
-              <p className="lets-talk-text">Tell us what kind of support you’re looking for, and our team will follow up privately.</p>
+              <p className="lets-talk-text">Share your contact details and our team will follow up privately. Please don’t include sensitive health information.</p>
               <div className="lets-talk-socials">
                 <span>Connect with us</span>
               </div>
@@ -62,7 +62,7 @@ export function ContactSection({
               </div>}
             </div>
 
-            <AppointmentRequestForm contactEmail={contactEmail} variant="contact" />
+            <AppointmentRequestForm variant="contact" />
           </div>
         </div>
       </section>

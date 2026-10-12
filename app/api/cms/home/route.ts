@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { canEditCms } from "@/lib/cms-auth";
+import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { parseHomepageSection } from "@/lib/cms-validation";
 
@@ -23,5 +24,6 @@ export async function POST(request: Request) {
   const database = getCmsDatabase();
   database.prepare("INSERT INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
     .run(sectionKey, input.group_name, input.heading, input.eyebrow, input.body, input.image_url, input.position, input.is_published);
+  recordCmsAudit(await getCmsUserId(), request, "homepage.create", "homepage", sectionKey, `Created homepage card “${input.heading}”.`);
   return NextResponse.json({ data: database.prepare("SELECT * FROM cms_home_sections WHERE section_key = ?").get(sectionKey) }, { status: 201 });
 }

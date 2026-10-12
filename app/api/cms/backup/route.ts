@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
 import sharp from "sharp";
-import { isCmsAdmin } from "@/lib/cms-auth";
+import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { getCmsMediaDirectory, getCmsMediaFilePath, isCmsMediaId } from "@/lib/cms-media-storage";
 
@@ -11,7 +12,7 @@ export const runtime = "nodejs";
 
 const backupVersion = 1;
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
   const database = getCmsDatabase();
   const media = database.prepare("SELECT id, filename, url, mime_type, size, width, height, created_at FROM cms_media").all() as {
@@ -47,6 +48,7 @@ export async function GET() {
     media,
     mediaFiles,
   };
+  recordCmsAudit(await getCmsUserId(), request, "backup.export", "backup", null, "Downloaded a CMS content backup.");
   return new NextResponse(JSON.stringify(payload, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
@@ -195,5 +197,6 @@ export async function POST(request: Request) {
     await Promise.all(written.map(async (path) => { const { unlink } = await import("node:fs/promises"); await unlink(path); }));
     return NextResponse.json({ error: error instanceof Error ? error.message : "Backup restore failed." }, { status: 400 });
   }
+  recordCmsAudit(await getCmsUserId(), request, "backup.restore", "backup", null, `Restored backup with ${content.length} content items.`);
   return NextResponse.json({ data: { restored: true, categories: categories.length, content: content.length, revisions: revisions.length, faqs: faqs.length } });
 }

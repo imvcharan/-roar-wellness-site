@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { canEditCms, getCmsRole, getCmsUserId } from "@/lib/cms-auth";
 import {
   findCategory,
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
     database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
       .run(crypto.randomUUID(), id, JSON.stringify(item), createdBy);
     database.exec("COMMIT");
+    recordCmsAudit(createdBy, request, "content.create", "content", id, `Created content “${input.title}” as ${input.status}.`);
     return NextResponse.json({ data: item && toPublicContent(item) }, { status: 201 });
   } catch (error) {
     if (database.isTransaction) database.exec("ROLLBACK");

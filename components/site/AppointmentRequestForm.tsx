@@ -1,21 +1,12 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { RefreshCw, ArrowUpRight } from "lucide-react";
-
-const supportOptions = [
-  "Alcohol and substance use",
-  "Mental health support",
-  "Therapy and wellbeing",
-  "Family guidance",
-  "Not sure yet",
-];
+import { CheckCircle2, RefreshCw, ArrowUpRight } from "lucide-react";
+import { recordOptedInAnalytics } from "@/components/site/AnalyticsConsent";
 
 export function AppointmentRequestForm({
-  contactEmail,
   variant = "appointment",
 }: {
-  contactEmail: string;
   variant?: "appointment" | "contact";
 }) {
   const isContact = variant === "contact";
@@ -23,6 +14,7 @@ export function AppointmentRequestForm({
   const [answer, setAnswer] = useState("");
   const [captchaError, setCaptchaError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const loadChallenge = async (preserveError = false) => {
     setChallenge(null);
@@ -48,52 +40,55 @@ export function AppointmentRequestForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!challenge || isSubmitting) return;
-    const formData = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const formData = new FormData(formElement);
     setIsSubmitting(true);
     setCaptchaError("");
-
     try {
-      const verification = await fetch("/api/appointment-captcha", {
+      const response = await fetch("/api/appointment-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-        body: JSON.stringify({ token: challenge.token, answer }),
+        body: JSON.stringify({
+          name: `${formData.get("firstName")?.toString().trim() || ""} ${formData.get("lastName")?.toString().trim() || ""}`.trim(),
+          email: formData.get("email")?.toString().trim() || "",
+          phone: formData.get("phone")?.toString().trim() || "",
+          source: variant,
+          consent: formData.get("contactConsent") === "on",
+          website: formData.get("website")?.toString() || "",
+          token: challenge.token,
+          answer,
+        }),
       });
-      const result = await verification.json() as { verified?: boolean; error?: string };
-      if (!verification.ok || result.verified !== true) {
-        setCaptchaError(result.error || "The answer could not be verified. Please try again.");
-        await loadChallenge(true);
-        return;
+      const result = await response.json() as { error?: string };
+      if (!response.ok) {
+        setCaptchaError(result.error || "Your request could not be sent. Please try again.");
+        if (response.status === 400) await loadChallenge(true);
+      } else {
+        recordOptedInAnalytics("appointment_submit", variant === "contact" ? "/contact" : "/appointment");
+        setSubmitted(true);
+        formElement.reset();
       }
     } catch (error) {
-      console.error("Unable to verify appointment math answer.", error);
-      setCaptchaError("The answer could not be verified. Please try again.");
-      return;
+      console.error("Unable to submit appointment request.", error);
+      setCaptchaError("Your request could not be sent. Please check your connection and try again.");
     } finally {
       setIsSubmitting(false);
     }
-
-    const firstName = formData.get("firstName")?.toString().trim() || "";
-    const lastName = formData.get("lastName")?.toString().trim() || "";
-    const name = `${firstName} ${lastName}`.trim();
-    const body = [
-      `Name: ${name}`,
-      `Email: ${formData.get("email") || "Not provided"}`,
-      `Phone: ${formData.get("phone") || "Not provided"}`,
-      `Area of support: ${formData.get("support") || "Not provided"}`,
-      "",
-      "Message:",
-      formData.get("message") || "Not provided",
-    ].join("\n");
-    const subject = `Appointment request from ${name}`;
-    window.location.href = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   return (
-    <form
+    submitted ? <div className="appointment-request-success" role="status">
+      <CheckCircle2 size={24} aria-hidden="true" />
+      <div><strong>Request received</strong><p>Thank you. Our team will contact you privately using the details you provided.</p></div>
+    </div> : <form
       className={isContact ? "appointment-request-form lets-talk-form" : "appointment-request-form"}
       onSubmit={handleSubmit}
     >
+      <label className="sr-only" aria-hidden="true">
+        Leave this field empty
+        <input name="website" tabIndex={-1} autoComplete="off" />
+      </label>
       <div className="appointment-form-row">
         <label>
           <span>First name*</span>
@@ -114,16 +109,9 @@ export function AppointmentRequestForm({
           <input name="phone" type="tel" placeholder="+91" autoComplete="tel" required />
         </label>
       </div>
-      <label>
-        <span>How can we support you?*</span>
-        <select name="support" defaultValue="" required>
-          <option value="" disabled>Select an area of support</option>
-          {supportOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-        </select>
-      </label>
-      <label>
-        <span>Message*</span>
-        <textarea name="message" placeholder="Share anything you’d like us to know..." rows={3} required />
+      <label className="appointment-contact-consent">
+        <input type="checkbox" name="contactConsent" required />
+        <span>I agree that Roar Wellness may contact me about this request. I understand my contact details will be deleted after 12 months. Please don’t include sensitive health information in this form.</span>
       </label>
       <div className="appointment-captcha">
         <label htmlFor="appointment-captcha-answer">
@@ -153,7 +141,7 @@ export function AppointmentRequestForm({
       </div>
       {captchaError && <p className="appointment-captcha-error" role="alert">{captchaError}</p>}
       <button type="submit" className={isContact ? "lets-talk-button" : "appointment-submit"} disabled={!challenge || isSubmitting}>
-        <span>Send appointment request</span>
+        <span>{isSubmitting ? "Sending…" : "Send appointment request"}</span>
         <ArrowUpRight size={17} aria-hidden="true" />
       </button>
     </form>

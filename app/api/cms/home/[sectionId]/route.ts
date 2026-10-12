@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { canEditCms, isCmsAdmin } from "@/lib/cms-auth";
+import { canEditCms, getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { parseHomepageSection } from "@/lib/cms-validation";
 
@@ -22,13 +23,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ se
   }
   getCmsDatabase().prepare("UPDATE cms_home_sections SET group_name = ?, heading = ?, eyebrow = ?, body = ?, image_url = ?, position = ?, is_published = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE section_key = ?")
     .run(section.group_name, section.heading, section.eyebrow, section.body, section.image_url, section.position, section.is_published, sectionId);
+  recordCmsAudit(await getCmsUserId(), request, "homepage.update", "homepage", sectionId, `Updated homepage card “${section.heading}”.`);
   return NextResponse.json({ data: getCmsDatabase().prepare("SELECT * FROM cms_home_sections WHERE section_key = ?").get(sectionId) });
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ sectionId: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ sectionId: string }> }) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required to remove homepage cards." }, { status: 403 });
   const { sectionId } = await params;
   const result = getCmsDatabase().prepare("DELETE FROM cms_home_sections WHERE section_key = ? AND group_name != 'site-copy'").run(sectionId);
   if (!result.changes) return NextResponse.json({ error: "Card not found or a fixed homepage section cannot be deleted." }, { status: 404 });
+  recordCmsAudit(await getCmsUserId(), request, "homepage.delete", "homepage", sectionId, "Deleted a homepage card.");
   return NextResponse.json({ data: { deleted: true } });
 }

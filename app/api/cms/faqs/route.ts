@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { canEditCms } from "@/lib/cms-auth";
+import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase as db } from "@/lib/cms-db";
 
 export const runtime = "nodejs";
@@ -25,5 +26,6 @@ export async function POST(request: Request) {
   const id = randomUUID();
   db().prepare("INSERT INTO cms_faqs (id, question, answer, position, status) VALUES (?, ?, ?, ?, ?)")
     .run(id, data.question.trim(), data.answer.trim(), position, status);
+  recordCmsAudit(await getCmsUserId(), request, "faq.create", "faq", id, `Created FAQ “${data.question.trim()}”.`);
   return NextResponse.json({ data: db().prepare("SELECT * FROM cms_faqs WHERE id = ?").get(id) }, { status: 201 });
 }

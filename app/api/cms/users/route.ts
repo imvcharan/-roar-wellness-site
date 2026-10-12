@@ -1,7 +1,8 @@
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { NextResponse } from "next/server";
+import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
-import { isCmsAdmin } from "@/lib/cms-auth";
 import type { CmsRole } from "@/lib/cms-auth";
 
 export const runtime = "nodejs";
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
     const id = randomUUID();
     getCmsDatabase().prepare("INSERT INTO cms_users (id, email, name, role, password_hash) VALUES (?, ?, ?, ?, ?)")
       .run(id, data.email.trim().toLowerCase(), data.name.trim(), data.role, `${salt}:${hash}`);
+    recordCmsAudit(await getCmsUserId(), request, "user.create", "user", id, `Created ${data.role} account “${data.name.trim()}”.`);
     return NextResponse.json({ data: { id, email: data.email.trim().toLowerCase(), name: data.name.trim(), role: data.role } }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {

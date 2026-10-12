@@ -31,11 +31,13 @@ export default function FaqsPageContent() {
   }, []);
 
   return (
-    <main className="pt-32 md:pt-40">
-      <header className="site-container px-5 py-10 md:py-14">
-        <p className="eyebrow text-terracotta">Help and guidance</p>
-        <h1 className="mt-3 font-serif text-4xl tracking-tight text-brown md:text-5xl">Frequently Asked Questions</h1>
-        <p className="archive-intro">Clear, considered answers about treatment, rehabilitation, and recovery.</p>
+    <main className="faq-page">
+      <header className="page-hero-band">
+        <div className="page-hero-inner site-container">
+          <p className="page-hero-kicker">Help and guidance</p>
+          <h1 className="page-hero-title">Frequently Asked Questions</h1>
+          <p className="page-hero-description">Clear, considered answers about treatment, rehabilitation, and recovery.</p>
+        </div>
       </header>
       {faqs.length
         ? <FaqSection faqs={faqs} />

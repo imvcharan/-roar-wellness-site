@@ -93,6 +93,37 @@ function openDatabase(): DatabaseSync {
       expires_at INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
+    CREATE TABLE IF NOT EXISTS cms_enquiries (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      source TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'scheduled', 'closed')),
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    );
+    CREATE INDEX IF NOT EXISTS cms_enquiries_created ON cms_enquiries(status, created_at DESC);
+    CREATE TABLE IF NOT EXISTS cms_audit_log (
+      id TEXT PRIMARY KEY,
+      user_id TEXT REFERENCES cms_users(id) ON DELETE SET NULL,
+      actor_name TEXT NOT NULL,
+      action TEXT NOT NULL,
+      resource_type TEXT NOT NULL,
+      resource_id TEXT,
+      summary TEXT NOT NULL,
+      location TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    );
+    CREATE INDEX IF NOT EXISTS cms_audit_created ON cms_audit_log(created_at DESC);
+    CREATE TABLE IF NOT EXISTS cms_analytics_events (
+      id TEXT PRIMARY KEY,
+      event_type TEXT NOT NULL CHECK (event_type IN ('page_view', 'appointment_submit')),
+      page_path TEXT,
+      region TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    );
+    CREATE INDEX IF NOT EXISTS cms_analytics_created ON cms_analytics_events(created_at DESC, event_type);
     CREATE TABLE IF NOT EXISTS appointment_captcha_challenges (
       challenge_id TEXT PRIMARY KEY,
       answer INTEGER NOT NULL,
@@ -104,6 +135,16 @@ function openDatabase(): DatabaseSync {
       name TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('admin', 'editor', 'viewer')),
       password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    );
+    CREATE TABLE IF NOT EXISTS cms_login_challenges (
+      challenge_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES cms_users(id) ON DELETE CASCADE,
+      expires_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS cms_totp_recovery_codes (
+      code_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES cms_users(id) ON DELETE CASCADE,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
     CREATE TABLE IF NOT EXISTS cms_revisions (
@@ -175,6 +216,10 @@ function openDatabase(): DatabaseSync {
   addColumn("content", "seo_robots", "TEXT");
   addColumn("content", "scheduled_publish_at", "TEXT");
   addColumn("cms_sessions", "user_id", "TEXT REFERENCES cms_users(id) ON DELETE CASCADE");
+  addColumn("cms_users", "totp_secret_enc", "TEXT");
+  addColumn("cms_users", "totp_pending_secret_enc", "TEXT");
+  addColumn("cms_users", "totp_pending_at", "TEXT");
+  addColumn("cms_users", "totp_last_counter", "INTEGER NOT NULL DEFAULT -1");
   addColumn("cms_home_sections", "group_name", "TEXT NOT NULL DEFAULT 'custom'");
   database.exec("CREATE INDEX IF NOT EXISTS cms_url_redirects_content ON cms_url_redirects(content_id)");
   addColumn("cms_home_sections", "position", "INTEGER NOT NULL DEFAULT 0");
@@ -816,6 +861,9 @@ export function listContent(options: {
 }
 
 function publishDueContent(database: DatabaseSync): void {
+  database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
+  database.prepare("DELETE FROM cms_analytics_events WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
+  database.prepare("DELETE FROM cms_audit_log WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
   database.prepare(`
     UPDATE content SET status = 'published', published_at = COALESCE(published_at, scheduled_publish_at),
       scheduled_publish_at = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')

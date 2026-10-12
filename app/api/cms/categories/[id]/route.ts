@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { canEditCms, isCmsAdmin } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
+import { canEditCms, getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { findCategory, getCmsDatabase } from "@/lib/cms-db";
 import { parseCategoryInput } from "@/lib/cms-validation";
 
@@ -23,6 +24,7 @@ export async function PATCH(
   }
   try {
     getCmsDatabase().prepare("UPDATE categories SET name = ?, slug = ? WHERE id = ?").run(input.name, input.slug, id);
+    recordCmsAudit(await getCmsUserId(), request, "category.update", "category", id, `Updated category “${input.name}”.`);
     return NextResponse.json({ data: findCategory(id) });
   } catch (error) {
     if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
@@ -33,7 +35,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!await canEditCms()) {
@@ -50,6 +52,7 @@ export async function DELETE(
   }
   try {
     getCmsDatabase().prepare("DELETE FROM categories WHERE id = ?").run(id);
+    recordCmsAudit(await getCmsUserId(), request, "category.delete", "category", id, `Deleted category “${category.name}”.`);
     return NextResponse.json({ data: { deleted: true } });
   } catch (error) {
     if (error instanceof Error && error.message.includes("FOREIGN KEY constraint failed")) {

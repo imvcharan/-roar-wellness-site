@@ -1,5 +1,6 @@
 import { randomBytes, scryptSync } from "node:crypto";
 import { NextResponse } from "next/server";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsSessionId, getCmsUserId, verifyPassword } from "@/lib/cms-auth";
 import { getCmsDatabase } from "@/lib/cms-db";
 
@@ -23,5 +24,6 @@ export async function POST(request: Request) {
   database.prepare("UPDATE cms_users SET password_hash = ? WHERE id = ?").run(`${salt}:${hash}`, userId);
   const sessionId = await getCmsSessionId();
   database.prepare("DELETE FROM cms_sessions WHERE user_id = ? AND session_id != ?").run(userId, sessionId);
+  recordCmsAudit(userId, request, "auth.password", "account", userId, "Changed account password and signed out other sessions.");
   return NextResponse.json({ data: { updated: true } });
 }

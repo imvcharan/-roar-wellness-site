@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import sharp from "sharp";
-import { canEditCms } from "@/lib/cms-auth";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { getCmsMediaDirectory, getCmsMediaFilePath } from "@/lib/cms-media-storage";
 
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
     }
     throw error;
   }
+  recordCmsAudit(await getCmsUserId(), request, "media.upload", "media", id, `Uploaded image “${filename}”.`);
   return NextResponse.json({
     data: { id, filename, url, mime_type: "image/webp", size: output.length, width: dimensions.width, height: dimensions.height },
   }, { status: 201 });

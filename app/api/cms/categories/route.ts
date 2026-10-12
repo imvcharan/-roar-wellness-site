@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { canEditCms } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
+import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
 import { getCmsDatabase, listCategories } from "@/lib/cms-db";
 import { parseCategoryInput } from "@/lib/cms-validation";
 
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
     getCmsDatabase()
       .prepare("INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)")
       .run(id, category.name, category.slug);
+    recordCmsAudit(await getCmsUserId(), request, "category.create", "category", id, `Created category “${category.name}”.`);
     return NextResponse.json({ data: listCategories().find((item) => item.id === id) }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {

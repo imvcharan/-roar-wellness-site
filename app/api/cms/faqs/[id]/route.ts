@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { canEditCms, isCmsAdmin } from "@/lib/cms-auth";
+import { canEditCms, getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 
 export const runtime = "nodejs";
@@ -18,13 +19,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const result = getCmsDatabase().prepare("UPDATE cms_faqs SET question = ?, answer = ?, status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?")
     .run(data.question.trim(), data.answer.trim(), data.status, id);
   if (!result.changes) return NextResponse.json({ error: "FAQ not found." }, { status: 404 });
+  recordCmsAudit(await getCmsUserId(), request, "faq.update", "faq", id, `Updated FAQ “${data.question.trim()}” (${data.status}).`);
   return NextResponse.json({ data: getCmsDatabase().prepare("SELECT * FROM cms_faqs WHERE id = ?").get(id) });
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required to delete FAQs." }, { status: 403 });
   const { id } = await params;
   const result = getCmsDatabase().prepare("DELETE FROM cms_faqs WHERE id = ?").run(id);
   if (!result.changes) return NextResponse.json({ error: "FAQ not found." }, { status: 404 });
+  recordCmsAudit(await getCmsUserId(), request, "faq.delete", "faq", id, "Deleted an FAQ.");
   return NextResponse.json({ data: { deleted: true } });
 }

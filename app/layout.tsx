@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/lora";
 import { QueryProvider } from "@/lib/query-client";
+import { AnalyticsConsent } from "@/components/site/AnalyticsConsent";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function RootLayout({
       <body className="antialiased">
         <QueryProvider>
           {children}
+          <AnalyticsConsent />
         </QueryProvider>
       </body>
     </html>

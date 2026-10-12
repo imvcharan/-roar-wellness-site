@@ -2,13 +2,14 @@ import { existsSync } from "node:fs";
 import { unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
-import { isCmsAdmin } from "@/lib/cms-auth";
+import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { getCmsMediaFilePath } from "@/lib/cms-media-storage";
 
 export const runtime = "nodejs";
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required to delete media." }, { status: 403 });
   const { id } = await params;
   const database = getCmsDatabase();
@@ -36,5 +37,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     : urlPath === `/uploads/${id}.webp` ? legacyPath : storagePath;
   await unlink(filePath);
   database.prepare("DELETE FROM cms_media WHERE id = ?").run(id);
+  recordCmsAudit(await getCmsUserId(), request, "media.delete", "media", id, "Deleted an image from the media library.");
   return NextResponse.json({ data: { deleted: true } });
 }

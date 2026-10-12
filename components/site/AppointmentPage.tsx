@@ -41,8 +41,8 @@ export function AppointmentPage() {
           <p className="appointment-eyebrow">Schedule</p>
           <h1 id="appointment-title">Book your appointment</h1>
           <p className="appointment-intro">Tell us a little about what you’re looking for. Our team will reach out privately to talk through the next step.</p>
-          <AppointmentRequestForm contactEmail={contactEmail} />
-          <p className="appointment-form-note">Your email app will open with your request ready to send. Our team will follow up to confirm a suitable time.</p>
+          <AppointmentRequestForm />
+          <p className="appointment-form-note">Your request is sent to our team. Only your contact details are collected; please don’t share health information here.</p>
           <div className="appointment-contact-links">
             <a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`}><Phone size={15} aria-hidden="true" />{contactPhone}</a>
             <a href={`mailto:${contactEmail}`}><Mail size={15} aria-hidden="true" />{contactEmail}</a>

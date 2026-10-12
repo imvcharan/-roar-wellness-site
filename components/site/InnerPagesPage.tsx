@@ -889,7 +889,7 @@ export default function InnerPagesPage({
                   <p className="eyebrow">A thoughtful next step</p>
                   <h2 id="blog-appointment-title">Request an appointment</h2>
                   <p className="blog-appointment-intro">Share a few details and our team will get in touch privately.</p>
-                  <AppointmentRequestForm contactEmail={contactEmail} />
+                  <AppointmentRequestForm />
                 </section> : selectedKind === "service" ? <div className="service-category-sidebar-grid">
                   {serviceCategoryRecommendations.map((category) => <nav className="detail-sidebar-card detail-related" key={category.slug} aria-label={`Related ${category.label.toLowerCase()}`}>
                     <p className="eyebrow">Keep exploring</p>
@@ -940,11 +940,13 @@ export default function InnerPagesPage({
   return (
     <main className={listingKind === "services" ? "content-archive content-archive-services" : "content-archive content-archive-all"}>
       {listingKind === "services" ? <>
-        <header className="services-hero site-container">
-          <p className="services-hero-kicker">Services</p>
-          <h1>Rooted in <em>wellness</em></h1>
-          <p className="services-hero-intro">Thoughtful support for recovery, therapy, and mental wellbeing — shaped around you.</p>
-          <a className="services-hero-scroll" href="#browse-services" aria-label="Explore our services">↓</a>
+        <header className="page-hero-band">
+          <div className="page-hero-inner site-container">
+            <p className="page-hero-kicker">Services</p>
+            <h1 className="page-hero-title">Rooted in <em>wellness</em></h1>
+            <p className="page-hero-description">Thoughtful support for recovery, therapy, and mental wellbeing — shaped around you.</p>
+            <a className="services-hero-scroll" href="#browse-services" aria-label="Explore our services">↓</a>
+          </div>
         </header>
 
         <div className="services-divider" aria-hidden="true"><span>+</span></div>

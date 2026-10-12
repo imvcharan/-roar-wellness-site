@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { canEditCms } from "@/lib/cms-auth";
+import { recordCmsAudit } from "@/lib/cms-audit";
+import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
 import { findCategory, findContentById, getCmsDatabase, recordContentRevision } from "@/lib/cms-db";
 import { getCmsContentHref, isPageCategory } from "@/lib/cms-routes";
 import { isReservedCmsPageSlug } from "@/lib/cms-validation";
@@ -7,11 +8,12 @@ import { isReservedCmsPageSlug } from "@/lib/cms-validation";
 export const runtime = "nodejs";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string; revisionId: string }> },
 ) {
   if (!await canEditCms()) return NextResponse.json({ error: "Editor access is required to restore revisions." }, { status: 403 });
   const { id, revisionId } = await params;
+  const restoringUser = await getCmsUserId();
   const database = getCmsDatabase();
   const revision = database.prepare("SELECT snapshot FROM cms_revisions WHERE id = ? AND content_id = ?")
     .get(revisionId, id) as { snapshot: string } | undefined;
@@ -71,5 +73,6 @@ export async function POST(
     }
     throw error;
   }
+  recordCmsAudit(restoringUser, request, "content.restore", "content", id, `Restored a previous version of “${snapshot.title}”.`);
   return NextResponse.json({ data: findContentById(id) });
 }
