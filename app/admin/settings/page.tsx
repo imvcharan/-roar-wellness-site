@@ -141,6 +141,7 @@ export default function SettingsPage() {
   };
 
   const downloadBackup = async () => {
+    if (!window.confirm("Download a full backup containing enquiry contact details, staff activity, and analytics events? Store the file in encrypted, access-controlled storage.")) return;
     try {
       const response = await fetch("/api/cms/backup", { cache: "no-store" });
       if (!response.ok) throw new Error((await response.json()).error || "Backup download failed.");
@@ -157,10 +158,13 @@ export default function SettingsPage() {
 
   const restoreBackup = async () => {
     if (!importText.trim()) { setError("Select a JSON backup or paste a PHP CMS content export first."); return; }
-    if (!window.confirm("Restore/import this JSON? A Roar CMS backup replaces all CMS content, FAQs, settings, and media records. Legacy CMS imports are merged. Export a backup first.")) return;
     try {
       const payload: unknown = JSON.parse(importText);
       const isBackup = typeof payload === "object" && payload !== null && "format" in payload && payload.format === "roar-cms-backup";
+      const confirmMessage = isBackup
+        ? "Restore this full backup? It replaces current CMS content, enquiries, analytics events, staff activity, settings, and media records. CMS accounts and active sessions are excluded. Export a backup first."
+        : "Import this legacy CMS export? Legacy content imports are merged. Export a backup first.";
+      if (!window.confirm(confirmMessage)) return;
       const response = await cmsRequest<{ data: { restored?: boolean; imported?: number } }>(
         isBackup ? "/api/cms/backup" : "/api/cms/import",
         { method: "POST", body: JSON.stringify(payload) },
@@ -308,7 +312,8 @@ export default function SettingsPage() {
         open={activePanel === "backup"}
         onToggle={() => setActivePanel(activePanel === "backup" ? null : "backup")}
       >
-        <p className="mt-1 text-sm text-cms-muted">Backups include content, categories, FAQs, site settings, media files, and revision history. Import WordPress or legacy CMS JSON exports containing `pages`, `posts`, `services`, `content`, or `items` arrays.</p>
+        <p className="mt-1 text-sm text-cms-muted">Full backups include content, revision history, media, enquiry contact details, staff activity, and anonymous analytics events. CMS accounts and active sessions are excluded. Import WordPress or legacy CMS JSON exports containing `pages`, `posts`, `services`, `content`, or `items` arrays.</p>
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Backups are downloaded manually; they are not encrypted or stored off-site automatically. Protect each file in encrypted, access-controlled storage and keep the CMS secrets separately.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button type="button" onClick={() => void downloadBackup()}>Download full backup</Button>
           <label className="cursor-pointer rounded-lg border border-cms-border px-4 py-2 font-medium text-cms-text">

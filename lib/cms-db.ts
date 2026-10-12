@@ -100,6 +100,8 @@ function openDatabase(): DatabaseSync {
       phone TEXT NOT NULL,
       source TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'scheduled', 'closed')),
+      assigned_user_id TEXT REFERENCES cms_users(id) ON DELETE SET NULL,
+      follow_up_at TEXT,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
@@ -129,6 +131,12 @@ function openDatabase(): DatabaseSync {
       answer INTEGER NOT NULL,
       expires_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS cms_rate_limits (
+      key TEXT PRIMARY KEY,
+      hits INTEGER NOT NULL,
+      window_started_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS cms_rate_limits_window ON cms_rate_limits(window_started_at);
     CREATE TABLE IF NOT EXISTS cms_users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -216,6 +224,8 @@ function openDatabase(): DatabaseSync {
   addColumn("content", "seo_robots", "TEXT");
   addColumn("content", "scheduled_publish_at", "TEXT");
   addColumn("cms_sessions", "user_id", "TEXT REFERENCES cms_users(id) ON DELETE CASCADE");
+  addColumn("cms_enquiries", "assigned_user_id", "TEXT REFERENCES cms_users(id) ON DELETE SET NULL");
+  addColumn("cms_enquiries", "follow_up_at", "TEXT");
   addColumn("cms_users", "totp_secret_enc", "TEXT");
   addColumn("cms_users", "totp_pending_secret_enc", "TEXT");
   addColumn("cms_users", "totp_pending_at", "TEXT");

@@ -10,7 +10,7 @@ import { getCmsMediaDirectory, getCmsMediaFilePath, isCmsMediaId } from "@/lib/c
 
 export const runtime = "nodejs";
 
-const backupVersion = 1;
+const backupVersion = 2;
 
 export async function GET(request: Request) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
@@ -47,6 +47,9 @@ export async function GET(request: Request) {
     urlRedirects: database.prepare("SELECT source_path, content_id, created_at FROM cms_url_redirects").all(),
     media,
     mediaFiles,
+    enquiries: database.prepare("SELECT id, name, email, phone, source, status, assigned_user_id, follow_up_at, created_at, updated_at FROM cms_enquiries").all(),
+    auditLog: database.prepare("SELECT id, actor_name, action, resource_type, resource_id, summary, location, created_at FROM cms_audit_log").all(),
+    analyticsEvents: database.prepare("SELECT id, event_type, page_path, created_at FROM cms_analytics_events").all(),
   };
   recordCmsAudit(await getCmsUserId(), request, "backup.export", "backup", null, "Downloaded a CMS content backup.");
   return new NextResponse(JSON.stringify(payload, null, 2), {
@@ -70,10 +73,12 @@ export async function POST(request: Request) {
   }
   if (!backup || typeof backup !== "object" || Array.isArray(backup)) return NextResponse.json({ error: "Backup must be a JSON object." }, { status: 400 });
   const data = backup as Record<string, unknown>;
-  if (data.format !== "roar-cms-backup" || data.version !== backupVersion
+  if (data.format !== "roar-cms-backup" || (data.version !== 1 && data.version !== backupVersion)
     || !Array.isArray(data.categories) || !Array.isArray(data.content)
     || !Array.isArray(data.faqs) || !Array.isArray(data.settings)
-    || !Array.isArray(data.media) || !Array.isArray(data.mediaFiles)) {
+    || !Array.isArray(data.media) || !Array.isArray(data.mediaFiles)
+    || (data.version === backupVersion && (!Array.isArray(data.enquiries)
+      || !Array.isArray(data.auditLog) || !Array.isArray(data.analyticsEvents)))) {
     return NextResponse.json({ error: "Unsupported backup format or version." }, { status: 400 });
   }
 
@@ -121,6 +126,9 @@ export async function POST(request: Request) {
   const homeSections = Array.isArray(data.homeSections) ? data.homeSections as Record<string, unknown>[] : [];
   const revisions = Array.isArray(data.revisions) ? data.revisions as Record<string, unknown>[] : [];
   const urlRedirects = Array.isArray(data.urlRedirects) ? data.urlRedirects as Record<string, unknown>[] : [];
+  const enquiries = Array.isArray(data.enquiries) ? data.enquiries as Record<string, unknown>[] : [];
+  const auditLog = Array.isArray(data.auditLog) ? data.auditLog as Record<string, unknown>[] : [];
+  const analyticsEvents = Array.isArray(data.analyticsEvents) ? data.analyticsEvents as Record<string, unknown>[] : [];
   const media = data.media as Record<string, unknown>[];
   const text = (value: unknown, fallback: string | null = null): string | null =>
     typeof value === "string" ? value : fallback;
@@ -140,6 +148,9 @@ export async function POST(request: Request) {
   try {
     database.exec("BEGIN IMMEDIATE");
     database.exec("DELETE FROM cms_revisions; DELETE FROM cms_url_redirects; DELETE FROM content; DELETE FROM categories WHERE is_default = 0;");
+    if (data.version === backupVersion) {
+      database.exec("DELETE FROM cms_enquiries; DELETE FROM cms_audit_log; DELETE FROM cms_analytics_events;");
+    }
   } catch (error) {
     if (database.isTransaction) database.exec("ROLLBACK");
     await Promise.all(written.map(async (path) => { const { unlink } = await import("node:fs/promises"); await unlink(path); }));
@@ -147,6 +158,14 @@ export async function POST(request: Request) {
   }
   try {
     database.exec("DELETE FROM cms_faqs; DELETE FROM cms_settings; DELETE FROM cms_home_sections; DELETE FROM cms_media;");
+    const enquiryStatement = database.prepare(`INSERT INTO cms_enquiries
+      (id, name, email, phone, source, status, assigned_user_id, follow_up_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    const auditStatement = database.prepare(`INSERT INTO cms_audit_log
+      (id, user_id, actor_name, action, resource_type, resource_id, summary, location, created_at)
+      VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?)`);
+    const analyticsStatement = database.prepare(`INSERT INTO cms_analytics_events
+      (id, event_type, page_path, created_at) VALUES (?, ?, ?, ?)`);
     const restoredCategories = new Set<string>();
     const restoredContent = new Set<string>();
     for (const row of categories) {
@@ -191,6 +210,43 @@ export async function POST(request: Request) {
       if (typeof row.id !== "string" || !isCmsMediaId(row.id) || typeof row.url !== "string" || typeof row.filename !== "string") throw new Error("Backup contains invalid media metadata.");
       statements.media.run(row.id, row.filename, row.url, text(row.mime_type, "image/webp"), number(row.size), number(row.width), number(row.height), text(row.created_at, new Date().toISOString()));
     }
+    for (const row of enquiries) {
+      if (typeof row.id !== "string" || typeof row.name !== "string" || row.name.length > 120
+        || typeof row.email !== "string" || row.email.length > 254
+        || typeof row.phone !== "string" || row.phone.length > 40
+        || (row.source !== "appointment" && row.source !== "contact")
+        || (row.status !== "new" && row.status !== "contacted" && row.status !== "scheduled" && row.status !== "closed")
+        || (row.assigned_user_id !== null && row.assigned_user_id !== undefined && typeof row.assigned_user_id !== "string")
+        || (row.follow_up_at !== null && row.follow_up_at !== undefined
+          && (typeof row.follow_up_at !== "string" || !Number.isFinite(Date.parse(row.follow_up_at))))) {
+        throw new Error("Backup contains an invalid enquiry.");
+      }
+      const assignedUserId = typeof row.assigned_user_id === "string"
+        && database.prepare("SELECT 1 FROM cms_users WHERE id = ? AND role = 'admin'").get(row.assigned_user_id)
+        ? row.assigned_user_id : null;
+      enquiryStatement.run(row.id, row.name, row.email, row.phone, row.source, row.status, assignedUserId,
+        text(row.follow_up_at), text(row.created_at, new Date().toISOString()), text(row.updated_at, new Date().toISOString()));
+    }
+    for (const row of auditLog) {
+      if (typeof row.id !== "string" || typeof row.actor_name !== "string" || row.actor_name.length > 120
+        || typeof row.action !== "string" || row.action.length > 80
+        || typeof row.resource_type !== "string" || row.resource_type.length > 80
+        || typeof row.summary !== "string" || row.summary.length > 300
+        || (row.resource_id !== null && row.resource_id !== undefined && typeof row.resource_id !== "string")
+        || (row.location !== null && row.location !== undefined && typeof row.location !== "string")) {
+        throw new Error("Backup contains an invalid staff activity record.");
+      }
+      auditStatement.run(row.id, row.actor_name, row.action, row.resource_type, text(row.resource_id), row.summary,
+        text(row.location), text(row.created_at, new Date().toISOString()));
+    }
+    for (const row of analyticsEvents) {
+      if (typeof row.id !== "string" || (row.event_type !== "page_view" && row.event_type !== "appointment_submit")
+        || (row.page_path !== null && row.page_path !== undefined && (typeof row.page_path !== "string" || row.page_path.length > 200
+          || !row.page_path.startsWith("/") || row.page_path.startsWith("//") || row.page_path.includes("?") || row.page_path.includes("#")))) {
+        throw new Error("Backup contains an invalid analytics event.");
+      }
+      analyticsStatement.run(row.id, row.event_type, text(row.page_path), text(row.created_at, new Date().toISOString()));
+    }
     database.exec("COMMIT");
   } catch (error) {
     database.exec("ROLLBACK");
@@ -198,5 +254,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Backup restore failed." }, { status: 400 });
   }
   recordCmsAudit(await getCmsUserId(), request, "backup.restore", "backup", null, `Restored backup with ${content.length} content items.`);
-  return NextResponse.json({ data: { restored: true, categories: categories.length, content: content.length, revisions: revisions.length, faqs: faqs.length } });
+  return NextResponse.json({ data: {
+    restored: true,
+    categories: categories.length,
+    content: content.length,
+    revisions: revisions.length,
+    faqs: faqs.length,
+    enquiries: enquiries.length,
+    auditEvents: auditLog.length,
+    analyticsEvents: analyticsEvents.length,
+  } });
 }

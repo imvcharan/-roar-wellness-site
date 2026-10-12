@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { consumeAppointmentCaptcha } from "@/lib/appointment-captcha";
 import { getCmsDatabase } from "@/lib/cms-db";
+import { consumeCmsRateLimit } from "@/lib/cms-rate-limit";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,13 @@ export async function POST(request: Request) {
   }
   if (!consumeAppointmentCaptcha(data.token, data.answer)) {
     return NextResponse.json({ error: "The verification answer was incorrect or expired. Please try a new question." }, { status: 400, headers: noStore });
+  }
+  const rateLimit = consumeCmsRateLimit("appointment-submit", data.email.trim().toLowerCase(), 3, 15 * 60);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests were submitted from this email address. Please wait before trying again." },
+      { status: 429, headers: { ...noStore, "Retry-After": String(rateLimit.retryAfterSeconds) } },
+    );
   }
 
   const database = getCmsDatabase();

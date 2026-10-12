@@ -9,6 +9,7 @@ import {
 } from "@/lib/cms-auth";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { consumeTotpRecoveryCode, decryptTotpSecret, matchTotpCounter } from "@/lib/cms-totp";
+import { clearCmsRateLimit, consumeCmsRateLimit, getCmsRateLimitKey } from "@/lib/cms-rate-limit";
 
 export const runtime = "nodejs";
 
@@ -28,14 +29,29 @@ export async function POST(request: Request) {
   if (typeof password !== "string" || password.length > 1024) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   }
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  const rateLimit = consumeCmsRateLimit("cms-login", normalizedEmail, 8, 15 * 60);
+  const logFailedSignIn = () => {
+    if (rateLimit.hits === 1 || rateLimit.hits === 9) {
+      recordCmsAudit(null, request, "auth.login.failed", "session", getCmsRateLimitKey("cms-login", normalizedEmail), "Failed CMS sign-in attempt.");
+    }
+  };
+  if (!rateLimit.allowed) {
+    logFailedSignIn();
+    return NextResponse.json(
+      { error: "Too many sign-in attempts. Please wait before trying again." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds), "Cache-Control": "no-store" } },
+    );
+  }
 
   const user = getCmsDatabase()
     .prepare("SELECT id, email, name, role, password_hash, totp_secret_enc, totp_last_counter FROM cms_users WHERE email = ? COLLATE NOCASE")
-    .get(typeof email === "string" ? email.trim() : "") as {
+    .get(normalizedEmail) as {
       id: string; email: string; name: string; role: string; password_hash: string;
       totp_secret_enc: string | null; totp_last_counter: number;
     } | undefined;
   if (!user || !verifyPassword(password, user.password_hash)) {
+    logFailedSignIn();
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
@@ -54,12 +70,14 @@ export async function POST(request: Request) {
       RETURNING expires_at
     `).get(createHash("sha256").update(challengeToken).digest("hex"), user.id) as { expires_at: number } | undefined;
     if (!challengeRow || challengeRow.expires_at <= Math.floor(Date.now() / 1000)) {
+      logFailedSignIn();
       return NextResponse.json({ error: "The sign-in verification expired. Enter your password again." }, { status: 401 });
     }
     const secret = decryptTotpSecret(user.totp_secret_enc);
     const counter = matchTotpCounter(secret, totpCode);
     const validTotp = counter !== null && Number(counter) > user.totp_last_counter;
     if (!validTotp && !consumeTotpRecoveryCode(user.id, totpCode)) {
+      logFailedSignIn();
       return NextResponse.json({ error: "The authenticator or recovery code is invalid or already used." }, { status: 401 });
     }
     if (validTotp) database.prepare("UPDATE cms_users SET totp_last_counter = ? WHERE id = ?").run(Number(counter), user.id);
@@ -68,6 +86,7 @@ export async function POST(request: Request) {
   }
 
   const session = createCmsSession(user.id);
+  clearCmsRateLimit("cms-login", normalizedEmail);
   recordCmsAudit(user.id, request, "auth.login", "session", null, "Signed in to the CMS.");
   const response = NextResponse.json({ data: { requiresMfa: false, user: { id: user.id, email: user.email, name: user.name, role: user.role } } });
   response.cookies.set(cmsSessionCookieName(), session.token, {

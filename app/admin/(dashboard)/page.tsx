@@ -34,6 +34,8 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [newEnquiries, setNewEnquiries] = useState(0);
+  const [overdueFollowUps, setOverdueFollowUps] = useState(0);
+  const [unassignedEnquiries, setUnassignedEnquiries] = useState(0);
   const [activities, setActivities] = useState<CmsOverviewActivity[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -50,10 +52,12 @@ export default function AdminOverviewPage() {
       setIsAdmin(admin);
       if (admin) {
         const [enquiriesResult, activityResult] = await Promise.all([
-          cmsRequest<{ data: { status: string }[] }>("/api/cms/enquiries"),
+          cmsRequest<{ summary: { new: number; overdue: number; unassigned: number } }>("/api/cms/enquiries?summary=1"),
           cmsRequest<{ data: CmsOverviewActivity[] }>("/api/cms/activity?limit=5"),
         ]);
-        setNewEnquiries(enquiriesResult.data.filter((item) => item.status === "new").length);
+        setNewEnquiries(enquiriesResult.summary.new);
+        setOverdueFollowUps(enquiriesResult.summary.overdue);
+        setUnassignedEnquiries(enquiriesResult.summary.unassigned);
         setActivities(activityResult.data);
       }
     } catch (loadError) {
@@ -186,7 +190,7 @@ export default function AdminOverviewPage() {
         </section>
         {isAdmin && <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
           <div className="flex items-center justify-between border-b border-cms-border px-5 py-4">
-            <div><h2 className="font-semibold text-cms-text">New enquiries</h2><p className="mt-1 text-sm text-cms-muted">{newEnquiries} request{newEnquiries === 1 ? "" : "s"} need follow-up.</p></div>
+            <div><h2 className="font-semibold text-cms-text">Enquiry follow-up</h2><p className="mt-1 text-sm text-cms-muted">{newEnquiries} new · {unassignedEnquiries} unassigned · {overdueFollowUps} overdue.</p></div>
             <Mail size={18} className="text-cms-primary" />
           </div>
           <div className="p-5">
