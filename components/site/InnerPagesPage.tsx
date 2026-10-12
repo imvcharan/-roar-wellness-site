@@ -12,6 +12,8 @@ import { AppointmentRequestForm } from "@/components/site/AppointmentRequestForm
 import { AboutPage } from "@/components/site/AboutPage";
 import { ContactSection } from "@/components/site/ContactSection";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
+import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
+import { galleryImages } from "@/lib/gallery-images";
 import { getYouTubeVideos } from "@/lib/youtube-videos";
 
 interface CmsItem {
@@ -941,6 +943,7 @@ export default function InnerPagesPage({
     const isVideosPage = selectedItem?.slug === "videos";
     const isExpertsPage = selectedSlug.toLowerCase() === "drug-alcohol-rehabilitation-experts";
     const isAboutPage = selectedSlug === "about-roarwellness";
+    const isFacilityPage = selectedSlug.toLowerCase() === "facility";
     const isTwelveStepPage = selectedSlug.toLowerCase() === "12-step-program-delhi";
     const isAaQuestionsPage = selectedSlug.toLowerCase() === "aa-20-questions";
     const summary = isExpertsPage
@@ -1065,10 +1068,10 @@ export default function InnerPagesPage({
           {breadcrumb}
 
           <div className="site-container px-5">
-            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""} mt-10 md:mt-14`}>
-              {selectedKind === "service" && <aside className="service-detail-left" aria-label="On this page and care approach">
+            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" || isFacilityPage ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""}${isFacilityPage ? " detail-facility-layout" : ""} mt-10 md:mt-14`}>
+              {(selectedKind === "service" || isFacilityPage) && <aside className="service-detail-left" aria-label={isFacilityPage ? "Facility guide and stay" : "On this page and care approach"}>
                 {serviceHeadings.length > 0 && <nav className="service-toc-card" aria-label="On this page">
-                  <p className="eyebrow">Explore this guide</p>
+                  <p className="eyebrow">{isFacilityPage ? "Explore the facility" : "Explore this guide"}</p>
                   <h2>On this page</h2>
                   <ol>{serviceHeadings.map((heading, index) => <li key={heading.id}>
                     <a href={`#${encodeURIComponent(heading.id)}`}><span>{String(index + 1).padStart(2, "0")}</span>{heading.title}</a>
@@ -1076,12 +1079,18 @@ export default function InnerPagesPage({
                 </nav>}
 
                 <section className="service-path-card" aria-labelledby="service-path-title">
-                  <p className="eyebrow">Our approach</p>
-                  <h2 id="service-path-title">Care, one step at a time</h2>
+                  <p className="eyebrow">{isFacilityPage ? "A supportive stay" : "Our approach"}</p>
+                  <h2 id="service-path-title">{isFacilityPage ? "Space to settle and reconnect" : "Care, one step at a time"}</h2>
                   <ol>
-                    <li><span>01</span><div><strong>Listen</strong><p>We begin with your story.</p></div></li>
-                    <li><span>02</span><div><strong>Plan</strong><p>Explore options together.</p></div></li>
-                    <li><span>03</span><div><strong>Support</strong><p>Move forward at your pace.</p></div></li>
+                    {isFacilityPage ? <>
+                      <li><span>01</span><div><strong>Arrive</strong><p>A calm, welcoming place to begin.</p></div></li>
+                      <li><span>02</span><div><strong>Settle</strong><p>Comfortable spaces for everyday care.</p></div></li>
+                      <li><span>03</span><div><strong>Reconnect</strong><p>Room to restore healthy routines.</p></div></li>
+                    </> : <>
+                      <li><span>01</span><div><strong>Listen</strong><p>We begin with your story.</p></div></li>
+                      <li><span>02</span><div><strong>Plan</strong><p>Explore options together.</p></div></li>
+                      <li><span>03</span><div><strong>Support</strong><p>Move forward at your pace.</p></div></li>
+                    </>}
                   </ol>
                   <div className="service-path-orbit" aria-hidden="true"><span /><span /><span /></div>
                 </section>
@@ -1118,7 +1127,7 @@ export default function InnerPagesPage({
                     centerMedia={selectedKind === "blog" || selectedKind === "service"}
                     inlineCta={selectedKind === "service"}
                     blogHelpline={selectedKind === "blog"}
-                    onHeadings={selectedKind === "service" ? setServiceHeadings : undefined}
+                    onHeadings={selectedKind === "service" || isFacilityPage ? setServiceHeadings : undefined}
                   />}
               </article>
 
@@ -1135,6 +1144,27 @@ export default function InnerPagesPage({
                     <span className="therapy-infographic-point therapy-infographic-point-three">Grow</span>
                   </div>
                   <p className="therapy-infographic-caption">Personalised care, grounded in connection and compassion.</p>
+                </section>}
+
+                {isFacilityPage && <section className="detail-sidebar-card facility-detail-card" aria-labelledby="facility-detail-card-title">
+                  <p className="eyebrow">Inside Roar Wellness</p>
+                  <h2 id="facility-detail-card-title">Explore our facility</h2>
+                  <GalleryLightbox images={galleryImages}>
+                    <div className="facility-detail-gallery">
+                      {galleryImages.map((image, index) => (
+                        <button
+                          key={image}
+                          type="button"
+                          className="facility-detail-gallery-item"
+                          data-gallery-index={index}
+                          aria-label={`Open facility photo ${index + 1}`}
+                        >
+                          <img src={image} alt={`Roar Wellness facility photo ${index + 1}`} loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
+                  </GalleryLightbox>
+                  <a className="detail-browse-link" href="/gallery/">Explore the facility gallery <span aria-hidden="true">→</span></a>
                 </section>}
 
                 {selectedKind === "blog" && relatedItems.length > 0 && <nav className="detail-sidebar-card blog-related-card" aria-labelledby="blog-related-title">

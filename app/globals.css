@@ -1061,6 +1061,7 @@
   .cms-page-content ul { list-style: disc; }
   .cms-page-content ol { list-style: decimal; }
   .cms-page-content li { margin: .3rem 0; text-align: justify !important; text-align-last: start; text-justify: inter-word; }
+  .cms-page-content .bg-primary.h-1.mt-2.w-16:has(> ul, > ol) { width: 100% !important; height: auto !important; background: transparent; }
   .cms-page-content a { color: var(--color-terracotta); text-decoration: underline; text-underline-offset: .2em; }
   .cms-page-content img { max-width: 100%; height: auto; }
   .cms-centered-media figure.wp-block-image { display: table; float: none !important; clear: both; max-width: 100%; margin: 1.5rem auto !important; text-align: center; }
@@ -1103,6 +1104,7 @@
   .cms-page-content .elementor-widget-reviews .elementor-testimonial__text { margin: 2rem 0 0; color: var(--color-olive); font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.35; }
   .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem); align-items: start; gap: clamp(2rem, 5vw, 4rem); }
   .detail-layout.detail-service-layout { grid-template-columns: minmax(12rem, .78fr) minmax(0, 1.8fr) minmax(13rem, .88fr); gap: clamp(1rem, 2vw, 2rem); }
+  .detail-layout.detail-facility-layout { grid-template-columns: minmax(12rem, .78fr) minmax(0, 1.8fr) minmax(13rem, .88fr); gap: clamp(1rem, 2vw, 2rem); }
   .detail-layout-full { grid-template-columns: minmax(0, 1fr); }
   .detail-layout-full .detail-sidebar { position: static; }
   .detail-article { min-width: 0; }
@@ -1775,6 +1777,13 @@
   .therapy-infographic-point-two { right: -2%; bottom: 25%; }
   .therapy-infographic-point-three { bottom: 10%; left: 12%; }
   .therapy-infographic-caption { max-width: 22rem; margin: .75rem auto 0; color: rgb(81 72 63 / .75); font-size: .72rem; line-height: 1.55; text-align: center; }
+  .facility-detail-card { border-top: 3px solid #a1806e; background: #ede9dd; }
+  .facility-detail-card h2 { max-width: 14ch; }
+  .facility-detail-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; }
+  .facility-detail-gallery-item { position: relative; display: block; min-width: 0; aspect-ratio: 1.15; overflow: hidden; border: 1px solid rgb(81 72 63 / .12); background: #fffcf5; padding: 0; cursor: zoom-in; }
+  .facility-detail-gallery-item img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+  .facility-detail-gallery-item:hover img { transform: scale(1.05); }
+  .facility-detail-gallery-item:focus-visible { z-index: 1; outline: 2px solid #8d6b57; outline-offset: 2px; }
   .service-inline-cta { position: relative; display: flex; min-height: 0; align-items: center; overflow: hidden; isolation: isolate; margin: clamp(2rem, 4vw, 3.5rem) 0; background: #51483f url("/images/facility-open-space.webp") center 48% / cover no-repeat; padding: clamp(1.25rem, 2.5vw, 1.75rem); color: #fffcf5; }
   .service-inline-cta::before { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, rgb(36 31 28 / .88), rgb(36 31 28 / .68) 58%, rgb(36 31 28 / .24)); content: ""; }
   .service-inline-cta-copy { max-width: 31rem; }
@@ -1977,8 +1986,10 @@
   .footer-socials a { border-color: rgb(81 72 63 / .24); color: #51483f; }
   .footer-socials a:hover { border-color: #51483f; background: #51483f; color: #fffcf5; }
   @media (max-width: 1100px) {
-    .detail-layout.detail-service-layout { grid-template-columns: minmax(11rem, .72fr) minmax(0, 1.6fr); gap: 1.25rem; }
+    .detail-layout.detail-service-layout,
+    .detail-layout.detail-facility-layout { grid-template-columns: minmax(11rem, .72fr) minmax(0, 1.6fr); gap: 1.25rem; }
     .detail-service-layout .detail-sidebar { position: static; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .detail-facility-layout .detail-sidebar { position: static; grid-column: 1 / -1; }
     .header-desktop-links { display: none; }
     .site-nav { width: min(calc(100% - 1.25rem), 30rem); }
     .site-nav.is-mobile-open::before { position: fixed; z-index: -1; inset: -1rem calc((100vw - 100%) / -2); background: rgb(35 28 35 / .28); backdrop-filter: blur(2px); content: ""; }
@@ -2618,7 +2629,8 @@
     .mosaic-orbit-dot-5 { top: 50%; right: -6%; }
   }
   @media (max-width: 767px) {
-    .detail-layout.detail-service-layout { grid-template-columns: minmax(0, 1fr); }
+    .detail-layout.detail-service-layout,
+    .detail-layout.detail-facility-layout { grid-template-columns: minmax(0, 1fr); }
     .about-addiction-video { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
     .twelve-step-intro,
     .twelve-step-video { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
@@ -2635,7 +2647,8 @@
     .twelve-step-note { align-items: flex-start; flex-direction: column; }
     .substance-alcohol-panel { grid-template-columns: minmax(0, 1fr); }
     .substance-alcohol-signs { border-top: 1px solid rgb(81 72 63 / .16); border-left: 0; padding: 1rem 0 0; }
-    .detail-service-layout .detail-sidebar { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
+    .detail-service-layout .detail-sidebar,
+    .detail-facility-layout .detail-sidebar { grid-column: auto; grid-template-columns: minmax(0, 1fr); }
     .service-detail-left { position: static; }
     .service-inline-cta { min-height: 0; margin-block: 2rem; padding: 1rem; }
     .service-pagination-header { align-items: center; }
