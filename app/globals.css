@@ -198,10 +198,15 @@
     object-fit: cover;
     object-position: center 45%;
     filter: saturate(.76) brightness(.76);
-    transform: scale(1.06);
-    transition: transform 1.6s cubic-bezier(.22, .68, 0, 1), object-position 1.6s ease;
+    opacity: 0;
+    transform: scale(1.025);
+    transition: opacity 1.35s ease, transform 5.2s cubic-bezier(.22, .68, 0, 1);
   }
-  .home-theme .care-interlude-scene[data-step="1"] .care-interlude-image {
+  .home-theme .care-interlude-image.is-active {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  .home-theme .care-interlude-scene[data-step="1"] .care-interlude-image.is-active {
     object-position: center 54%;
     transform: scale(1.13);
   }
@@ -221,18 +226,33 @@
     overflow: hidden;
     border: 4px solid rgb(255 252 245 / .92);
     border-radius: .55rem;
-    opacity: .92;
+    box-shadow: 0 24px 70px rgb(20 16 13 / .26), 0 0 0 1px rgb(255 252 245 / .12);
     transform: translate(-50%, -50%);
     pointer-events: none;
   }
   .home-theme .care-interlude-frame-image {
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center 45%;
-    filter: saturate(.82) brightness(.72);
-    transform: scale(1.04);
+    filter: saturate(.86) brightness(.74);
+    opacity: 0;
+    transform: scale(1.025);
+    transition: opacity 1.35s ease, transform 5.2s cubic-bezier(.22, .68, 0, 1);
+  }
+  .home-theme .care-interlude-frame-image.is-active {
+    opacity: 1;
+    transform: scale(1.09);
+  }
+  .home-theme .care-interlude-frame::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(38 31 26 / .08), transparent 45%, rgb(38 31 26 / .16));
+    content: "";
+    pointer-events: none;
   }
   .home-theme .care-interlude-copy {
     position: absolute;
@@ -580,6 +600,7 @@
     .service-tile-description,
     .home-theme .services-browse-link > span:last-child,
     .home-theme .care-interlude-image,
+    .home-theme .care-interlude-frame-image,
     .home-theme .care-interlude-copy-side { transition: none; animation: none; }
   }
   .home-theme .approach-item { justify-content: flex-start; border: 0; border-radius: 0; background-color: #fffcf5; background-image: none !important; padding: .25rem 0 0; box-shadow: none; }
@@ -2079,8 +2100,8 @@
     .home-theme .care-interlude-frame { width: min(58vw, 20rem); height: 48vh; min-height: 20rem; border-width: 3px; }
     .home-theme .care-interlude-copy { grid-template-columns: 1fr; align-content: center; gap: .85rem; font-size: clamp(3.2rem, 12vw, 5rem); text-align: center; }
     .home-theme .care-interlude-copy-left, .home-theme .care-interlude-copy-right { padding: 0; text-align: center; }
-    .home-theme .care-interlude-image { object-position: 74% 42%; }
-    .home-theme .care-interlude-scene[data-step="1"] .care-interlude-image { object-position: 74% 50%; }
+    .home-theme .care-interlude-image.is-active { object-position: 74% 42%; }
+    .home-theme .care-interlude-scene[data-step="1"] .care-interlude-image.is-active { object-position: 74% 50%; }
     .home-theme .review-featured-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
     .home-theme .review-featured-quote { min-height: 17rem; padding: 1.1rem; }
     .home-theme .review-featured-quote blockquote { margin-bottom: 1.4rem; font-size: clamp(1rem, 3.5vw, 1.3rem); }

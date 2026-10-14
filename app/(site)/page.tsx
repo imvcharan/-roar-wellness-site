@@ -69,9 +69,21 @@ function servicePlaceholderImage(title: string, slug: string, category: string):
   return "/images/atlas-session.png";
 }
 
+const careInterludeImages = [
+  "/images/recovery-space-01.webp",
+  "/images/recovery-space-02.webp",
+  "/images/recovery-space-03.webp",
+  "/images/recovery-space-04.webp",
+  "/images/recovery-space-05.webp",
+  "/images/recovery-space-06.webp",
+  "/images/recovery-space-07.webp",
+];
+
 export default function Home() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [activeInterludeStep, setActiveInterludeStep] = useState(0);
+  const [careInterludeImageIndex, setCareInterludeImageIndex] = useState(0);
+  const [isCareInterludeVisible, setIsCareInterludeVisible] = useState(false);
   const [revealedApproachItems, setRevealedApproachItems] = useState<Set<number>>(() => new Set([0]));
   const [approachRevealReady, setApproachRevealReady] = useState(false);
   const approachStepsRef = useRef<HTMLDivElement>(null);
@@ -141,6 +153,25 @@ export default function Home() {
     section.querySelectorAll("[data-care-interlude-step]").forEach((step) => observer.observe(step));
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const section = careInterludeRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsCareInterludeVisible(entry.isIntersecting);
+    }, { threshold: 0.1 });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isCareInterludeVisible || reducedMotion || careInterludeImages.length < 2) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      setCareInterludeImageIndex((current) => (current + 1) % careInterludeImages.length);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [isCareInterludeVisible, reducedMotion]);
 
   const featuredServiceSlugs = [
     "alcohol-addiction",
@@ -451,10 +482,28 @@ export default function Home() {
 
       <section ref={careInterludeRef} className="care-interlude" aria-label="Care centered around you">
         <div className="care-interlude-scene" data-step={activeInterludeStep}>
-          <img src="/images/care-meditation.png" alt="A person meditating at sunrise beside a mountain lake" className="care-interlude-image" />
+          {careInterludeImages.map((image, index) => (
+            <img
+              key={image}
+              src={image}
+              alt=""
+              aria-hidden="true"
+              loading={index === 0 ? "eager" : "lazy"}
+              className={`care-interlude-image${index === careInterludeImageIndex ? " is-active" : ""}`}
+            />
+          ))}
           <span className="care-interlude-shade" aria-hidden="true" />
           <span className="care-interlude-frame" aria-hidden="true">
-            <img src="/images/care-meditation.png" alt="" className="care-interlude-frame-image" />
+            {careInterludeImages.map((image, index) => (
+              <img
+                key={image}
+                src={image}
+                alt=""
+                aria-hidden="true"
+                loading={index === 0 ? "eager" : "lazy"}
+                className={`care-interlude-frame-image${index === careInterludeImageIndex ? " is-active" : ""}`}
+              />
+            ))}
           </span>
           <h2 className="care-interlude-copy" aria-live="polite" aria-atomic="true">
             <span key={`left-${activeInterludeStep}`} className="care-interlude-copy-side care-interlude-copy-left">
