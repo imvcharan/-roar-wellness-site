@@ -55,10 +55,12 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
   );
 
   if (variant === "featured") {
-    const currentReview = reviews.length ? reviews[reviewIndex % reviews.length] : null;
+    const featuredPageCount = Math.ceil(reviews.length / 2);
+    const currentPage = featuredPageCount ? reviewIndex % featuredPageCount : 0;
+    const featuredReviews = reviews.slice(currentPage * 2, currentPage * 2 + 2);
     const moveReview = (offset: number) => {
-      if (!reviews.length) return;
-      setReviewIndex((current) => (current + offset + reviews.length) % reviews.length);
+      if (featuredPageCount < 2) return;
+      setReviewIndex((current) => (current + offset + featuredPageCount) % featuredPageCount);
     };
 
     return (
@@ -68,24 +70,35 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
             <p className="eyebrow">Testimonials</p>
             <h2>Healing through <em>their eyes</em></h2>
           </div>
-          {currentReview && (
+          {featuredReviews.length > 0 && (
             <div className="review-featured-layout" aria-live="polite">
-              <img
-                src={currentReview[2].replace(/i\.pravatar\.cc\/\d+/, "i.pravatar.cc/600")}
-                alt=""
-                className="review-featured-image"
-              />
-              <div className="review-featured-content">
-                <article className="review-featured-quote">
+              {featuredReviews.map(([name, quote, avatar]) => (
+                <article key={name} className="review-featured-quote">
                   <span className="review-featured-mark" aria-hidden="true">“</span>
-                  <blockquote>{currentReview[1]}</blockquote>
-                  <p className="review-featured-name">~ {currentReview[0]}</p>
+                  <blockquote>{quote}</blockquote>
+                  <div className="review-featured-author">
+                    <img src={avatar} alt="" className="review-featured-avatar" />
+                    <p className="review-featured-name">{name}</p>
+                  </div>
                 </article>
-                <div className="review-featured-controls" aria-label="Testimonial controls">
-                  <button type="button" onClick={() => moveReview(-1)} aria-label="Previous testimonial" disabled={reviews.length < 2}>←</button>
-                  <button type="button" onClick={() => moveReview(1)} aria-label="Next testimonial" disabled={reviews.length < 2}>→</button>
-                </div>
+              ))}
+            </div>
+          )}
+          {featuredPageCount > 0 && (
+            <div className="review-featured-controls" aria-label="Testimonial controls">
+              <button type="button" onClick={() => moveReview(-1)} aria-label="Previous testimonials" disabled={featuredPageCount < 2}>←</button>
+              <div className="review-featured-pagination" aria-label="Testimonial pages">
+                {Array.from({ length: featuredPageCount }, (_, page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    aria-label={`Show testimonial group ${page + 1}`}
+                    aria-current={page === currentPage ? "page" : undefined}
+                    onClick={() => setReviewIndex(page)}
+                  />
+                ))}
               </div>
+              <button type="button" onClick={() => moveReview(1)} aria-label="Next testimonials" disabled={featuredPageCount < 2}>→</button>
             </div>
           )}
         </div>

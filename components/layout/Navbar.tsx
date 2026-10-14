@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface NavigationLink {
@@ -108,7 +108,6 @@ const navigationLinks: NavigationLink[] = [
     ],
   },
   { label: "Contact Us", href: "/contact-us/" },
-  { label: "Click To Call", href: "tel:+919319977207" },
 ];
 
 function NavigationItem({
@@ -233,6 +232,12 @@ export function Navbar() {
   };
   const desktopLinks = navigationLinks.slice(0, 5);
   const rightLinks = navigationLinks.slice(5);
+  const callButton = (
+    <a href="tel:+919319977207" className="header-call-button" aria-label="Call Roar Wellness at +91 93199 77207">
+      <Phone size={15} strokeWidth={2.2} aria-hidden="true" />
+      <span>Call Now</span>
+    </a>
+  );
 
   return (
     <nav className={`site-nav${isOpen ? " is-mobile-open" : ""}`} aria-label="Main navigation">
@@ -260,11 +265,13 @@ export function Navbar() {
             menuOwner={link.label}
             isMenuSuppressed={suppressedMenu === link.label}
           />)}
+          {callButton}
         </div>
         <div className="header-mobile-row">
           <Link href="/#top" aria-label="Roar Wellness home" className="header-brand">
             <img src="/images/logo.png" alt="Roar Wellness" className="header-logo" />
           </Link>
+          {callButton}
           <button type="button" className="header-menu-button" aria-label={isOpen ? "Close menu" : "Open menu"} aria-expanded={isOpen} onClick={() => setIsOpen((open) => !open)}>
             {isOpen ? <X size={21} /> : <Menu size={21} />}
           </button>

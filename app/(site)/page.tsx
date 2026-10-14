@@ -451,9 +451,11 @@ export default function Home() {
 
       <section ref={careInterludeRef} className="care-interlude" aria-label="Care centered around you">
         <div className="care-interlude-scene" data-step={activeInterludeStep}>
-          <img src="/images/naturopathic-consultation.png" alt="A care provider speaking with a patient" className="care-interlude-image" />
+          <img src="/images/care-meditation.png" alt="A person meditating at sunrise beside a mountain lake" className="care-interlude-image" />
           <span className="care-interlude-shade" aria-hidden="true" />
-          <span className="care-interlude-frame" aria-hidden="true" />
+          <span className="care-interlude-frame" aria-hidden="true">
+            <img src="/images/care-meditation.png" alt="" className="care-interlude-frame-image" />
+          </span>
           <h2 className="care-interlude-copy" aria-live="polite" aria-atomic="true">
             <span key={`left-${activeInterludeStep}`} className="care-interlude-copy-side care-interlude-copy-left">
               {activeInterludeStep === 0 ? "Care" : "Recovery"}
