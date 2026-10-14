@@ -523,7 +523,7 @@
     min-height: min(44rem, 86vh);
     place-items: center;
     overflow: hidden;
-    background: #51483f url("/images/ready-to-begin.webp") center 45% / cover no-repeat;
+    background: #51483f url("/images/ready-to-begin-meditation.webp") center 45% / cover no-repeat;
     padding: clamp(3rem, 8vw, 6rem) 1.5rem;
   }
   .home-appointment-showcase::before {
@@ -543,7 +543,7 @@
   }
   .home-appointment-image {
     height: clamp(13rem, 29vw, 17rem);
-    background: #a1806e url("/images/ready-to-begin.webp") center 45% / cover no-repeat;
+    background: #a1806e url("/images/ready-to-begin-meditation.webp") center 45% / cover no-repeat;
   }
   .home-appointment-copy {
     display: flex;

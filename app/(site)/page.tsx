@@ -76,7 +76,6 @@ const careInterludeImages = [
   "/images/recovery-space-04.webp",
   "/images/recovery-space-05.webp",
   "/images/recovery-space-06.webp",
-  "/images/recovery-space-07.webp",
 ];
 
 export default function Home() {
