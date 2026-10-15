@@ -196,6 +196,14 @@ export default function Home() {
     "cannabis-treatment": "Personalized support to address cannabis use and build sustainable recovery.",
     "poly-substance-abuse": "Integrated care for people affected by the use of multiple substances.",
   };
+  const featuredServiceImages: Record<string, string> = {
+    "alcohol-addiction": "/images/alcohol-addiction-home.png",
+    "opioid-treatment": "/images/opioid-treatment-home.png",
+    "heroin-addiction": "/images/heroin-addiction-home.png",
+    "cocaine-addiction": "/images/cocaine-addiction-home.png",
+    "cannabis-treatment": "/images/cannabis-treatment-home.png",
+    "poly-substance-abuse": "/images/poly-substance-abuse-home.png",
+  };
   const treatmentImages: Record<string, string> = {
     "Alcohol Addiction": "/images/Alcohol%20Addiction.png",
     "Opioid Addiction": "/images/Opioid%20Addiction.png",
@@ -267,7 +275,7 @@ export default function Home() {
         slug: item.slug,
         categorySlug: item.category_slug,
         description: item.summary?.trim() || item.description?.trim() || serviceDescriptions[item.slug] || "",
-        imageUrl: item.image_url || treatmentImages[item.title] || servicePlaceholderImage(item.title, item.slug, item.category_slug),
+        imageUrl: featuredServiceImages[item.slug] || item.image_url || treatmentImages[item.title] || servicePlaceholderImage(item.title, item.slug, item.category_slug),
         imagePosition: item.featured_image_position || "50% 50%",
       }] : [];
     })
@@ -276,7 +284,7 @@ export default function Home() {
       slug: featuredServiceSlugs[index],
       categorySlug: "treatments",
       description: serviceDescriptions[featuredServiceSlugs[index]],
-      imageUrl: treatmentImages[title] || servicePlaceholderImage(title, featuredServiceSlugs[index], "treatments"),
+      imageUrl: featuredServiceImages[featuredServiceSlugs[index]] || treatmentImages[title] || servicePlaceholderImage(title, featuredServiceSlugs[index], "treatments"),
       imagePosition: "50% 50%",
     }));
   const homeBlogPosts = cmsBlogPosts.slice(0, 3);
