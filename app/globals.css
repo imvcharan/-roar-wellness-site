@@ -74,6 +74,11 @@
 }
 
 @layer components {
+  .admin-sidebar-navigation {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .admin-sidebar-navigation::-webkit-scrollbar { display: none; }
   .band-light { background: var(--color-cream); }
   .home-theme {
     overflow-x: clip;

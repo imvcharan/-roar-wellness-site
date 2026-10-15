@@ -54,7 +54,7 @@ export function AdminSidebar() {
         </div>
       </div>
       <div className="hidden px-6 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#bfb3a4] md:block">Workspace</div>
-      <nav aria-label="Admin navigation" className="flex flex-row gap-1 overflow-x-auto border-y border-white/10 px-3 py-2 md:flex-1 md:flex-col md:gap-1 md:overflow-visible md:border-y-0 md:px-3 md:py-1">
+      <nav aria-label="Admin navigation" className="admin-sidebar-navigation flex flex-row gap-1 overflow-x-auto border-y border-white/10 px-3 py-2 md:min-h-0 md:flex-1 md:flex-col md:gap-1 md:overflow-y-auto md:overscroll-contain md:border-y-0 md:px-3 md:py-1">
         {navItems.filter((item) => role && item.roles.includes(role)).map((item) => {
           const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           const Icon = item.icon;

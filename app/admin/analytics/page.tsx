@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Eye, MailCheck } from "lucide-react";
+import { AnalyticsTrendCharts, PopularPageBars } from "@/components/analytics/AnalyticsVisuals";
 import { cmsRequest } from "@/services/cms-api";
 
 interface Analytics {
@@ -41,8 +42,24 @@ export default function AnalyticsPage() {
     ? "No prior-period baseline"
     : `${change > 0 ? "+" : ""}${change}% ${comparisonLabel}`;
   const metrics = [
-    { label: "Anonymous page views", value: data?.totals.page_views ?? 0, comparison: changeLabel(data?.change.page_views), icon: Eye, tone: "text-[#695f53] bg-[#ede9dd]" },
-    { label: "Appointment requests", value: data?.totals.appointment_requests ?? 0, comparison: changeLabel(data?.change.appointment_requests), icon: MailCheck, tone: "text-emerald-700 bg-emerald-50" },
+    {
+      label: "Anonymous page views",
+      value: data?.totals.page_views ?? 0,
+      comparison: changeLabel(data?.change.page_views),
+      current: data?.totals.page_views ?? 0,
+      previous: data?.previous.page_views ?? 0,
+      icon: Eye,
+      tone: "text-[#695f53] bg-[#ede9dd]",
+    },
+    {
+      label: "Appointment requests",
+      value: data?.totals.appointment_requests ?? 0,
+      comparison: changeLabel(data?.change.appointment_requests),
+      current: data?.totals.appointment_requests ?? 0,
+      previous: data?.previous.appointment_requests ?? 0,
+      icon: MailCheck,
+      tone: "text-emerald-700 bg-emerald-50",
+    },
     { label: "Appointment requests / views", value: data?.totals.conversion_rate == null ? "—" : `${data.totals.conversion_rate}%`, comparison: "Anonymous opted-in events, not unique visitors", icon: BarChart3, tone: "text-cms-primary bg-cms-background" },
   ];
 
@@ -68,28 +85,37 @@ export default function AnalyticsPage() {
       </p>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       <section aria-label="Website metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {metrics.map(({ label, value, comparison, icon: Icon, tone }) => <article key={label} className="rounded-xl border border-cms-border bg-cms-surface p-5 shadow-sm">
+        {metrics.map(({ label, value, comparison, current, previous, icon: Icon, tone }) => <article key={label} className="rounded-xl border border-cms-border bg-cms-surface p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-sm text-cms-muted">{label}</p><span className={`rounded-xl p-2 ${tone}`}><Icon size={19} /></span>
           </div>
           <p className="mt-4 text-3xl font-bold text-cms-text">{loading ? "—" : value}</p>
           <p className="mt-2 text-xs text-cms-muted">{comparison}</p>
+          {typeof current === "number" && typeof previous === "number" && <div className="mt-4 space-y-2" aria-label={`${label} period comparison`}>
+            {[
+              { name: `Current ${rangeDays} days`, amount: current, color: "bg-cms-primary" },
+              { name: `Previous ${rangeDays} days`, amount: previous, color: "bg-[#c9c0b5]" },
+            ].map((period) => {
+              const scale = Math.max(1, current, previous);
+              return <div key={period.name} className="grid grid-cols-[7.5rem_1fr_2rem] items-center gap-2 text-[11px] text-cms-muted">
+                <span>{period.name}</span>
+                <span className="h-1.5 overflow-hidden rounded-full bg-cms-background">
+                  <span className={`block h-full rounded-full ${period.color}`} style={{ width: `${(period.amount / scale) * 100}%` }} />
+                </span>
+                <span className="text-right font-medium text-cms-text">{period.amount}</span>
+              </div>;
+            })}
+          </div>}
         </article>)}
       </section>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-6">
         <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
-          <div className="border-b border-cms-border px-5 py-4"><h2 className="font-semibold text-cms-text">Popular pages</h2><p className="mt-1 text-sm text-cms-muted">Opted-in views over the last {rangeDays} days.</p></div>
-          {data?.popularPages.length ? <ol className="divide-y divide-cms-border">
-            {data.popularPages.map((page) => <li key={page.page_path} className="flex justify-between gap-3 px-5 py-3 text-sm"><span className="truncate text-cms-text">{page.page_path}</span><span className="shrink-0 font-semibold text-cms-text">{page.views}</span></li>)}
-          </ol> : <p className="p-5 text-sm text-cms-muted">No opted-in page views have been recorded yet.</p>}
+          <div className="flex items-center gap-2 border-b border-cms-border px-5 py-4"><BarChart3 size={18} className="text-cms-primary" /><div><h2 className="font-semibold text-cms-text">Daily activity</h2><p className="mt-1 text-sm text-cms-muted">Trends for the last {rangeDays} days. Each chart uses its own scale.</p></div></div>
+          <AnalyticsTrendCharts days={data?.days ?? []} />
         </section>
         <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
-          <div className="flex items-center gap-2 border-b border-cms-border px-5 py-4"><BarChart3 size={18} className="text-cms-primary" /><div><h2 className="font-semibold text-cms-text">Daily page views</h2><p className="mt-1 text-sm text-cms-muted">Last {rangeDays} days.</p></div></div>
-          {data?.days.length ? <ol className="space-y-3 p-5">
-            {data.days.map((day) => <li key={day.day} className="grid grid-cols-[5.5rem_1fr_2.5rem] items-center gap-3 text-xs text-cms-muted">
-              <time>{day.day}</time><span className="h-2 overflow-hidden rounded-full bg-cms-background"><span className="block h-full rounded-full bg-cms-primary" style={{ width: `${Math.max(3, day.page_views / maximum * 100)}%` }} /></span><span className="text-right font-medium text-cms-text">{day.page_views}</span>
-            </li>)}
-          </ol> : <p className="p-5 text-sm text-cms-muted">No opted-in analytics to display.</p>}
+          <div className="border-b border-cms-border px-5 py-4"><h2 className="font-semibold text-cms-text">Popular pages</h2><p className="mt-1 text-sm text-cms-muted">Share of opted-in page views over the last {rangeDays} days.</p></div>
+          <PopularPageBars pages={data?.popularPages ?? []} totalViews={data?.totals.page_views ?? 0} />
         </section>
       </div>
     </div>

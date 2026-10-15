@@ -107,6 +107,14 @@ function openDatabase(): DatabaseSync {
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
     CREATE INDEX IF NOT EXISTS cms_enquiries_created ON cms_enquiries(status, created_at DESC);
+    CREATE TABLE IF NOT EXISTS cms_notification_outbox (
+      enquiry_id TEXT PRIMARY KEY REFERENCES cms_enquiries(id) ON DELETE CASCADE,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      next_attempt_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      sent_at TEXT,
+      last_error TEXT
+    );
     CREATE TABLE IF NOT EXISTS cms_audit_log (
       id TEXT PRIMARY KEY,
       user_id TEXT REFERENCES cms_users(id) ON DELETE SET NULL,
