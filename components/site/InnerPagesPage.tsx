@@ -82,6 +82,41 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
       "/images/alcohol-addiction-hero-03.jpg",
       ];
     }
+    if (slug === "opioid-treatment") {
+      return [
+        "/images/opioid-treatment-hero-01.png",
+        "/images/opioid-treatment-hero-02.png",
+        "/images/opioid-treatment-hero-03.png",
+      ];
+    }
+    if (slug === "heroin-addiction") {
+      return [
+        "/images/heroin-addiction-hero-01.png",
+        "/images/heroin-addiction-hero-02.png",
+        "/images/heroin-addiction-hero-03.png",
+      ];
+    }
+    if (slug === "cannabis-treatment") {
+      return [
+        "/images/cannabis-treatment-hero-01.jpg",
+        "/images/cannabis-treatment-hero-02.jpg",
+        "/images/cannabis-treatment-hero-03.jpg",
+      ];
+    }
+    if (slug === "cocaine-addiction") {
+      return [
+        "/images/cocaine-addiction-hero-01.jpg",
+        "/images/cocaine-addiction-hero-02.jpg",
+        "/images/cocaine-addiction-hero-03.jpg",
+      ];
+    }
+    if (slug === "poly-substance-abuse") {
+      return [
+        "/images/poly-substance-abuse-hero-01.jpg",
+        "/images/poly-substance-abuse-hero-02.jpg",
+        "/images/poly-substance-abuse-hero-03.jpg",
+      ];
+    }
     const pageImages = getCmsPageImages(html);
     return pageImages.length ? pageImages : ["/images/facility-open-space.webp"];
   }, [html, slug]);
