@@ -2,21 +2,17 @@ import Link from "next/link";
 import { BriefcaseBusiness, Camera, Globe, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getCmsSettings } from "@/lib/cms-db";
+import { treatmentNavigationLinks } from "@/lib/treatment-navigation";
 
 const quickLinks = [
+  ["Home", "/#top"],
   ["About us", "/about-roarwellness/"],
   ["Our approach", "/#about"],
-  ["Treatments", "/services?category=treatments"],
+  ["Services", "/services"],
   ["Facility", "/facility/"],
+  ["Gallery", "/gallery/"],
   ["FAQs", "/faqs/"],
   ["Contact", "/contact-us/"],
-];
-
-const services = [
-  { label: "Alcohol addiction", href: "/services/alcohol-addiction" },
-  { label: "Drug rehabilitation", href: "/services?category=treatments" },
-  { label: "Mental healthcare", href: "/services?category=mental-healthcare" },
-  { label: "Yoga & meditation", href: "/services/yoga-and-meditation" },
 ];
 
 const socialLinks: Array<[string, string, LucideIcon]> = [
@@ -52,12 +48,12 @@ export function Footer() {
             </div>
           </nav>
 
-          <div className="footer-column">
-            <p className="footer-heading">Services</p>
+          <nav className="footer-column" aria-label="Treatments">
+            <p className="footer-heading">Treatments</p>
             <div className="footer-link-list">
-              {services.map((service) => <Link key={service.label} href={service.href}>{service.label}</Link>)}
+              {treatmentNavigationLinks.map((treatment) => <Link key={treatment.label} href={treatment.href}>{treatment.label}</Link>)}
             </div>
-          </div>
+          </nav>
 
           <div className="footer-column footer-contact-column">
             <p className="footer-heading">Contact</p>

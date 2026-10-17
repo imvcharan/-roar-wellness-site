@@ -1,0 +1,16 @@
+export const treatmentNavigationLinks = [
+  { label: "Alcohol Addiction", href: "/services/alcohol-addiction/" },
+  { label: "Opioid Treatment", href: "/services/opioid-treatment/" },
+  { label: "Heroin Addiction", href: "/services/heroin-addiction/" },
+  { label: "Cocaine Addiction", href: "/services/cocaine-addiction/" },
+  { label: "Cannabis Treatment", href: "/services/cannabis-treatment/" },
+  { label: "Poly Substance Abuse", href: "/services/poly-substance-abuse/" },
+  { label: "Benzodiazepine Treatment", href: "/services/benzodiazepine-treatment/" },
+  { label: "Morphine Addiction", href: "/services/morphine-addiction/" },
+  { label: "Gambling Treatment", href: "/services/gambling-treatment/" },
+  { label: "Internet Addiction", href: "/services/internet-addiction/" },
+  { label: "Sex Addiction", href: "/services/sex-addiction/" },
+  { label: "Drugs Addiction", href: "/services/drugs-addiction/" },
+  { label: "De-Addiction Treatment", href: "/services/de-addiction-treatment/" },
+  { label: "Marijuana Treatment", href: "/services/marijuana-treatment-in-delhi/" },
+];
