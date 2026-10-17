@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FaqSection, type Faq } from "@/components/site/TestimonialsFaq";
+import { PageTitle } from "@/components/site/PageTitle";
 import { cmsRequest } from "@/services/cms-api";
 
 interface CmsFaq {
@@ -33,10 +34,11 @@ export default function FaqsPageContent() {
 
   return (
     <main className="faq-page">
+      <PageTitle>Frequently Asked Questions</PageTitle>
       <header className="page-hero-band">
         <div className="page-hero-inner site-container">
           <p className="page-hero-kicker">Help and guidance</p>
-          <h1 className="page-hero-title">Frequently Asked Questions</h1>
+          <h2 className="page-hero-title">Frequently Asked Questions</h2>
           <p className="page-hero-description">Clear, considered answers about treatment, rehabilitation, and recovery.</p>
         </div>
       </header>

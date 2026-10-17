@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUpRight, Play, X } from "lucide-react";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
+import { PageTitle } from "@/components/site/PageTitle";
 
 const philosophy = [
   {
@@ -87,11 +88,12 @@ export function AboutPage({ phone }: { phone: string }) {
 
   return (
     <main ref={pageRef} className="about-reference-page">
+      <PageTitle>About Roar Wellness</PageTitle>
       <section className="about-reference-hero" aria-labelledby="about-reference-title">
         <div className="about-reference-hero-backdrop" aria-hidden="true" />
         <div className="about-reference-hero-content">
           <p className="about-reference-kicker">About Roar Wellness</p>
-          <h1 id="about-reference-title">Care that sees <em>the whole person</em></h1>
+          <h2 id="about-reference-title">Care that sees <em>the whole person</em></h2>
           <a href="#about-reference-story" className="about-reference-scroll">
             Discover our story <ArrowDown size={17} aria-hidden="true" />
           </a>

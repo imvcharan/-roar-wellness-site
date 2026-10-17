@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Mail, Phone } from "lucide-react";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
 import { AppointmentRequestForm } from "@/components/site/AppointmentRequestForm";
+import { PageTitle } from "@/components/site/PageTitle";
 import { cmsRequest } from "@/services/cms-api";
 
 interface AppointmentSettings {
@@ -32,6 +33,7 @@ export function AppointmentPage() {
 
   return (
     <main className="appointment-page">
+      <PageTitle>Book your appointment</PageTitle>
       <section className="appointment-booking site-container" aria-labelledby="appointment-title">
         <div className="appointment-booking-image">
           <img src="/images/recovery-at-your-pace.webp" alt="A clinician listening to someone during a private conversation" />
@@ -39,7 +41,7 @@ export function AppointmentPage() {
         </div>
         <div className="appointment-booking-content">
           <p className="appointment-eyebrow">Schedule</p>
-          <h1 id="appointment-title">Book your appointment</h1>
+          <h2 id="appointment-title">Book your appointment</h2>
           <p className="appointment-intro">Tell us a little about what you’re looking for. Our team will reach out privately to talk through the next step.</p>
           <AppointmentRequestForm />
           <p className="appointment-form-note">Your request is sent to our team. Only your contact details are collected; please don’t share health information here.</p>

@@ -9,6 +9,9 @@ import { cmsRequest } from "@/services/cms-api";
 import { defaultFaqs, defaultReviews, FaqSection, TestimonialsSection, type Faq, type Review } from "@/components/site/TestimonialsFaq";
 import { ContactSection } from "@/components/site/ContactSection";
 import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
+import { PageTitle } from "@/components/site/PageTitle";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { locationNavigationLinks } from "@/lib/location-navigation";
 
 interface CmsService {
   title: string;
@@ -86,6 +89,7 @@ export default function Home() {
   const [revealedApproachItems, setRevealedApproachItems] = useState<Set<number>>(() => new Set([0]));
   const [approachRevealReady, setApproachRevealReady] = useState(false);
   const approachStepsRef = useRef<HTMLDivElement>(null);
+  const locationTrackRef = useRef<HTMLDivElement>(null);
   const careInterludeRef = useRef<HTMLElement>(null);
   const [facilityIndex, setFacilityIndex] = useState(0);
   const [cmsServices, setCmsServices] = useState<CmsService[]>([]);
@@ -380,6 +384,7 @@ export default function Home() {
   }, [cmsHomeLoaded, reducedMotion]);
   return (
     <main id="top" className="home-theme">
+      <PageTitle>{homeSettings.homepageHeroTitle || "Roar Wellness"}</PageTitle>
       <section className="home-hero relative flex min-h-[92vh] items-center justify-center bg-brand-plum px-6 py-32 text-cream md:px-12 md:py-36">
         <iframe
           title="Roar Wellness hero background"
@@ -391,7 +396,7 @@ export default function Home() {
         />
         <div className="home-hero-content relative site-container">
           <p className="eyebrow mb-6 text-cream/75">{homeSettings.homepageHeroEyebrow || "Rehabilitation centre · Delhi"}</p>
-          <h1 className="mx-auto max-w-5xl font-serif text-[clamp(3.8rem,10vw,9.5rem)] leading-[.86] tracking-[-.06em]">{homeSettings.homepageHeroTitle || "Roar Wellness"}</h1>
+          <h2 className="mx-auto max-w-5xl font-serif text-[clamp(3.8rem,10vw,9.5rem)] leading-[.86] tracking-[-.06em]">{homeSettings.homepageHeroTitle || "Roar Wellness"}</h2>
           <p className="mx-auto mt-8 max-w-xl text-xl italic leading-relaxed text-cream/85 md:text-2xl" style={{ fontFamily: "var(--font-body)" }}>{homeSettings.homepageHeroDescription || "A premier rehabilitation centre committed to transforming lives through personalized, evidence-based care."}</p>
           <a href="tel:+919319977207" className="home-hero-appointment">
             <span>Make an appointment</span><span className="home-hero-appointment-arrow" aria-hidden="true">→</span>
@@ -483,6 +488,41 @@ export default function Home() {
                 </Link>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      <section className="location-directory-section" aria-labelledby="location-directory-title">
+        <div className="site-container">
+          <div className="location-directory-heading">
+            <div>
+              <p className="eyebrow">Care across the region</p>
+              <h2 id="location-directory-title">Find care <em>near you</em></h2>
+              <p>Explore our rehabilitation centre information for locations across Delhi NCR and beyond.</p>
+            </div>
+            <div className="location-directory-controls" aria-label="Browse locations">
+              <button type="button" aria-label="Show previous locations" onClick={() => locationTrackRef.current?.scrollBy({ left: -locationTrackRef.current.clientWidth * 0.8, behavior: reducedMotion ? "instant" : "smooth" })}>
+                <ArrowLeft size={19} aria-hidden="true" />
+              </button>
+              <button type="button" aria-label="Show more locations" onClick={() => locationTrackRef.current?.scrollBy({ left: locationTrackRef.current.clientWidth * 0.8, behavior: reducedMotion ? "instant" : "smooth" })}>
+                <ArrowRight size={19} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <div className="location-directory-track"
+            ref={locationTrackRef}
+            role="region"
+            aria-label="Roar Wellness locations"
+            aria-roledescription="carousel"
+            tabIndex={0}
+          >
+            {locationNavigationLinks.map((location, index) => (
+              <Link key={location.href} href={location.href} className="location-directory-card">
+                <span className="location-directory-number">{String(index + 1).padStart(2, "0")}</span>
+                <span className="location-directory-name">{location.label}</span>
+                <span className="location-directory-arrow" aria-hidden="true">↗</span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -676,7 +716,7 @@ export default function Home() {
               <h2 className="section-title mt-5 text-olive">Stories for the <em>journey</em></h2>
             </div>
             <Link href="/blog/" className="services-browse-link">
-              <span>Explore all Blogs</span><span aria-hidden="true">→</span>
+              <span>Explore the blog</span><span aria-hidden="true">→</span>
             </Link>
           </div>
           {activeBlogPosts.length
@@ -691,7 +731,7 @@ export default function Home() {
                 >
                   <span className="blog-showcase-image">
                     <img src={post.imageUrl} alt="" loading="lazy" style={{ objectPosition: post.imagePosition }} />
-                    <span className="blog-showcase-category">{post.category_slug.replace(/-/g, " ")}</span>
+                    <span className="blog-showcase-category">{post.category_slug === "blog" ? "Blog" : post.category_slug.replace(/-/g, " ")}</span>
                   </span>
                   <span className="blog-showcase-copy">
                     <span className="blog-showcase-title">{post.title}</span>

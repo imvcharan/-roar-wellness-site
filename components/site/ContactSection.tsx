@@ -8,7 +8,6 @@ interface ContactSectionProps {
   contactPhone: string;
   contactWhatsApp: string;
   contactAddress: string;
-  headingLevel?: "h1" | "h2";
   appearance?: "standard" | "light";
   showContactDetails?: boolean;
 }
@@ -18,19 +17,16 @@ export function ContactSection({
   contactPhone,
   contactWhatsApp,
   contactAddress,
-  headingLevel = "h2",
   appearance = "standard",
   showContactDetails = true,
 }: ContactSectionProps) {
-  const Heading = headingLevel;
-
   return (
     <>
       <section id="contact" className={`lets-talk-band contact-section px-6 md:px-12 ${appearance === "light" ? "contact-section-light" : "text-cream"}`}>
         <div className="site-container">
           <div className="lets-talk-section">
             <div className="lets-talk-copy">
-              <Heading>Let’s Talk!</Heading>
+              <h2>Let’s Talk!</h2>
               <p className="lets-talk-kicker">A confidential first conversation</p>
               <p className="lets-talk-text">Share your contact details and our team will follow up privately. Please don’t include sensitive health information.</p>
               <div className="lets-talk-socials">

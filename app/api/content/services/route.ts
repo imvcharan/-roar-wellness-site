@@ -5,15 +5,19 @@ import { isLocationService, isServiceCategory } from "@/lib/cms-routes";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const includeAllServices = new URL(request.url).searchParams.get("all") === "1";
-  const content = includeAllServices
+  const searchParams = new URL(request.url).searchParams;
+  const includeAllServices = searchParams.get("all") === "1";
+  const includeArchiveServices = searchParams.get("archive") === "1";
+  const excludeLocationServices = !includeAllServices || includeArchiveServices;
+  const content = includeAllServices || includeArchiveServices
     ? ["treatments", "therapy", "mental-healthcare"]
       .flatMap((categorySlug) => listContent({ categorySlug }))
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
     : listContent({ categorySlug: "treatments" });
   return NextResponse.json({
     data: content
-      .filter((item) => isServiceCategory(item.category_slug) && (includeAllServices || !isLocationService(item.slug)))
+      .filter((item) => isServiceCategory(item.category_slug)
+        && (!excludeLocationServices || !isLocationService(item.slug)))
       .map(toPublicContent),
   }, { headers: { "Cache-Control": "no-store, max-age=0" } });
 }

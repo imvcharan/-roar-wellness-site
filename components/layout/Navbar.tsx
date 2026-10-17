@@ -4,31 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { treatmentNavigationLinks } from "@/lib/treatment-navigation";
 
 interface NavigationLink {
   label: string;
   href: string;
   children?: NavigationLink[];
-  menuColumns?: boolean;
-  secondaryChildren?: NavigationLink[];
 }
-
-const locations: NavigationLink[] = [
-  { label: "Chhatarpur", href: "/services/luxury-rehabilitation-centre-chhatarpur/" },
-  { label: "CR Park", href: "/services/luxury-rehabilitation-centre-cr-park/" },
-  { label: "Greater Kailash", href: "/services/luxury-rehabilitation-centre-greater-kailash/" },
-  { label: "Green Park", href: "/services/luxury-rehabilitation-centre-green-park/" },
-  { label: "Gurgaon", href: "/services/luxury-rehabilitation-centre-gurgaon/" },
-  { label: "Hauz Khas", href: "/services/luxury-rehabilitation-centre-hauz-khas/" },
-  { label: "Jaipur", href: "/services/luxury-rehabilitation-centre-jaipur/" },
-  { label: "Kanpur", href: "/services/luxury-rehabilitation-centre-kanpur/" },
-  { label: "Lucknow", href: "/services/luxury-rehabilitation-centre-lucknow/" },
-  { label: "Mehrauli", href: "/services/luxury-rehabilitation-centre-mehrauli/" },
-  { label: "RK Puram", href: "/services/luxury-rehabilitation-centre-rk-puram/" },
-  { label: "Safdarjung Enclave", href: "/services/luxury-rehabilitation-centre-safdarjung-enclave/" },
-  { label: "Saket", href: "/services/luxury-rehabilitation-centre-saket/" },
-  { label: "South Ex", href: "/services/luxury-rehabilitation-centre-south-ex/" },
-];
 
 const navigationLinks: NavigationLink[] = [
   { label: "Home", href: "/#top" },
@@ -40,8 +22,6 @@ const navigationLinks: NavigationLink[] = [
       { label: "Our Team", href: "/drug-alcohol-rehabilitation-experts/" },
       { label: "Videos", href: "/videos/" },
     ],
-    menuColumns: true,
-    secondaryChildren: locations,
   },
   {
     label: "Therapy",
@@ -55,22 +35,7 @@ const navigationLinks: NavigationLink[] = [
   {
     label: "Treatments",
     href: "/services/?category=treatments",
-    children: [
-      { label: "Alcohol Addiction", href: "/services/alcohol-addiction/" },
-      { label: "Opioid Treatment", href: "/services/opioid-treatment/" },
-      { label: "Heroin Addiction", href: "/services/heroin-addiction/" },
-      { label: "Cocaine Addiction", href: "/services/cocaine-addiction/" },
-      { label: "Cannabis Treatment", href: "/services/cannabis-treatment/" },
-      { label: "Poly Substance Abuse", href: "/services/poly-substance-abuse/" },
-      { label: "Benzodiazepine Treatment", href: "/services/benzodiazepine-treatment/" },
-      { label: "Morphine Addiction", href: "/services/morphine-addiction/" },
-      { label: "Gambling Treatment", href: "/services/gambling-treatment/" },
-      { label: "Internet Addiction", href: "/services/internet-addiction/" },
-      { label: "Sex Addiction", href: "/services/sex-addiction/" },
-      { label: "Drugs Addiction", href: "/services/drugs-addiction/" },
-      { label: "De-Addiction Treatment", href: "/services/de-addiction-treatment/" },
-      { label: "Marijuana Treatment", href: "/services/marijuana-treatment-in-delhi/" },
-    ],
+    children: treatmentNavigationLinks,
   },
   {
     label: "Mental Healthcare",
@@ -82,15 +47,6 @@ const navigationLinks: NavigationLink[] = [
       { label: "Dementia Treatment", href: "/services/dementia-treatment-in-delhi/" },
       { label: "Psychosis Treatment", href: "/services/?category=mental-healthcare" },
       { label: "BPD Treatment", href: "/services/?category=mental-healthcare" },
-    ],
-  },
-  {
-    label: "Services",
-    href: "/services/",
-    children: [
-      { label: "Treatments", href: "/services/?category=treatments" },
-      { label: "Therapy", href: "/services/?category=therapy" },
-      { label: "Mental Healthcare", href: "/services/?category=mental-healthcare" },
     ],
   },
   { label: "Blogs", href: "/blog/" },
@@ -168,21 +124,8 @@ function NavigationItem({
         )}
       </div>
       {hasChildren && (
-        <div className={`nav-dropdown${link.menuColumns ? " nav-dropdown-columns" : ""}`}>
-          {link.menuColumns ? (
-            <>
-              <div className="nav-dropdown-column nav-dropdown-pages" aria-label="About Roar Wellness pages">
-                {link.children?.map((child) => (
-                  <NavigationItem key={child.label} link={child} onClick={onClick} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
-                ))}
-              </div>
-              <div className="nav-dropdown-column nav-dropdown-locations" aria-label="Locations">
-                {link.secondaryChildren?.map((child) => (
-                  <NavigationItem key={child.label} link={child} onClick={onClick} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
-                ))}
-              </div>
-            </>
-          ) : link.children?.map((child) => (
+        <div className="nav-dropdown">
+          {link.children?.map((child) => (
             <NavigationItem key={child.label} link={child} onClick={onClick} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
           ))}
         </div>

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
-import { getCmsContentHref } from "@/lib/cms-routes";
+import { getCmsCategoryLabel, getCmsContentHref } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { cmsRequest } from "@/services/cms-api";
+import { PageTitle } from "@/components/site/PageTitle";
 
 interface BlogEntry {
   title: string;
@@ -29,7 +30,7 @@ function formatPublishedDate(value: string | null) {
   return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(date);
 }
 
-export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: string }) {
+export default function BlogPage() {
   const [posts, setPosts] = useState<BlogEntry[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [message, setMessage] = useState("Loading published articles...");
@@ -38,7 +39,7 @@ export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: 
 
   useEffect(() => {
     let mounted = true;
-    cmsRequest<{ data: BlogEntry[] }>("/api/content/blog")
+    cmsRequest<{ data: BlogEntry[] }>("/api/content/blog?archive=true")
       .then(({ data }) => {
         if (!mounted) return;
         setPosts(data);
@@ -58,12 +59,14 @@ export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: 
     posts.forEach((post) => unique.set(post.category_slug, post.category_name));
     return Array.from(unique, ([slug, name]) => ({ slug, name }));
   }, [posts]);
-  const visiblePosts = selectedCategory
+  const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_slug === selectedCategory)
     : posts;
-  const featuredPosts = [...posts]
+  const featuredPosts = [...filteredPosts]
     .sort((first, second) => Number(Boolean(second.featured_image_url || second.image_url)) - Number(Boolean(first.featured_image_url || first.image_url)))
     .slice(0, 2);
+  const featuredSlugs = new Set(featuredPosts.map((post) => post.slug));
+  const archivePosts = filteredPosts.filter((post) => !featuredSlugs.has(post.slug));
 
   useEffect(() => {
     const page = pageRef.current;
@@ -89,22 +92,23 @@ export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: 
     const image = post.featured_image_url || post.image_url;
     const date = formatPublishedDate(post.published_at);
     const summary = normalizeCmsPlainText(post.excerpt || post.summary || "");
+    const category = getCmsCategoryLabel(post.category_slug);
     return (
       <article key={`${featured ? "featured-" : ""}${post.slug}`} className={`blog-story-card blog-reveal${featured ? " blog-story-card-featured" : ""}`}>
         <Link href={href} className={`blog-story-image${image ? "" : " blog-story-image-placeholder"}`} aria-label={`Read ${post.title}`}>
           {image
             ? <img src={image} alt={post.featured_image_alt || ""} loading={index < 2 ? "eager" : "lazy"} style={{ objectPosition: post.featured_image_position || "50% 50%" }} />
             : <span className="blog-story-image-mark" aria-hidden="true">Roar<br />Wellness</span>}
+          <span className="blog-story-category">{category}</span>
           <span className="blog-story-image-action" aria-hidden="true"><ArrowUpRight size={19} /></span>
         </Link>
         <div className="blog-story-copy">
           <div className="blog-story-meta">
-            <span className="blog-story-category">{post.category_slug === "blog" ? "Journal" : post.category_name}</span>
             {date && <time dateTime={post.published_at || undefined}>{date}</time>}
           </div>
           <h2><Link href={href}>{post.title}</Link></h2>
           {summary && <p className="blog-story-summary">{summary}</p>}
-          <Link href={href} className="blog-story-read-link">Read the story <ArrowUpRight size={15} aria-hidden="true" /></Link>
+          <Link href={href} className="blog-story-read-link">Read article <ArrowUpRight size={15} aria-hidden="true" /></Link>
         </div>
       </article>
     );
@@ -112,23 +116,24 @@ export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: 
 
   return (
     <main ref={pageRef} className="content-archive content-archive-blog blog-page">
+      <PageTitle>Blog: stories and insights</PageTitle>
       <header className="blog-page-hero">
         <div className="blog-page-hero-top">
-          <p className="blog-page-kicker">Roar Wellness {sectionLabel}</p>
-          <p className="blog-page-hero-note">Care, recovery &amp; the wisdom to keep growing.</p>
+          <p className="blog-page-kicker">Roar Wellness Blog</p>
+          <p className="blog-page-hero-note">Thoughtful ideas for recovery, wellbeing, and the way forward.</p>
         </div>
         <div className="blog-page-hero-bottom">
-          <h1>News &amp; <em>insights</em></h1>
-          <a href="#featured-stories" aria-label="Explore the latest stories"><ArrowDown size={24} strokeWidth={1.4} /></a>
+          <h2>Stories &amp; <em>insights</em></h2>
+          <a href="#featured-stories" aria-label="Explore featured blog articles"><ArrowDown size={24} strokeWidth={1.4} /></a>
         </div>
-        <p className="blog-page-intro">Thoughtful perspectives on recovery, mental wellbeing, and the journey toward lasting change.</p>
+        <p className="blog-page-intro">Explore practical guidance and perspectives from the Roar Wellness team on treatment, mental health, and lasting recovery.</p>
       </header>
 
       <nav aria-label="Breadcrumb" className="blog-page-breadcrumb site-container">
         <ol>
           <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page">{sectionLabel}</li>
+          <li aria-current="page">Blog</li>
         </ol>
       </nav>
 
@@ -137,10 +142,10 @@ export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: 
       {featuredPosts.length > 0 && <section id="featured-stories" className="blog-featured-section" aria-labelledby="blog-featured-title">
         <div className="blog-section-heading blog-reveal">
           <div>
-            <p className="blog-section-kicker">From the journal</p>
-            <h2 id="blog-featured-title">Stories to start with</h2>
+            <p className="blog-section-kicker">Featured on the blog</p>
+            <h2 id="blog-featured-title">Featured articles</h2>
           </div>
-          <p>Personal experiences and practical guidance for every step forward.</p>
+          <p>Selected perspectives and guidance from across our blog.</p>
         </div>
         <div className="blog-featured-grid">
           {featuredPosts.map((post, index) => renderCard(post, index, true))}
@@ -150,17 +155,19 @@ export default function BlogPage({ sectionLabel = "Journal" }: { sectionLabel?: 
       <section id="all-stories" className="blog-all-section" aria-labelledby="blog-all-title">
         <div className="blog-section-heading blog-reveal">
           <div>
-            <p className="blog-section-kicker">Explore at your own pace</p>
-            <h2 id="blog-all-title">The journal</h2>
+            <p className="blog-section-kicker">Explore more from the blog</p>
+            <h2 id="blog-all-title">Latest articles</h2>
           </div>
-          <p>Browse our latest articles and find the insight that speaks to you.</p>
+          <p>Browse articles by topic or explore everything we’ve shared.</p>
         </div>
         {categories.length > 1 && <div className="blog-category-filters" role="group" aria-label="Filter articles by category">
-          <button type="button" aria-pressed={!selectedCategory} className={!selectedCategory ? "is-active" : ""} onClick={() => setSelectedCategory("")}>All</button>
+          <button type="button" aria-pressed={!selectedCategory} className={!selectedCategory ? "is-active" : ""} onClick={() => setSelectedCategory("")}>All topics</button>
           {categories.map((item) => <button key={item.slug} type="button" aria-pressed={selectedCategory === item.slug} className={selectedCategory === item.slug ? "is-active" : ""} onClick={() => setSelectedCategory(item.slug)}>{item.name}</button>)}
         </div>}
-        {visiblePosts.length
-          ? <div className="blog-story-grid" aria-live="polite">{visiblePosts.map((post, index) => renderCard(post, index))}</div>
+        {archivePosts.length
+          ? <div className="blog-story-grid" aria-live="polite">{archivePosts.map((post, index) => renderCard(post, index))}</div>
+          : filteredPosts.length
+            ? null
           : <p role="status" className="blog-empty">{posts.length ? "No articles are available in this category." : message}</p>}
       </section>
 

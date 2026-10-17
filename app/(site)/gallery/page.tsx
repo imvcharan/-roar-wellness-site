@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImages } from "@/lib/gallery-images";
+import { PageTitle } from "@/components/site/PageTitle";
 
 export default function GalleryPage() {
   const [activeTab, setActiveTab] = useState<"photos" | "videos">("photos");
@@ -20,9 +21,10 @@ export default function GalleryPage() {
 
   return (
     <main className="gallery-page">
+      <PageTitle>Inside Roar Wellness</PageTitle>
       <section className="gallery-page-header">
         <p className="eyebrow text-coral">Roar Wellness</p>
-        <h1 className="section-title text-olive">Inside <em>Roar Wellness</em></h1>
+        <h2 className="section-title text-olive">Inside <em>Roar Wellness</em></h2>
         <p className="gallery-page-intro">Photos and videos from Roar Wellness.</p>
       </section>
       <div className="gallery-tabs" role="tablist" aria-label="Gallery media type">

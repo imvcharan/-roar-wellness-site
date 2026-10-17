@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import BlogPage from "@/app/(site)/blog/page";
+import { notFound } from "next/navigation";
+import InnerPagesPage from "@/components/site/InnerPagesPage";
+import { getRouteContentMetadata, resolvePublishedRouteContent } from "@/lib/cms-route-content";
+import { getCmsContentHref } from "@/lib/cms-routes";
 
-export const metadata: Metadata = {
-  title: "News & Insights | Roar Wellness",
-  description: "The latest news, recovery insights, and practical guidance from Roar Wellness.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const resolved = resolvePublishedRouteContent("news", "page");
+  const canonical = resolved.item ? getCmsContentHref(resolved.item.slug, resolved.item.category_slug) : "/news";
+  return getRouteContentMetadata(resolved.item, canonical);
+}
 
 export default function NewsPage() {
-  return <BlogPage sectionLabel="News" />;
+  const resolved = resolvePublishedRouteContent("news", "page");
+  if (!resolved.item) notFound();
+  return <InnerPagesPage detailSlug="news" detailKind="page" />;
 }

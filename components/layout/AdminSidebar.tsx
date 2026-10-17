@@ -49,7 +49,7 @@ export function AdminSidebar() {
       <div className="flex items-center gap-3 px-5 py-4 md:px-6 md:py-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-[#a1806e] to-[#695f53] text-lg font-bold text-white shadow-lg shadow-black/20">R</div>
         <div>
-          <h1 className="text-base font-bold tracking-wide text-white">ROAR CMS</h1>
+          <p className="text-base font-bold tracking-wide text-white">ROAR CMS</p>
           <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d4cabb]">Workspace</p>
         </div>
       </div>

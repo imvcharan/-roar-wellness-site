@@ -11,6 +11,7 @@ import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
 import { AppointmentRequestForm } from "@/components/site/AppointmentRequestForm";
 import { AboutPage } from "@/components/site/AboutPage";
 import { ContactSection } from "@/components/site/ContactSection";
+import { PageTitle } from "@/components/site/PageTitle";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImages } from "@/lib/gallery-images";
@@ -527,6 +528,10 @@ function CmsPageContent({
   onHeadings?: Dispatch<SetStateAction<ContentHeading[]>>;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const headingSafeHtml = useMemo(
+    () => html.replace(/<h1\b([^>]*)>/gi, '<h2 data-cms-original-heading="h1"$1>').replace(/<\/h1\s*>/gi, "</h2>"),
+    [html],
+  );
 
   useEffect(() => {
     const content = contentRef.current;
@@ -588,7 +593,7 @@ function CmsPageContent({
         fragmentNavigationSections.forEach((section) => section.remove());
 
         const seenHeadings = new Set<string>();
-        Array.from(pageRoot.querySelectorAll<HTMLElement>("h1")).forEach((heading) => {
+        Array.from(pageRoot.querySelectorAll<HTMLElement>('h1, [data-cms-original-heading="h1"]')).forEach((heading) => {
           const normalizedTitle = heading.textContent?.trim().replace(/\s+/g, " ").toLowerCase() || "";
           if (!normalizedTitle) return;
           if (!seenHeadings.has(normalizedTitle)) {
@@ -601,7 +606,7 @@ function CmsPageContent({
       }
 
       if (inlineCta && featuredImage) {
-        const heading = pageRoot.querySelector<HTMLElement>("h1");
+        const heading = pageRoot.querySelector<HTMLElement>('h1, [data-cms-original-heading="h1"]');
         if (heading) {
           const headingBlock = heading.closest<HTMLElement>(".elementor-widget-heading") || heading;
           let figure = pageRoot.querySelector<HTMLElement>(".service-article-featured-image");
@@ -627,6 +632,28 @@ function CmsPageContent({
     };
 
     const syncContent = () => {
+      if (slug === "news") {
+        content.querySelectorAll<HTMLElement>(".rt-grid-item").forEach((item) => {
+          const isNewsCategory = /\bcategory-(news|events|awards-recognition)\b/i.test(item.className);
+          const isNewsAnnouncement = /delhi police crime branch|drug awareness week/i.test(item.textContent || "");
+          if (!isNewsCategory && !isNewsAnnouncement) item.remove();
+        });
+        content.querySelectorAll<HTMLElement>(".rt-pagination-wrap, .rt-pagination").forEach((pagination) => pagination.remove());
+        Array.from(content.querySelectorAll<HTMLElement>("h1, h2, h3, h4"))
+          .filter((heading) => heading.textContent?.trim() === "Previous Blogs")
+          .forEach((heading) => { heading.textContent = "More news"; });
+        const pageContent = content.querySelector<HTMLElement>(".elementor");
+        if (pageContent && !pageContent.querySelector(".cms-news-grid")) {
+          const newsSections = Array.from(pageContent.querySelectorAll<HTMLElement>(":scope > .e-con.e-parent"))
+            .filter((section) => section.querySelector(".rt-grid-item"));
+          if (newsSections.length > 1) {
+            const grid = document.createElement("div");
+            grid.className = "cms-news-grid";
+            newsSections[0].before(grid);
+            newsSections.forEach((section) => grid.append(section));
+          }
+        }
+      }
       removeEmbeddedSections();
       if (blogHelpline && !content.querySelector(".blog-helpline-card")) {
         const helplineHeading = Array.from(content.querySelectorAll<HTMLElement>("h2, h3, h4"))
@@ -686,7 +713,7 @@ function CmsPageContent({
           }
         }
       }
-      const articleTitle = content.querySelector<HTMLElement>("h1");
+      const articleTitle = content.querySelector<HTMLElement>('h1, [data-cms-original-heading="h1"]');
       const contentHeadings = Array.from(content.querySelectorAll<HTMLElement>("h1, h2, h3"))
         .filter((heading) => heading !== articleTitle)
         .filter((heading) => !heading.closest(".service-inline-cta"));
@@ -828,10 +855,10 @@ function CmsPageContent({
 
   return <div
     ref={contentRef}
-    className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${centerMedia ? " cms-centered-media" : ""}`}
+    className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${slug === "news" ? " cms-news-archive" : ""}${centerMedia ? " cms-centered-media" : ""}`}
     onClickCapture={onClickCapture}
     onKeyDownCapture={onKeyDownCapture}
-    dangerouslySetInnerHTML={{ __html: html }}
+    dangerouslySetInnerHTML={{ __html: headingSafeHtml }}
   />;
 }
 
@@ -945,7 +972,7 @@ export default function InnerPagesPage({
     let mounted = true;
     const requestedCategory = new URLSearchParams(window.location.search).get("category");
     if (requestedCategory && isServiceCategory(requestedCategory)) setCategory(requestedCategory);
-    cmsRequest<{ data: CmsItem[] }>("/api/content/services?all=1")
+    cmsRequest<{ data: CmsItem[] }>("/api/content/services?archive=1")
       .then(({ data }) => {
         if (!mounted) return;
         setCmsEntries(data);
@@ -1044,13 +1071,14 @@ export default function InnerPagesPage({
     if (selectedItem && selectedKind === "page" && selectedSlug.toLowerCase() === "contact-us") {
       return (
         <main className="contact-page">
+          <PageTitle>Contact Roar Wellness</PageTitle>
           <section className="contact-page-hero" aria-labelledby="contact-page-title">
             <div className="site-container">
               <div className="contact-page-hero-top">
                 <p className="contact-page-hero-kicker">Contact</p>
                 <a href="#contact-details" aria-label="Explore our contact details"><ArrowDown size={22} aria-hidden="true" /></a>
               </div>
-              <h1 id="contact-page-title">Get in <em>Touch</em></h1>
+              <h2 id="contact-page-title">Get in <em>Touch</em></h2>
               <p>Start a conversation with Roar Wellness about care, recovery, and the next step for you or someone you care about.</p>
               <div className="contact-page-divider" aria-hidden="true"><span>+</span></div>
             </div>
@@ -1094,14 +1122,15 @@ export default function InnerPagesPage({
 
     return (
       <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
+        <PageTitle>{selectedItem?.title || (selectedSlug ? "Page content" : listingKind === "services" ? "Services" : "Treatments & site pages")}</PageTitle>
         {selectedItem ? <>
           <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage ? " detail-hero-band-fallback-image" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
               <div className="detail-hero-copy">
-                <p className="detail-hero-kicker">{isExpertsPage ? "Meet the people behind your care" : selectedKind === "blog" ? "From the Roar Wellness journal" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
-                <h1 id="treatment-detail-title" className="detail-hero-title">{selectedItem.title}</h1>
+                <p className="detail-hero-kicker">{isExpertsPage ? "Meet the people behind your care" : selectedKind === "blog" ? "From the Roar Wellness blog" : selectedSlug === "news" ? "News & updates" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
+                <h2 id="treatment-detail-title" className="detail-hero-title">{selectedItem.title}</h2>
                 {summary && <p className="detail-hero-summary">{summary}</p>}
                 {selectedKind === "service" && <a className="detail-hero-cta" href="tel:+919319977207">Speak with our team <span aria-hidden="true">›</span></a>}
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
@@ -1215,7 +1244,7 @@ export default function InnerPagesPage({
 
                 {selectedKind === "blog" && relatedItems.length > 0 && <nav className="detail-sidebar-card blog-related-card" aria-labelledby="blog-related-title">
                   <p className="eyebrow">Continue reading</p>
-                  <h2 id="blog-related-title">Related stories</h2>
+                  <h2 id="blog-related-title">Related blog articles</h2>
                   <ul>
                     {relatedItems.map((item) => {
                       const relatedImage = item.featured_image_url || item.image_url;
@@ -1226,7 +1255,7 @@ export default function InnerPagesPage({
                               ? <img src={relatedImage} alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
                               : <BookOpen size={20} aria-hidden="true" />}
                           </span>
-                          <span className="blog-related-copy"><span className="blog-related-title">{item.title}</span><span className="blog-related-action">View full post</span></span>
+                          <span className="blog-related-copy"><span className="blog-related-title">{item.title}</span><span className="blog-related-action">Read article</span></span>
                           <ArrowUpRight className="blog-related-arrow" size={17} aria-hidden="true" />
                         </Link>
                       </li>;
@@ -1288,11 +1317,12 @@ export default function InnerPagesPage({
 
   return (
     <main className={listingKind === "services" ? "content-archive content-archive-services" : "content-archive content-archive-all"}>
+      <PageTitle>{listingKind === "services" ? "Services" : "Treatments & site pages"}</PageTitle>
       {listingKind === "services" ? <>
         <header className="page-hero-band">
           <div className="page-hero-inner site-container">
             <p className="page-hero-kicker">Services</p>
-            <h1 className="page-hero-title">Rooted in <em>wellness</em></h1>
+            <h2 className="page-hero-title">Rooted in <em>wellness</em></h2>
             <p className="page-hero-description">Thoughtful support for recovery, therapy, and mental wellbeing — shaped around you.</p>
             <a className="services-hero-scroll" href="#browse-services" aria-label="Explore our services">↓</a>
           </div>
@@ -1355,7 +1385,7 @@ export default function InnerPagesPage({
       </> : <>
         <header className="archive-heading site-container">
           <p className="eyebrow text-terracotta">Roar Wellness</p>
-          <h1 className="mt-4 font-serif text-5xl tracking-tight text-brown md:text-6xl">Treatments &amp; site pages</h1>
+          <h2 className="mt-4 font-serif text-5xl tracking-tight text-brown md:text-6xl">Treatments &amp; site pages</h2>
           <p className="archive-intro">Published treatment information, therapy, mental healthcare, and pages from Roar Wellness.</p>
         </header>
         <section className="site-container" aria-label="Browse site content">
