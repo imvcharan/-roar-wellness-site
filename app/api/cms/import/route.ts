@@ -4,8 +4,8 @@ import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { findContentBySlug, getCmsDatabase, listCategories, recordContentRevision } from "@/lib/cms-db";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
-import { getCmsContentHref, isPageCategory } from "@/lib/cms-routes";
-import { isReservedCmsPageSlug, makeSlug } from "@/lib/cms-validation";
+import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
+import { isReservedCmsRootSlug, makeSlug } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
         failures.push(`Item ${index + 1} (${title}): ${error instanceof Error ? error.message : "invalid content"}`);
         continue;
       }
-      if (isPageCategory(category.slug) && isReservedCmsPageSlug(input.slug)) {
+      if ((isPageCategory(category.slug) || isServiceCategory(category.slug)) && isReservedCmsRootSlug(input.slug)) {
         failures.push(`Item ${index + 1} (${title}): slug “${input.slug}” is reserved for a built-in website route.`);
         continue;
       }

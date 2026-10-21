@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseCmsContentInput } from "../lib/cms-validation.ts";
+import { isReservedCmsRootSlug, parseCmsContentInput } from "../lib/cms-validation.ts";
 
 const baseContent = {
   title: "Recovery services",
@@ -61,5 +61,44 @@ describe("CMS content SEO metadata", () => {
       () => parseCmsContentInput({ ...baseContent, seoTwitterImage: "data:image/png;base64,abc" }),
       /Twitter image URL must be an HTTP or HTTPS URL/,
     );
+  });
+});
+
+describe("CMS image alt text", () => {
+  it("requires descriptive featured image alt text before publishing", () => {
+    assert.throws(
+      () => parseCmsContentInput({
+        ...baseContent,
+        imageUrl: "/images/recovery-at-your-pace.webp",
+      }),
+      /Add descriptive alt text for the featured image before publishing/,
+    );
+    assert.equal(parseCmsContentInput({
+      ...baseContent,
+      imageUrl: "/images/recovery-at-your-pace.webp",
+      imageAltText: "A clinician listening during a private consultation",
+    }).imageAltText, "A clinician listening during a private consultation");
+  });
+
+  it("requires inline image alt attributes on published content but allows explicitly decorative images", () => {
+    assert.throws(
+      () => parseCmsContentInput({
+        ...baseContent,
+        content: '<p><img src="/images/recovery-at-your-pace.webp"></p>',
+      }),
+      /Every content image needs an alt attribute/,
+    );
+    assert.match(parseCmsContentInput({
+      ...baseContent,
+      content: '<p><img src="/images/recovery-at-your-pace.webp" alt=""></p>',
+    }).content || "", /<img\b[^>]*\balt=""/);
+  });
+});
+
+describe("CMS root-level service routes", () => {
+  it("blocks CMS slugs that would collide with built-in routes", () => {
+    assert.equal(isReservedCmsRootSlug("services"), true);
+    assert.equal(isReservedCmsRootSlug("appointment"), true);
+    assert.equal(isReservedCmsRootSlug("poly-substance-abuse"), false);
   });
 });

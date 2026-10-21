@@ -1,7 +1,10 @@
 import sanitizeHtml from "sanitize-html";
 
 const homepageGroups = new Set(["team", "reviews", "facility", "approach"]);
-const reservedPageSlugs = new Set(["admin", "admin-login", "api", "blog", "faqs", "gallery", "inner-pages", "services", "_next", "uploads"]);
+const reservedRootSlugs = new Set([
+  "admin", "admin-login", "api", "appointment", "blog", "faqs", "gallery",
+  "inner-pages", "news", "services", "_next", "uploads",
+]);
 
 export type CmsStatus = "draft" | "published" | "archived";
 
@@ -42,7 +45,11 @@ export function makeSlug(value: string): string {
 }
 
 export function isReservedCmsPageSlug(slug: string): boolean {
-  return reservedPageSlugs.has(slug);
+  return reservedRootSlugs.has(slug);
+}
+
+export function isReservedCmsRootSlug(slug: string): boolean {
+  return reservedRootSlugs.has(slug);
 }
 
 function optionalText(value: unknown, label: string, maxLength: number): string | null {
@@ -53,9 +60,9 @@ function optionalText(value: unknown, label: string, maxLength: number): string 
   return value.trim() || null;
 }
 
-function sanitizeRichText(value: string | null): string | null {
+function sanitizeRichText(value: string | null, requireImageAlt: boolean): string | null {
   if (!value) return null;
-  return sanitizeHtml(value, {
+  const sanitized = sanitizeHtml(value, {
     allowedTags: [
       ...sanitizeHtml.defaults.allowedTags,
       "h1", "h2", "h3", "h4", "img", "span", "section", "figure", "figcaption",
@@ -71,6 +78,17 @@ function sanitizeRichText(value: string | null): string | null {
       a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, true),
     },
   });
+  if (requireImageAlt) {
+    for (const match of sanitized.matchAll(/<img\b[^>]*>/gi)) {
+      if (!/\balt\s*=/i.test(match[0])) {
+        throw new Error('Every content image needs an alt attribute. Use alt="" only for a decorative image.');
+      }
+      const altText = match[0].match(/\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const alt = altText?.[1] ?? altText?.[2] ?? altText?.[3] ?? "";
+      if (alt.length > 250) throw new Error("Content image alt text must be 250 characters or fewer.");
+    }
+  }
+  return sanitized;
 }
 
 function isAllowedImageUrl(value: string): boolean {
@@ -133,6 +151,13 @@ export function parseCmsContentInput(value: unknown): CmsContentInput {
   if (imageUrl && !isAllowedImageUrl(imageUrl)) {
     throw new Error("Image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
   }
+  const imageAltText = optionalText(data.imageAltText, "Image alt text", 250);
+  if (status === "published" && imageUrl && !imageAltText) {
+    throw new Error("Add descriptive alt text for the featured image before publishing.");
+  }
+  if (imageAltText && !imageUrl) {
+    throw new Error("Add a featured image before entering its alt text.");
+  }
   const imagePosition = optionalText(data.imagePosition, "Image focal position", 20) ?? "50% 50%";
   const imagePositions = new Set([
     "0% 0%", "50% 0%", "100% 0%",
@@ -172,10 +197,10 @@ export function parseCmsContentInput(value: unknown): CmsContentInput {
     categoryId: data.categoryId.trim(),
     excerpt: optionalText(data.excerpt, "Excerpt", 500),
     summary: optionalText(data.summary, "Summary", 2000),
-    description: sanitizeRichText(optionalText(data.description, "Description", 20000)),
-    content: sanitizeRichText(optionalText(data.content, "Content", 200000)),
+    description: sanitizeRichText(optionalText(data.description, "Description", 20000), status === "published"),
+    content: sanitizeRichText(optionalText(data.content, "Content", 200000), status === "published"),
     imageUrl,
-    imageAltText: optionalText(data.imageAltText, "Image alt text", 250),
+    imageAltText,
     imagePosition,
     status,
     seoTitle: optionalText(data.seoTitle, "SEO title", 200),

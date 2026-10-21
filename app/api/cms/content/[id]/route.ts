@@ -7,8 +7,8 @@ import {
   getCmsDatabase,
   toPublicContent,
 } from "@/lib/cms-db";
-import { getCmsContentHref, isPageCategory } from "@/lib/cms-routes";
-import { isReservedCmsPageSlug, parseCmsContentInput } from "@/lib/cms-validation";
+import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
+import { isReservedCmsRootSlug, parseCmsContentInput } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
@@ -33,7 +33,7 @@ export async function PUT(
   if (!category) {
     return NextResponse.json({ error: "The selected category does not exist." }, { status: 400 });
   }
-  if (isPageCategory(category.slug) && isReservedCmsPageSlug(input.slug)) {
+  if ((isPageCategory(category.slug) || isServiceCategory(category.slug)) && isReservedCmsRootSlug(input.slug)) {
     return NextResponse.json({ error: "This slug is reserved for a built-in website route. Choose another slug." }, { status: 400 });
   }
 

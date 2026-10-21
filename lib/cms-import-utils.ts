@@ -127,10 +127,17 @@ export function parseImportedContent(row: Record<string, unknown>, categoryId: s
   const media = row._embedded && typeof row._embedded === "object" && !Array.isArray(row._embedded)
     ? (row._embedded as Record<string, unknown>)["wp:featuredmedia"]
     : null;
-  const embeddedImage = Array.isArray(media) && media[0] && typeof media[0] === "object"
-    ? (media[0] as Record<string, unknown>).source_url
+  const embeddedImageData = Array.isArray(media) && media[0] && typeof media[0] === "object"
+    ? media[0] as Record<string, unknown>
+    : null;
+  const embeddedImage = embeddedImageData?.source_url;
+  const embeddedImageAlt = typeof embeddedImageData?.alt_text === "string"
+    ? embeddedImageData.alt_text
     : null;
   const imageUrl = getString(row, "image_url", "featured_image_url", "image") || embeddedImage;
+  const imageAltText = getString(row, "image_alt_text", "featured_image_alt", "image_alt")
+    || embeddedImageAlt
+    || (typeof imageUrl === "string" ? title : null);
 
   return parseCmsContentInput({
     title,
@@ -141,7 +148,7 @@ export function parseImportedContent(row: Record<string, unknown>, categoryId: s
     description: renderedHtml(row.description),
     content: renderedHtml(row.content) || getString(row, "body", "html"),
     imageUrl: typeof imageUrl === "string" ? imageUrl : null,
-    imageAltText: getString(row, "image_alt_text", "featured_image_alt", "image_alt"),
+    imageAltText,
     imagePosition: getString(row, "image_position", "featured_image_position") || "50% 50%",
     seoTitle: getString(row, "seo_title", "meta_title"),
     seoDescription: getString(row, "seo_description", "meta_description"),

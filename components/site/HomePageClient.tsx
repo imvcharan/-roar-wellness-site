@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
-import { galleryImages } from "@/lib/gallery-images";
+import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
 import { getCmsContentHref } from "@/lib/cms-routes";
 import { cmsRequest } from "@/services/cms-api";
 import { defaultFaqs, defaultReviews, FaqSection, TestimonialsSection, type Faq, type Review } from "@/components/site/TestimonialsFaq";
@@ -267,7 +267,7 @@ export default function HomePageClient() {
 
   const renderGalleryImages = (offset: number) => (
     <div className="mosaic-gallery" aria-label="Roar Wellness gallery slideshow">
-      {galleryImages.map((image, index) => <img key={image} src={image} alt="Roar Wellness facility" data-gallery-index={index} className={`mosaic-gallery-image ${index === (galleryIndex + offset) % galleryImages.length ? "is-active" : ""}`} />)}
+      {galleryImages.map((image, index) => <img key={image} src={image} alt={galleryImageAlts[index]} data-gallery-index={index} className={`mosaic-gallery-image ${index === (galleryIndex + offset) % galleryImages.length ? "is-active" : ""}`} />)}
     </div>
   );
 
@@ -663,7 +663,7 @@ export default function HomePageClient() {
           <div className="facility-carousel" aria-roledescription="carousel" aria-label="Roar Wellness facility gallery">
             <GalleryLightbox
               images={activeFacilitySlides.map(([, , image]) => image)}
-              imageAlts={activeFacilitySlides.map(([title, description]) => `${title}: ${description}`)}
+              imageAlts={activeFacilitySlides.map(([title]) => `${title} at Roar Wellness`)}
             >
               <div className="facility-viewport">
                 <div
@@ -680,7 +680,7 @@ export default function HomePageClient() {
                     <article key={`${title}-${index}`} className="facility-slide" aria-hidden={index >= activeFacilitySlides.length} aria-label={`${(index % activeFacilitySlides.length) + 1} of ${activeFacilitySlides.length}`}>
                       <div className="facility-image-wrap">
                         <button type="button" className="facility-image-button" data-gallery-index={index % activeFacilitySlides.length} aria-label={`View full image: ${title}`} tabIndex={index >= activeFacilitySlides.length ? -1 : 0}>
-                          <img src={image} alt={`${title}: ${description}`} className="facility-image" />
+                          <img src={image} alt={`${title} at Roar Wellness`} className="facility-image" />
                         </button>
                       </div>
                       <div className="facility-card-copy">

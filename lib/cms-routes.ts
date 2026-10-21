@@ -9,13 +9,13 @@ export function getCmsRouteKind(categorySlug: string): CmsRouteKind {
 
 export function getCmsContentHref(slug: string, categorySlug: string): string {
   const kind = getCmsRouteKind(categorySlug);
-  if (kind === "service") return `/services/${encodeURIComponent(slug)}`;
+  if (kind === "service") return `/${encodeURIComponent(slug)}`;
   if (kind === "blog") return `/blog/${encodeURIComponent(slug)}`;
   return `/${encodeURIComponent(slug)}`;
 }
 
 export function getCmsContentRoutePath(slug: string, kind: CmsRouteKind): string {
-  if (kind === "service") return `/services/${encodeURIComponent(slug)}`;
+  if (kind === "service") return `/${encodeURIComponent(slug)}`;
   if (kind === "blog") return `/blog/${encodeURIComponent(slug)}`;
   return `/${encodeURIComponent(slug)}`;
 }

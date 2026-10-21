@@ -365,6 +365,9 @@ export default function PostsPage() {
   const previewPath = form.slug && selectedCategorySlug
     ? getCmsContentHref(makeSlug(form.slug), selectedCategorySlug)
     : "";
+  const imageAltReviewCount = sectionEntries.filter((entry) =>
+    entry.image_url && entry.image_alt_text === entry.title,
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -390,6 +393,9 @@ export default function PostsPage() {
         onToggle={() => setActivePanel(activePanel === "library" ? null : "library")}
       >
         <div className="space-y-5">
+          {imageAltReviewCount > 0 && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            {imageAltReviewCount} featured image{imageAltReviewCount === 1 ? "" : "s"} use a temporary title-based alt-text fallback. Review each marked item and replace it with an accurate description of the image.
+          </p>}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <p className="text-sm text-cms-muted">Showing only {section === "all" ? "all content types" : sectionConfig.singular}; drafts, published items, and archived items are included.</p>
             <div className="flex flex-wrap gap-3">
@@ -419,6 +425,7 @@ export default function PostsPage() {
                 <div className="min-w-0">
                   <h3 className="font-semibold text-cms-text">{entry.title}</h3>
                   <p className="mt-1 text-sm text-cms-muted">/{entry.slug} · {entry.category_name} · {entry.status}</p>
+                  {entry.image_url && entry.image_alt_text === entry.title && <p className="mt-1 text-xs font-medium text-amber-800">Featured image description needs review</p>}
                 </div>
                 <div className="flex gap-2">
                   {entry.status === "published" && <a href={getCmsContentHref(entry.slug, entry.category_slug)} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-lg border border-cms-border px-3 py-1.5 text-xs font-medium text-cms-text hover:bg-cms-background">Open page</a>}
@@ -481,7 +488,10 @@ export default function PostsPage() {
             name="featured_image_url"
             label="Featured image"
             value={form.imageUrl}
-            onChange={(imageUrl) => setField("imageUrl", imageUrl)}
+            onChange={(imageUrl) => {
+              setField("imageUrl", imageUrl);
+              if (!imageUrl) setField("imageAltText", "");
+            }}
             onUploadingChange={(uploading) => setImageUploading("featured", uploading)}
             previewMode="cover"
             previewPosition={form.imagePosition}
@@ -489,16 +499,18 @@ export default function PostsPage() {
             className="md:col-span-2"
           />
           <label className="text-sm font-medium text-cms-text md:col-span-2">
-            Image alt text
+            Featured image alt text {form.imageUrl && form.status === "published" ? <span className="text-red-700">*</span> : null}
             <input
               type="text"
+              required={Boolean(form.imageUrl && form.status === "published")}
               maxLength={250}
               value={form.imageAltText}
               onChange={(event) => setField("imageAltText", event.target.value)}
-              placeholder="Describe the image for visitors using screen readers"
+              placeholder={form.imageUrl && form.status === "published" ? "Describe what is visible in the image" : "Add an image description"}
               className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2"
             />
-            <span className="mt-1 block text-xs font-normal text-cms-muted">Leave blank if the image is only decorative.</span>
+            <span className="mt-1 block text-xs font-normal text-cms-muted">Required for a published featured image. Describe visible details, not keywords. If the image is purely decorative, omit it as the featured image and add it in the content editor with alt="" instead.</span>
+            {form.imageUrl && form.imageAltText === form.title && <span className="mt-1 block text-xs font-medium text-amber-800">This is a fallback based on the page title. Review the image and replace it with an accurate description before publishing.</span>}
           </label>
           <label className="text-sm font-medium text-cms-text">
             Image focal point

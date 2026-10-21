@@ -12,7 +12,7 @@ const importedItems = (JSON.parse(
 const appRoutes = new Set(["gallery", "blog", "inner-pages", "services", "admin", "admin-login"]);
 const serviceCategories = new Set(["treatments", "therapy", "mental-healthcare"]);
 const contentHref = (slug: string, category: string) => serviceCategories.has(category)
-  ? `/services/${encodeURIComponent(slug)}`
+  ? `/${encodeURIComponent(slug)}`
   : category === "blog" ? `/blog/${encodeURIComponent(slug)}` : `/${encodeURIComponent(slug)}`;
 const importedBySlug = new Map(importedItems.map((item) => [item.slug, item]));
 const legacySlugAliases: Record<string, string> = {
@@ -29,14 +29,19 @@ const legacySlugAliases: Record<string, string> = {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  htmlLimitedBots: /.*/,
-  compress: false,
   async redirects() {
     const canonicalRedirects = importedItems
-      .filter(({ slug, category_slug }) => !appRoutes.has(slug) && !Object.hasOwn(legacySlugAliases, slug) && category_slug !== "main-pages")
+      .filter(({ slug, category_slug }) => category_slug === "blog" && !appRoutes.has(slug) && !Object.hasOwn(legacySlugAliases, slug))
       .map(({ slug, category_slug }) => ({
         source: `/${slug}`,
         destination: contentHref(slug, category_slug),
+        permanent: true,
+      }));
+    const legacyServiceRedirects = importedItems
+      .filter(({ category_slug }) => serviceCategories.has(category_slug))
+      .map(({ slug }) => ({
+        source: `/services/${slug}`,
+        destination: `/${slug}`,
         permanent: true,
       }));
     const aliasRedirects = Object.entries(legacySlugAliases).map(([source, target]) => ({
@@ -46,6 +51,7 @@ const nextConfig: NextConfig = {
     }));
     return [
       ...canonicalRedirects,
+      ...legacyServiceRedirects,
       ...aliasRedirects,
     ];
   },

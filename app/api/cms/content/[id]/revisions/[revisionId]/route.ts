@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
 import { findCategory, findContentById, getCmsDatabase, recordContentRevision } from "@/lib/cms-db";
-import { getCmsContentHref, isPageCategory } from "@/lib/cms-routes";
-import { isReservedCmsPageSlug } from "@/lib/cms-validation";
+import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
+import { isReservedCmsRootSlug } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
@@ -33,7 +33,7 @@ export async function POST(
     || !category || !status) {
     return NextResponse.json({ error: "This revision references a missing category and cannot be restored." }, { status: 409 });
   }
-  if (isPageCategory(category.slug) && isReservedCmsPageSlug(snapshot.slug)) {
+  if ((isPageCategory(category.slug) || isServiceCategory(category.slug)) && isReservedCmsRootSlug(snapshot.slug)) {
     return NextResponse.json({ error: "This revision uses a slug reserved for a built-in website route." }, { status: 409 });
   }
   const text = (value: unknown): string | null => typeof value === "string" ? value : null;

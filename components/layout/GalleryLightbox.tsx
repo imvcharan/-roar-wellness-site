@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { galleryImageAlts } from "@/lib/gallery-images";
 
 export function GalleryLightbox({ images, imageAlts, children }: { images: string[]; imageAlts?: string[]; children: ReactNode }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -50,7 +51,7 @@ export function GalleryLightbox({ images, imageAlts, children }: { images: strin
           </div>
           <button type="button" className="gallery-lightbox-arrow gallery-lightbox-previous" onClick={showPrevious} aria-label="Previous gallery image"><ChevronLeft size={26} /></button>
           <div className="gallery-lightbox-image-wrap">
-            <img src={images[activeIndex]} alt={imageAlts?.[activeIndex] ?? "Roar Wellness gallery"} className="gallery-lightbox-image" style={{ transform: `scale(${zoom})` }} />
+            <img src={images[activeIndex]} alt={imageAlts?.[activeIndex] ?? galleryImageAlts[activeIndex] ?? "Roar Wellness gallery"} className="gallery-lightbox-image" style={{ transform: `scale(${zoom})` }} />
           </div>
           <button type="button" className="gallery-lightbox-arrow gallery-lightbox-next" onClick={showNext} aria-label="Next gallery image"><ChevronRight size={26} /></button>
         </div>

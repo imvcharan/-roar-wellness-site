@@ -28,6 +28,19 @@ export function resolvePublishedRouteContent(slug: string, kind: CmsRouteKind): 
   };
 }
 
+export function resolvePublishedRootRouteContent(slug: string): {
+  item?: CmsContent;
+  redirectTo?: string;
+  kind: "page" | "service";
+} {
+  const page = resolvePublishedRouteContent(slug, "page");
+  if (page.item || page.redirectTo) return { ...page, kind: "page" };
+
+  const service = resolvePublishedRouteContent(slug, "service");
+  if (service.item || service.redirectTo) return { ...service, kind: "service" };
+  return { kind: "page" };
+}
+
 export function getCmsContentCanonical(item: CmsContent, fallback: string): string {
   if (!item.seo_canonical_url) return fallback;
   try {

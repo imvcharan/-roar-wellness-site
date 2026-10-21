@@ -14,7 +14,7 @@ import { ContactSection } from "@/components/site/ContactSection";
 import { PageTitle } from "@/components/site/PageTitle";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
-import { galleryImages } from "@/lib/gallery-images";
+import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
 import { getYouTubeVideos } from "@/lib/youtube-videos";
 
 interface CmsItem {
@@ -172,6 +172,48 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
         "/images/drugs-addiction-hero-01.png",
         "/images/drugs-addiction-hero-02.png",
         "/images/drugs-addiction-hero-03.png",
+      ];
+    }
+    if (slug === "adhd-treatment-in-delhi") {
+      return [
+        "/images/adhd-treatment-hero-01.jpg",
+        "/images/adhd-treatment-hero-02.jpg",
+        "/images/adhd-treatment-hero-03.jpg",
+      ];
+    }
+    if (slug === "schizophrenia-treatment-in-delhi") {
+      return [
+        "/images/schizophrenia-treatment-hero-01.png",
+        "/images/schizophrenia-treatment-hero-02.png",
+        "/images/schizophrenia-treatment-hero-03.png",
+      ];
+    }
+    if (slug === "treatment-of-personality-disorders") {
+      return [
+        "/images/treatment-of-personality-disorders-hero-01.jpg",
+        "/images/treatment-of-personality-disorders-hero-02.jpg",
+        "/images/treatment-of-personality-disorders-hero-03.jpg",
+      ];
+    }
+    if (slug === "dementia-treatment-in-delhi") {
+      return [
+        "/images/dementia-treatment-in-delhi-hero-01.jpg",
+        "/images/dementia-treatment-in-delhi-hero-02.jpg",
+        "/images/dementia-treatment-in-delhi-hero-03.jpg",
+      ];
+    }
+    if (slug === "psychosis-treatment") {
+      return [
+        "/images/psychosis-treatment-hero-01.jpg",
+        "/images/psychosis-treatment-hero-02.jpg",
+        "/images/psychosis-treatment-hero-03.jpg",
+      ];
+    }
+    if (slug === "bpd-treatment") {
+      return [
+        "/images/bpd-treatment-hero-01.jpg",
+        "/images/bpd-treatment-hero-02.jpg",
+        "/images/bpd-treatment-hero-03.jpg",
       ];
     }
     const pageImages = getCmsPageImages(html);
@@ -1288,9 +1330,9 @@ export default function InnerPagesPage({
                           type="button"
                           className="facility-detail-gallery-item"
                           data-gallery-index={index}
-                          aria-label={`Open facility photo ${index + 1}`}
+                          aria-label={`Open facility photo: ${galleryImageAlts[index]}`}
                         >
-                          <img src={image} alt={`Roar Wellness facility photo ${index + 1}`} loading="lazy" />
+                          <img src={image} alt={galleryImageAlts[index]} loading="lazy" />
                         </button>
                       ))}
                     </div>

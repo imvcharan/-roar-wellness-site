@@ -58,12 +58,20 @@ export function RichTextEditor({ label, value, onChange, maxLength, rows = 10 }:
 
   const uploadImage = async (file?: File) => {
     if (!file || !editor) return;
+    const altText = window.prompt(
+      "Describe what is shown in this image. Leave blank only if the image is decorative.",
+      "",
+    );
+    if (altText === null) {
+      if (fileInput.current) fileInput.current.value = "";
+      return;
+    }
     setError("");
     try {
       const form = new FormData();
       form.set("file", file);
       const response = await cmsRequest<{ data: UploadedMedia }>("/api/cms/media", { method: "POST", body: form });
-      editor.chain().focus().setImage({ src: response.data.url, alt: file.name.replace(/\.[^.]+$/, "") }).run();
+      editor.chain().focus().setImage({ src: response.data.url, alt: altText.trim() }).run();
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
     } finally {

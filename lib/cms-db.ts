@@ -258,6 +258,24 @@ function openDatabase(): DatabaseSync {
   addColumn("cms_enquiries", "follow_up_at", "TEXT");
   addColumn("cms_users", "totp_secret_enc", "TEXT");
   addColumn("cms_users", "totp_pending_secret_enc", "TEXT");
+  const featuredAltMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'featured-image-alt-fallback-v1'",
+  ).get();
+  if (!featuredAltMigration) {
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      database.prepare(`
+        UPDATE content SET image_alt_text = title
+        WHERE image_url IS NOT NULL AND trim(image_url) != ''
+          AND (image_alt_text IS NULL OR trim(image_alt_text) = '')
+      `).run();
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('featured-image-alt-fallback-v1')").run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
   addColumn("cms_users", "totp_pending_at", "TEXT");
   addColumn("cms_users", "totp_last_counter", "INTEGER NOT NULL DEFAULT -1");
   addColumn("cms_home_sections", "group_name", "TEXT NOT NULL DEFAULT 'custom'");
@@ -873,6 +891,138 @@ function openDatabase(): DatabaseSync {
         if (imageUrl && slug) updateImage.run(imageUrl, slug);
       }
       database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-post-featured-images-v2')").run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  const psychosisDescription = "Experiences associated with psychosis can be confusing or frightening for the person affected and for those close to them. Psychosis is a group of symptoms, not a diagnosis by itself. A qualified mental health professional can assess what is happening and discuss appropriate care.";
+  const psychosisPageContent = `<p>${psychosisDescription}</p>
+<h2>What is psychosis?</h2>
+<p>Psychosis can affect a person's perception, thoughts, emotions, and ability to distinguish internal experiences from what is happening around them. Experiences differ from person to person and may change over time. Only a qualified clinician can assess symptoms and identify possible causes.</p>
+<h2>When to seek an assessment</h2>
+<p>Consider arranging a professional assessment when changes in perception, beliefs, communication, sleep, or everyday functioning are persistent, distressing, or concerning to the person or their family. A clinician will listen to the person's experiences, consider their health and circumstances, and recommend next steps. There is no single assessment or treatment plan that is right for everyone.</p>
+<h2>Care and treatment</h2>
+<p>Care is guided by an individual assessment and may involve a psychiatrist, psychologist, and other healthcare professionals. Depending on the person's needs, a care plan can include regular clinical follow-up, psychological support, practical help with daily routines, and medication prescribed and monitored by a qualified clinician. Treatment decisions should be made with the care team; medication should not be started, stopped, or changed without medical guidance.</p>
+<h2>How families can offer support</h2>
+<ul>
+<li>Listen calmly and respectfully, without arguing about or dismissing the person's experience.</li>
+<li>Encourage professional help and offer to accompany them if they would find that useful.</li>
+<li>Keep communication simple, give the person time, and ask what support feels helpful.</li>
+<li>Look after your own wellbeing and seek guidance from qualified professionals.</li>
+</ul>
+<h2>Urgent help</h2>
+<p>If someone may harm themselves or another person, cannot keep themselves safe, or needs immediate medical attention, contact local emergency services or go to the nearest emergency department now. Do not wait for a routine appointment.</p>
+<p>Roar Wellness can help families discuss available mental healthcare and the next appropriate step. This page provides general information only; it is not a diagnosis or a substitute for professional medical advice.</p>`;
+  const psychosisSeoTitle = "Psychosis Treatment and Mental Healthcare in Delhi | Roar Wellness";
+  const psychosisSeoDescription = "Explore professional assessment and individualized mental healthcare for psychosis in Delhi. Contact Roar Wellness to discuss appropriate support.";
+  const psychosisContentMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'psychosis-treatment-content-v1'",
+  ).get();
+  if (!psychosisContentMigration) {
+    const mentalHealthcare = database.prepare(
+      "SELECT id FROM categories WHERE slug = 'mental-healthcare'",
+    ).get() as { id: string } | undefined;
+    if (!mentalHealthcare) throw new Error("Psychosis treatment content requires the Mental healthcare category.");
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      database.prepare(`
+        INSERT OR IGNORE INTO content (
+          id, title, slug, category_id, excerpt, summary, description, content,
+          status, seo_title, seo_description, published_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      `).run(
+        randomUUID(),
+        "Psychosis Treatment",
+        "psychosis-treatment",
+        mentalHealthcare.id,
+        "Psychosis can affect how a person understands and experiences reality. A qualified mental health professional can assess symptoms and help plan appropriate care.",
+        "Learn about professional assessment, treatment options, and family support for people experiencing psychosis.",
+        psychosisDescription,
+        psychosisPageContent,
+        psychosisSeoTitle,
+        psychosisSeoDescription,
+      );
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('psychosis-treatment-content-v1')").run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  const psychosisSeoMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'psychosis-treatment-seo-fix-v2'",
+  ).get();
+  if (!psychosisSeoMigration) {
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      database.prepare(`
+        UPDATE content SET description = ?, content = ?, seo_title = ?, seo_description = ?
+        WHERE slug = 'psychosis-treatment' AND seo_description IS NULL
+          AND seo_title = ?
+      `).run(
+        psychosisDescription,
+        psychosisPageContent,
+        psychosisSeoTitle,
+        psychosisSeoDescription,
+        psychosisSeoDescription,
+      );
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('psychosis-treatment-seo-fix-v2')").run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  const bpdDescription = "Borderline personality disorder (BPD) can affect emotions, relationships, self-image, and day-to-day life. A qualified mental health professional can assess an individual's experiences and discuss appropriate support.";
+  const bpdPageContent = `<p>${bpdDescription}</p>
+<h2>Understanding BPD</h2>
+<p>BPD is a mental health condition that can involve intense emotions, changes in self-image, and difficulties in relationships. Experiences vary, and only a qualified clinician can assess whether someone meets diagnostic criteria. A compassionate assessment can also consider other health or life factors that may affect how a person is feeling.</p>
+<h2>Assessment and diagnosis</h2>
+<p>A mental health professional will talk with the person about their concerns, history, strengths, and goals. Assessment may take more than one appointment and can include screening for other mental health concerns. The person should have the opportunity to ask questions and take part in decisions about their care.</p>
+<h2>Treatment and support</h2>
+<p>Care is individualized and may include structured psychotherapy, regular follow-up, and practical support. Dialectical behavior therapy (DBT) is one evidence-based therapy that may be considered; a clinician can discuss whether it is appropriate and what other options are available. Medication is not a cure for BPD, though a prescriber may discuss it for specific symptoms or co-occurring conditions. Do not start, stop, or change medication without medical guidance.</p>
+<h2>Support from family and friends</h2>
+<ul>
+<li>Listen respectfully and validate the person's feelings without making assumptions about their experience.</li>
+<li>Encourage professional support and ask how you can help with practical next steps.</li>
+<li>Agree on clear, kind boundaries and seek guidance from qualified professionals when needed.</li>
+<li>Look after your own wellbeing and consider support for family members or carers.</li>
+</ul>
+<h2>Urgent help</h2>
+<p>If someone may harm themselves or another person, cannot keep themselves safe, or needs immediate medical attention, contact local emergency services or go to the nearest emergency department now. Do not wait for a routine appointment.</p>
+<p>Roar Wellness can help people and families discuss mental healthcare and appropriate next steps. This page provides general information only; it is not a diagnosis or a substitute for professional medical advice.</p>`;
+  const bpdSeoTitle = "BPD Treatment and Support in Delhi | Roar Wellness";
+  const bpdSeoDescription = "Learn about professional assessment and individualized support for borderline personality disorder (BPD) in Delhi. Contact Roar Wellness to discuss next steps.";
+  const bpdContentMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'bpd-treatment-content-v1'",
+  ).get();
+  if (!bpdContentMigration) {
+    const mentalHealthcare = database.prepare(
+      "SELECT id FROM categories WHERE slug = 'mental-healthcare'",
+    ).get() as { id: string } | undefined;
+    if (!mentalHealthcare) throw new Error("BPD treatment content requires the Mental healthcare category.");
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      database.prepare(`
+        INSERT OR IGNORE INTO content (
+          id, title, slug, category_id, excerpt, summary, description, content,
+          status, seo_title, seo_description, published_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      `).run(
+        randomUUID(),
+        "BPD Treatment",
+        "bpd-treatment",
+        mentalHealthcare.id,
+        "A qualified mental health professional can assess borderline personality disorder and discuss individualized treatment and support options.",
+        "Explore professional assessment, therapy options, and support for people living with borderline personality disorder (BPD).",
+        bpdDescription,
+        bpdPageContent,
+        bpdSeoTitle,
+        bpdSeoDescription,
+      );
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('bpd-treatment-content-v1')").run();
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
