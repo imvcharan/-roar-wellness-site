@@ -78,6 +78,8 @@ function NavigationItem({
   isMenuSuppressed?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isSubmenuDismissed, setIsSubmenuDismissed] = useState(false);
+  const itemRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const hasChildren = Boolean(link.children?.length);
   const className = "nav-link rolling-nav-link";
@@ -97,12 +99,41 @@ function NavigationItem({
     setIsExpanded(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (event.target instanceof Node && itemRef.current?.contains(event.target)) return;
+      setIsExpanded(false);
+      if (document.activeElement instanceof HTMLElement && itemRef.current?.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+    };
+  }, [isExpanded]);
+
   return (
     <div
+      ref={itemRef}
       data-menu-owner={menuOwner === link.label ? link.label : undefined}
-      className={`nav-item${hasChildren ? " has-children" : ""}${isExpanded ? " is-expanded" : ""}${isMenuSuppressed ? " is-navigation-suppressed" : ""}`}
+      className={`nav-item${hasChildren ? " has-children" : ""}${isExpanded ? " is-expanded" : ""}${isMenuSuppressed || isSubmenuDismissed ? " is-navigation-suppressed" : ""}`}
+      onMouseEnter={() => setIsSubmenuDismissed(false)}
+      onKeyDown={(event) => {
+        if (!hasChildren || event.key !== "Escape") return;
+        setIsExpanded(false);
+        if (window.matchMedia("(min-width: 1101px)").matches) setIsSubmenuDismissed(true);
+        if (document.activeElement instanceof HTMLElement && itemRef.current?.contains(document.activeElement)) {
+          document.activeElement.blur();
+        }
+      }}
       onMouseLeave={() => {
-        if (window.matchMedia("(min-width: 1101px)").matches) setIsExpanded(false);
+        if (window.matchMedia("(min-width: 1101px)").matches) {
+          setIsExpanded(false);
+          setIsSubmenuDismissed(false);
+        }
       }}
     >
       <div className="nav-item-trigger">
@@ -138,6 +169,8 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [suppressedMenu, setSuppressedMenu] = useState<string | null>(null);
   const suppressedMenuPointer = useRef<{ x: number; y: number } | null>(null);
+  const headerBarRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setSuppressedMenu(sessionStorage.getItem("roarwellness-suppressed-nav-menu"));
@@ -145,12 +178,41 @@ export function Navbar() {
 
   useEffect(() => {
     if (!isOpen) return;
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setIsOpen(false);
+    function closeOnOutsidePointer(event: PointerEvent) {
+      if (event.target instanceof Node && headerBarRef.current?.contains(event.target)) return;
+      setIsOpen(false);
     }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setIsOpen(false);
+      menuButtonRef.current?.focus();
+    }
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
     window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnDesktop = () => {
+      if (window.matchMedia("(min-width: 1101px)").matches) setIsOpen(false);
+    };
+    window.addEventListener("resize", closeOnDesktop);
+    return () => window.removeEventListener("resize", closeOnDesktop);
+  }, [isOpen]);
+
+  useEffect(() => {
+    const closeFocusedDesktopMenu = (event: PointerEvent) => {
+      if (!(event.target instanceof Node) || !(document.activeElement instanceof HTMLElement)) return;
+      const focusedMenu = document.activeElement.closest(".header-desktop-links .nav-item");
+      if (focusedMenu && !focusedMenu.contains(event.target)) document.activeElement.blur();
+    };
+    document.addEventListener("pointerdown", closeFocusedDesktopMenu);
+    return () => document.removeEventListener("pointerdown", closeFocusedDesktopMenu);
+  }, []);
 
   useEffect(() => {
     if (!suppressedMenu) return;
@@ -184,7 +246,7 @@ export function Navbar() {
 
   return (
     <nav className={`site-nav${isOpen ? " is-mobile-open" : ""}`} aria-label="Main navigation">
-      <div className="header-bar">
+      <div ref={headerBarRef} className="header-bar">
         <div
           className="header-desktop-links"
           onClickCapture={(event) => {
@@ -215,12 +277,13 @@ export function Navbar() {
             <img src="/images/logo.png" alt="Roar Wellness" className="header-logo" />
           </Link>
           {callButton}
-          <button type="button" className="header-menu-button" aria-label={isOpen ? "Close menu" : "Open menu"} aria-expanded={isOpen} onClick={() => setIsOpen((open) => !open)}>
+          <button ref={menuButtonRef} type="button" className="header-menu-button" aria-label={isOpen ? "Close menu" : "Open menu"} aria-expanded={isOpen} aria-controls="header-mobile-links" onClick={() => setIsOpen((open) => !open)}>
             {isOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
         </div>
         {isOpen && (
           <div
+            id="header-mobile-links"
             className="header-mobile-links"
             onClickCapture={(event) => {
               if (event.target instanceof Element && event.target.closest("a")) closeMobileMenu();

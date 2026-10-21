@@ -752,9 +752,11 @@
   .nav-disclosure svg { transition: transform .2s ease; }
   .nav-item.is-expanded > .nav-item-trigger .nav-disclosure svg { transform: rotate(180deg); }
   .nav-dropdown { position: absolute; top: 100%; left: 0; z-index: 60; display: none; width: max-content; min-width: 12.5rem; max-width: min(19rem, 80vw); max-height: min(72dvh, 36rem); overflow: auto; overscroll-behavior: contain; border: 1px solid rgb(117 71 122 / .14); border-radius: .75rem; background: rgb(255 252 245 / .99); padding: .4rem; box-shadow: 0 16px 42px rgb(42 31 37 / .2); scrollbar-color: rgb(117 71 122 / .42) transparent; scrollbar-width: thin; }
-  .nav-item:hover > .nav-dropdown,
-  .nav-item:focus-within > .nav-dropdown,
   .nav-item.is-expanded > .nav-dropdown { display: block; }
+  @media (min-width: 1101px) {
+    .nav-item:hover > .nav-dropdown,
+    .nav-item:focus-within > .nav-dropdown { display: block; }
+  }
   .nav-item.is-navigation-suppressed > .nav-dropdown,
   .nav-item.is-navigation-suppressed > .nav-dropdown { display: none !important; }
   .nav-dropdown::-webkit-scrollbar { width: 5px; }

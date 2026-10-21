@@ -118,6 +118,62 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
         "/images/poly-substance-abuse-hero-03.jpg",
       ];
     }
+    if (slug === "morphine-addiction") {
+      return [
+        "/images/morphine-addiction-hero-01.png",
+        "/images/morphine-addiction-hero-02.png",
+        "/images/morphine-addiction-hero-03.png",
+      ];
+    }
+    if (slug === "benzodiazepine-treatment") {
+      return [
+        "/images/benzodiazepine-treatment-hero-01.png",
+        "/images/benzodiazepine-treatment-hero-02.png",
+        "/images/benzodiazepine-treatment-hero-03.png",
+      ];
+    }
+    if (slug === "gambling-treatment") {
+      return [
+        "/images/gambling-treatment-hero-01.png",
+        "/images/gambling-treatment-hero-02.png",
+        "/images/gambling-treatment-hero-03.png",
+      ];
+    }
+    if (slug === "internet-addiction") {
+      return [
+        "/images/internet-addiction-hero-01.png",
+        "/images/internet-addiction-hero-02.png",
+        "/images/internet-addiction-hero-03.png",
+      ];
+    }
+    if (slug === "marijuana-treatment-in-delhi") {
+      return [
+        "/images/marijuana-treatment-in-delhi-hero-01.png",
+        "/images/marijuana-treatment-in-delhi-hero-02.png",
+        "/images/marijuana-treatment-in-delhi-hero-03.png",
+      ];
+    }
+    if (slug === "sex-addiction") {
+      return [
+        "/images/sex-addiction-hero-01.png",
+        "/images/sex-addiction-hero-02.png",
+        "/images/sex-addiction-hero-03.png",
+      ];
+    }
+    if (slug === "de-addiction-treatment") {
+      return [
+        "/images/de-addiction-treatment-hero-01.png",
+        "/images/de-addiction-treatment-hero-02.png",
+        "/images/de-addiction-treatment-hero-03.png",
+      ];
+    }
+    if (slug === "drugs-addiction") {
+      return [
+        "/images/drugs-addiction-hero-01.png",
+        "/images/drugs-addiction-hero-02.png",
+        "/images/drugs-addiction-hero-03.png",
+      ];
+    }
     const pageImages = getCmsPageImages(html);
     return pageImages.length ? pageImages : ["/images/facility-open-space.webp"];
   }, [html, slug]);
