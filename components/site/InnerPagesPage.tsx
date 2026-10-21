@@ -1188,7 +1188,7 @@ export default function InnerPagesPage({
                 <p className="detail-hero-kicker">{isExpertsPage ? "Meet the people behind your care" : selectedKind === "blog" ? "From the Roar Wellness blog" : selectedSlug === "news" ? "News & updates" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
                 <h2 id="treatment-detail-title" className="detail-hero-title">{selectedItem.title}</h2>
                 {summary && <p className="detail-hero-summary">{summary}</p>}
-                {selectedKind === "service" && <a className="detail-hero-cta" href="tel:+919319977207">Speak with our team <span aria-hidden="true">›</span></a>}
+                {selectedKind === "service" && <Link className="detail-hero-cta" href="/appointment/">Request an appointment <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "service" && <p className="detail-hero-note">Private, supportive, and without obligation</p>}
               </div>

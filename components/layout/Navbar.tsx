@@ -63,6 +63,7 @@ const navigationLinks: NavigationLink[] = [
       { label: "News", href: "/news/" },
     ],
   },
+  { label: "Appointment", href: "/appointment/" },
   { label: "Contact Us", href: "/contact-us/" },
 ];
 

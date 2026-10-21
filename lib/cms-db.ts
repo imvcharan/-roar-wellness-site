@@ -267,10 +267,10 @@ function openDatabase(): DatabaseSync {
   }
   const settingDefaults: [string, string][] = [
     ["siteName", "Roar Wellness"],
-    ["siteDescription", "Personalized, evidence-based rehabilitation and mental healthcare at Roar Wellness in Delhi."],
+    ["siteDescription", "Get expert help today at Roar Wellness Rehab Centre – confidential consultation available. Start your recovery journey now."],
     ["siteUrl", "https://www.roarwellness.org"],
-    ["seoTitle", "Roar Wellness | Rehabilitation Centre in Delhi"],
-    ["seoDescription", "Personalized, evidence-based rehabilitation and mental healthcare at Roar Wellness in Delhi."],
+    ["seoTitle", "Luxury Rehabilitation Centre | Drug & Alcohol Rehab Centre Delhi NCR, India"],
+    ["seoDescription", "Roar Wellness is the best rehabilitation Centre in Delhi NCR, India. Leading alcohol addiction treatment and luxury rehab facilities. Contact Roar Wellness Center Delhi."],
     ["postsPerPage", "20"],
     ["homepageHeroTitle", "Roar Wellness"],
     ["homepageHeroEyebrow", "Rehabilitation centre · Delhi"],
@@ -283,6 +283,21 @@ function openDatabase(): DatabaseSync {
     ["contactWhatsApp", "+919773890499"],
     ["contactAddress", "Akhil Farm, 1 Daisy Lane, Off Central Drive, DLF Chattarpur Farms, New Delhi 110074, India"],
   ];
+  database.prepare("UPDATE cms_settings SET value = ? WHERE key = ? AND value = ?").run(
+    "Luxury Rehabilitation Centre | Drug & Alcohol Rehab Centre Delhi NCR, India",
+    "seoTitle",
+    "Roar Wellness | Rehabilitation Centre in Delhi",
+  );
+  database.prepare("UPDATE cms_settings SET value = ? WHERE key = ? AND value = ?").run(
+    "Roar Wellness is the best rehabilitation Centre in Delhi NCR, India. Leading alcohol addiction treatment and luxury rehab facilities. Contact Roar Wellness Center Delhi.",
+    "seoDescription",
+    "Personalized, evidence-based rehabilitation and mental healthcare at Roar Wellness in Delhi.",
+  );
+  database.prepare("UPDATE cms_settings SET value = ? WHERE key = ? AND value = ?").run(
+    "Get expert help today at Roar Wellness Rehab Centre – confidential consultation available. Start your recovery journey now.",
+    "siteDescription",
+    "Personalized, evidence-based rehabilitation and mental healthcare at Roar Wellness in Delhi.",
+  );
   const seedSetting = database.prepare("INSERT OR IGNORE INTO cms_settings (key, value) VALUES (?, ?)");
   settingDefaults.forEach(([key, value]) => seedSetting.run(key, value));
   const seededHomepage = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-defaults'").get();

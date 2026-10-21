@@ -1420,6 +1420,11 @@
     font-size: 1.05rem;
     line-height: 1.6;
   }
+  .detail-service-hero-band .detail-hero-summary {
+    text-align: justify;
+    text-justify: inter-word;
+    text-align-last: left;
+  }
   .detail-hero-cta {
     display: inline-flex;
     width: fit-content;

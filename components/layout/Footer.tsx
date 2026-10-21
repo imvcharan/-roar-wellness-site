@@ -9,6 +9,7 @@ const quickLinks = [
   ["About us", "/about-roarwellness/"],
   ["Our approach", "/#about"],
   ["Services", "/services"],
+  ["Book an appointment", "/appointment/"],
   ["Facility", "/facility/"],
   ["Gallery", "/gallery/"],
   ["FAQs", "/faqs/"],
