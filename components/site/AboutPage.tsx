@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ArrowDown, ArrowUpRight, Play, X } from "lucide-react";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
 import { PageTitle } from "@/components/site/PageTitle";
@@ -99,6 +100,13 @@ export function AboutPage({ phone }: { phone: string }) {
           </a>
         </div>
       </section>
+      <nav aria-label="Breadcrumb" className="about-mobile-breadcrumb site-container mt-4 px-5">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
+          <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
+          <li aria-hidden="true" className="text-beige">/</li>
+          <li aria-current="page" className="text-brown">About Roar Wellness</li>
+        </ol>
+      </nav>
 
       <section id="about-reference-story" className="about-reference-story about-reference-reveal" aria-labelledby="about-reference-story-title">
         <div className="about-reference-story-heading">

@@ -1038,6 +1038,7 @@
     .cms-about-page .about-section-reveal { opacity: 1; transform: none; }
   }
   .about-reference-page { overflow: hidden; background: #fffcf5; color: #51483f; }
+  .about-mobile-breadcrumb { display: none; }
   .about-reference-hero { position: relative; display: flex; min-height: min(100svh, 60rem); align-items: flex-end; overflow: hidden; background: #342e29; color: #fffcf5; }
   .about-reference-hero-backdrop { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%), linear-gradient(0deg, rgb(24 25 19 / .38), transparent 65%), url("/images/facility-open-space.webp") center 55% / cover; transform: scale(1.02); }
   .about-reference-hero-content { position: relative; width: min(calc(100% - 3rem), 82rem); margin: 0 auto; padding: 12rem 0 clamp(4rem, 10vh, 8rem); animation: aboutReferenceRise .85s cubic-bezier(.2,.7,.2,1) both; }
@@ -1105,8 +1106,13 @@
   body:has(.about-reference-page) .nav-link { color: #51483f; }
   body:has(.about-reference-page) .nav-link:hover, body:has(.about-reference-page) .nav-link:focus-visible { color: #8d6b57; }
   @media (max-width: 767px) {
-    .about-reference-hero { min-height: 88svh; }
-    .about-reference-hero-content { width: calc(100% - 2.5rem); padding-bottom: 4rem; }
+    .about-reference-page { padding-top: 8rem; }
+    .about-reference-hero { min-height: min(44svh, 28rem); }
+    .about-reference-hero-content { width: calc(100% - 2.5rem); padding: .75rem 0 1.25rem; }
+    .about-reference-hero .about-reference-kicker { margin-bottom: .65rem; }
+    .about-reference-hero h2 { max-width: 14ch; font-size: clamp(2.65rem, 11.2vw, 3.5rem); line-height: .98; }
+    .about-reference-scroll { gap: .65rem; margin-top: 1rem; }
+    .about-mobile-breadcrumb { display: block; }
     .about-reference-story { width: calc(100% - 2.5rem); padding: 5rem 0; }
     .about-reference-story-grid { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
     .about-reference-story-image img { aspect-ratio: .9; }
@@ -2648,7 +2654,8 @@
     .blog-story-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 600px) {
-    .blog-page-hero { width: 100%; min-height: 31rem; padding: 9rem 1.25rem 2.25rem; }
+    .content-archive-blog.blog-page { padding-top: 8rem; }
+    .blog-page-hero { width: 100%; height: clamp(14rem, 69.8vw, 19rem); min-height: 0; padding: 1.25rem; }
     .blog-page-hero::before { inset: 0; background-position: 30% center; }
     .blog-page-hero-bottom { align-items: flex-end; gap: .75rem; }
     .blog-page-hero h2 { max-width: 8ch; margin-top: 0; font-size: clamp(3.1rem, 14vw, 4rem); line-height: .94; }
@@ -2864,7 +2871,7 @@
   @media (max-width: 767px) {
     .about-reference-hero-backdrop {
       background-image:
-        linear-gradient(180deg, transparent 14%, rgb(24 25 19 / .3) 24%, #342e29 37%),
+        linear-gradient(180deg, transparent 12%, rgb(24 25 19 / .18) 34%, rgb(24 25 19 / .7) 100%),
         linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%),
         url("/images/facility-open-space.webp");
       background-position: center, center, top center;
@@ -2906,7 +2913,7 @@
     }
     .blog-page-hero::before {
       background-position: top center;
-      background-size: 100% auto;
+      background-size: cover;
       background-repeat: no-repeat;
     }
     .gallery-page-header::before {
@@ -2951,4 +2958,95 @@
   .cms-rich-editor-content .ProseMirror blockquote { border-left: 3px solid var(--color-cms-border); padding-left: .85rem; color: var(--color-cms-muted); }
   .cms-rich-editor-content .ProseMirror a { color: #2563eb; text-decoration: underline; }
   .cms-rich-editor-content .ProseMirror img { max-width: 100%; height: auto; border-radius: .375rem; }
+}
+
+@media (max-width: 767px) {
+  .site-container { width: min(calc(100% - 1rem), var(--site-content-width)); }
+  .site-container.px-5 { padding-right: 0; padding-left: 0; }
+  .about-reference-story,
+  .about-reference-hero-content,
+  .about-page-hero-content,
+  .services-divider,
+  .blog-page-divider,
+  .blog-featured-section,
+  .blog-all-section { width: calc(100% - 1rem); }
+  main p:not(.eyebrow):not([class*="kicker"]) {
+    text-align: justify;
+    text-align-last: start;
+    text-justify: inter-word;
+  }
+  .detail-facility-layout .service-path-card h2 { max-width: none; }
+}
+
+:root {
+  --surface-depth-shadow:
+    0 1px 2px rgb(49 38 30 / .06),
+    0 8px 20px rgb(49 38 30 / .08),
+    inset 0 1px 0 rgb(255 255 255 / .55);
+  --surface-depth-shadow-raised:
+    0 3px 6px rgb(49 38 30 / .08),
+    0 16px 32px rgb(49 38 30 / .13),
+    inset 0 1px 0 rgb(255 255 255 / .6);
+}
+
+:is(
+  .service-toc-card,
+  .service-path-card,
+  .therapy-infographic-card,
+  .detail-sidebar-card,
+  .service-recommendation-card,
+  .blog-story-card,
+  .archive-item,
+  .home-appointment-card,
+  .about-reference-story-image,
+  .about-reference-appointment-card,
+  .facility-detail-gallery-item,
+  .gallery-page-item,
+  .service-tile,
+  .mosaic-card,
+  .substance-impact-card,
+  .twelve-step-phase-card,
+  .aa-question-card
+) {
+  box-shadow: var(--surface-depth-shadow);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(
+    .service-recommendation-card,
+    .blog-story-card,
+    .archive-item,
+    .facility-detail-gallery-item,
+    .gallery-page-item,
+    .service-tile,
+    .mosaic-card
+  ):hover {
+    transform: translateY(-3px);
+    box-shadow: var(--surface-depth-shadow-raised);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .service-toc-card,
+    .service-path-card,
+    .therapy-infographic-card,
+    .detail-sidebar-card,
+    .service-recommendation-card,
+    .blog-story-card,
+    .archive-item,
+    .home-appointment-card,
+    .about-reference-story-image,
+    .about-reference-appointment-card,
+    .facility-detail-gallery-item,
+    .gallery-page-item,
+    .service-tile,
+    .mosaic-card,
+    .substance-impact-card,
+    .twelve-step-phase-card,
+    .aa-question-card
+  ) {
+    transition: none;
+  }
 }
