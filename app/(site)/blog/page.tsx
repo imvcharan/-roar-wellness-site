@@ -112,10 +112,6 @@ export default function BlogPage() {
     <main ref={pageRef} className="content-archive content-archive-blog blog-page">
       <PageTitle>Blog: stories and insights</PageTitle>
       <header className="blog-page-hero">
-        <div className="blog-page-hero-top">
-          <p className="blog-page-kicker">Roar Wellness Blog</p>
-          <p className="blog-page-hero-note">Thoughtful ideas for recovery, wellbeing, and the way forward.</p>
-        </div>
         <div className="blog-page-hero-bottom">
           <h2>Stories &amp; <em>insights</em></h2>
           <a href="#featured-stories" aria-label="Explore featured blog articles"><ArrowDown size={24} strokeWidth={1.4} /></a>

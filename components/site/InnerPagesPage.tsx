@@ -211,6 +211,13 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
         "/images/psychosis-treatment-hero-03.jpg",
       ];
     }
+    if (slug === "tms-therapy") {
+      return [
+        "/images/tms-therapy-hero-01.png",
+        "/images/tms-therapy-hero-02.png",
+        "/images/tms-therapy-hero-03.png",
+      ];
+    }
     if (slug === "bpd-treatment") {
       return [
         "/images/bpd-treatment-hero-01.jpg",
@@ -1224,7 +1231,7 @@ export default function InnerPagesPage({
       <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
         <PageTitle>{selectedItem?.title || (selectedSlug ? "Page content" : listingKind === "services" ? "Services" : "Treatments & site pages")}</PageTitle>
         {selectedItem ? <>
-          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage ? " detail-hero-band-fallback-image" : ""}`} aria-labelledby="treatment-detail-title">
+          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage ? " detail-hero-band-fallback-image" : ""}${isFacilityPage ? " facility-detail-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
