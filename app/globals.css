@@ -2346,6 +2346,27 @@
   }
   .page-hero-band::before { position: absolute; z-index: 0; inset: 0; background: linear-gradient(105deg, rgb(40 34 31 / .82), rgb(66 56 48 / .64) 58%, rgb(67 57 50 / .48)), url("/images/facility-open-space.webp") center 48% / cover; content: ""; }
   .facility-detail-hero-band::before { background: linear-gradient(105deg, rgb(40 34 31 / .82), rgb(66 56 48 / .64) 58%, rgb(67 57 50 / .48)), url("/images/facility-page-hero.png") center 52% / cover; }
+  @media (max-width: 767px) {
+    .facility-detail-hero-band {
+      width: 100%;
+      min-height: 0;
+      aspect-ratio: 966 / 340;
+    }
+    .facility-detail-hero-band .detail-hero {
+      min-height: 0;
+      height: 100%;
+    }
+    .facility-detail-hero-band .detail-hero-copy {
+      justify-content: center;
+      padding: .75rem 0;
+    }
+    .facility-detail-hero-band::before {
+      inset: 0;
+      background-image: linear-gradient(180deg, rgb(38 33 30 / .22), rgb(38 33 30 / .08) 48%, rgb(38 33 30 / .4)), url("/images/facility-page-hero.png");
+      background-position: center, center;
+      background-size: auto, cover;
+    }
+  }
   .page-hero-inner {
     position: relative;
     z-index: 1;
@@ -2627,10 +2648,12 @@
     .blog-story-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 600px) {
-    .blog-page-hero { width: calc(100% - 2rem); min-height: 37rem; padding-top: 9.5rem; padding-bottom: 3.2rem; }
+    .blog-page-hero { width: 100%; min-height: 31rem; padding: 9rem 1.25rem 2.25rem; }
+    .blog-page-hero::before { inset: 0; background-position: 30% center; }
     .blog-page-hero-bottom { align-items: flex-end; gap: .75rem; }
-    .blog-page-hero h2 { max-width: 8ch; margin-top: 3rem; font-size: clamp(3.7rem, 17vw, 6rem); }
-    .blog-page-hero-bottom > a { width: 2.8rem; height: 2.8rem; margin-bottom: .15rem; }
+    .blog-page-hero h2 { max-width: 8ch; margin-top: 0; font-size: clamp(3.1rem, 14vw, 4rem); line-height: .94; }
+    .blog-page-intro { max-width: 26rem; margin-top: 1.5rem; font-size: clamp(.94rem, 4vw, 1.05rem); line-height: 1.65; }
+    .blog-page-hero-bottom > a { width: 3rem; height: 3rem; margin-bottom: .15rem; border: 1px solid rgb(81 72 63 / .48); background: #fffcf5; color: #51483f; box-shadow: 0 3px 12px rgb(36 28 24 / .22); }
     .blog-page-divider, .blog-featured-section, .blog-all-section { width: calc(100% - 2rem); }
     .blog-section-heading { align-items: flex-start; flex-direction: column; gap: .8rem; margin-bottom: 1.4rem; }
     .blog-section-heading > p { max-width: 26rem; }
@@ -2837,6 +2860,75 @@
     .gallery-page-grid { grid-template-columns: 1fr; }
     .gallery-lightbox-toolbar { left: .75rem; right: .75rem; }
     .gallery-lightbox-image-wrap { width: 76vw; height: 62vh; }
+  }
+  @media (max-width: 767px) {
+    .about-reference-hero-backdrop {
+      background-image:
+        linear-gradient(180deg, transparent 14%, rgb(24 25 19 / .3) 24%, #342e29 37%),
+        linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%),
+        url("/images/facility-open-space.webp");
+      background-position: center, center, top center;
+      background-size: 100% 100%, 100% 100%, 100% auto;
+      background-repeat: no-repeat;
+      transform: none;
+    }
+    .contact-page-hero::before {
+      background-image:
+        linear-gradient(180deg, transparent 18%, #f3f0e7 59%),
+        linear-gradient(90deg, rgb(255 252 245 / .9), rgb(255 252 245 / .74) 55%, rgb(255 252 245 / .4)),
+        url("/images/about-roar-wellness.webp");
+      background-position: center, center, top center;
+      background-size: 100% 100%, 100% 100%, 100% auto;
+      background-repeat: no-repeat;
+    }
+    .page-hero-band::before {
+      background-image:
+        linear-gradient(180deg, transparent 35%, rgb(38 33 30 / .78) 62%),
+        linear-gradient(105deg, rgb(40 34 31 / .82), rgb(66 56 48 / .64) 58%, rgb(67 57 50 / .48)),
+        url("/images/facility-open-space.webp");
+      background-position: center, center, top center;
+      background-size: 100% 100%, 100% 100%, 100% auto;
+      background-repeat: no-repeat;
+    }
+    .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-01"]) {
+      min-height: 0;
+      aspect-ratio: 966 / 430;
+    }
+    .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-01"]) > .site-container {
+      height: 100%;
+    }
+    .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-01"]) .detail-hero {
+      min-height: 0;
+      height: 100%;
+    }
+    .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-01"]) .detail-hero-background-slide {
+      object-position: center;
+    }
+    .blog-page-hero::before {
+      background-position: top center;
+      background-size: 100% auto;
+      background-repeat: no-repeat;
+    }
+    .gallery-page-header::before {
+      background-position: center, top center;
+      background-size: 100% 100%, 100% auto;
+      background-repeat: no-repeat;
+    }
+    .gallery-page .gallery-page-grid {
+      width: calc(100% + 3rem);
+      margin-right: -1.5rem;
+      margin-left: -1.5rem;
+    }
+    .gallery-page .gallery-page-grid:not(.gallery-video-grid) .gallery-page-item {
+      aspect-ratio: 16 / 10;
+    }
+    .gallery-lightbox-image-wrap {
+      width: 94vw;
+      height: 76vh;
+    }
+    .gallery-video-lightbox { padding: .35rem; }
+    .gallery-video-dialog { width: 100%; }
+    .gallery-video-toolbar { margin-bottom: .55rem; }
   }
   @media (hover: none) {
     .content-archive-services .service-tile-description {
