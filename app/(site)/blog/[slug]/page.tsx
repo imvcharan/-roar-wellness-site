@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import InnerPagesPage from "@/components/site/InnerPagesPage";
-import { getRouteContentMetadata, resolvePublishedRouteContent } from "@/lib/cms-route-content";
+import { getCmsContentStructuredData, getRouteContentMetadata, resolvePublishedRouteContent } from "@/lib/cms-route-content";
 import { getCmsContentHref } from "@/lib/cms-routes";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -18,5 +18,15 @@ export default async function BlogDetailPage({ params }: Props) {
   const resolved = resolvePublishedRouteContent(slug, "blog");
   if (resolved.redirectTo) permanentRedirect(resolved.redirectTo);
   if (!resolved.item) notFound();
-  return <InnerPagesPage detailSlug={slug} detailKind="blog" />;
+  const fallbackCanonical = getCmsContentHref(resolved.item.slug, resolved.item.category_slug);
+  const structuredData = getCmsContentStructuredData(resolved.item, fallbackCanonical, "blog");
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+      />
+      <InnerPagesPage detailSlug={slug} detailKind="blog" />
+    </>
+  );
 }

@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/appointment-validation.test.ts tests/cms-backup-crypto.test.ts tests/cms-media-health.test.ts tests/cms-notifications.test.ts",
+    "test": "node --experimental-strip-types --test tests/appointment-validation.test.ts tests/cms-validation.test.ts tests/cms-backup-crypto.test.ts tests/cms-media-health.test.ts tests/cms-notifications.test.ts",
     "cms:backup": "tsx scripts/cms-backup.ts",
     "cms:backup:check": "tsx scripts/check-cms-backup.ts",
     "cms:backup:decrypt": "tsx scripts/decrypt-cms-backup.ts",

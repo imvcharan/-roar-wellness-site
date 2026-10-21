@@ -21,6 +21,13 @@ export interface CmsContentInput {
   seoDescription: string | null;
   seoKeywords: string | null;
   seoRobots: string | null;
+  seoCanonicalUrl: string | null;
+  seoOgTitle: string | null;
+  seoOgDescription: string | null;
+  seoOgImage: string | null;
+  seoTwitterTitle: string | null;
+  seoTwitterDescription: string | null;
+  seoTwitterImage: string | null;
   scheduledPublishAt: string | null;
 }
 
@@ -139,6 +146,25 @@ export function parseCmsContentInput(value: unknown): CmsContentInput {
   if (seoRobots && !["index,follow", "index,nofollow", "noindex,follow", "noindex,nofollow"].includes(seoRobots)) {
     throw new Error("Choose a valid robots directive.");
   }
+  const seoCanonicalUrl = optionalText(data.seoCanonicalUrl, "Canonical URL", 2048);
+  if (seoCanonicalUrl) {
+    try {
+      const canonical = new URL(seoCanonicalUrl);
+      if ((canonical.protocol !== "http:" && canonical.protocol !== "https:") || canonical.username || canonical.password) {
+        throw new Error();
+      }
+    } catch {
+      throw new Error("Canonical URL must be a valid HTTP or HTTPS URL.");
+    }
+  }
+  const seoOgImage = optionalText(data.seoOgImage, "Open Graph image URL", 2048);
+  if (seoOgImage && !isAllowedImageUrl(seoOgImage)) {
+    throw new Error("Open Graph image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
+  }
+  const seoTwitterImage = optionalText(data.seoTwitterImage, "Twitter image URL", 2048);
+  if (seoTwitterImage && !isAllowedImageUrl(seoTwitterImage)) {
+    throw new Error("Twitter image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
+  }
 
   return {
     title: data.title.trim(),
@@ -156,6 +182,13 @@ export function parseCmsContentInput(value: unknown): CmsContentInput {
     seoDescription: optionalText(data.seoDescription, "SEO description", 500),
     seoKeywords: optionalText(data.seoKeywords, "SEO keywords", 500),
     seoRobots,
+    seoCanonicalUrl,
+    seoOgTitle: optionalText(data.seoOgTitle, "Open Graph title", 200),
+    seoOgDescription: optionalText(data.seoOgDescription, "Open Graph description", 500),
+    seoOgImage,
+    seoTwitterTitle: optionalText(data.seoTwitterTitle, "Twitter title", 200),
+    seoTwitterDescription: optionalText(data.seoTwitterDescription, "Twitter description", 500),
+    seoTwitterImage,
     scheduledPublishAt,
   };
 }

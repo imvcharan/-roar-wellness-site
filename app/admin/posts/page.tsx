@@ -35,6 +35,13 @@ interface CmsEntry {
   seo_description: string | null;
   seo_keywords: string | null;
   seo_robots: string | null;
+  seo_canonical_url: string | null;
+  seo_og_title: string | null;
+  seo_og_description: string | null;
+  seo_og_image: string | null;
+  seo_twitter_title: string | null;
+  seo_twitter_description: string | null;
+  seo_twitter_image: string | null;
   scheduled_publish_at: string | null;
   updated_at: string;
 }
@@ -55,6 +62,13 @@ interface EntryForm {
   seoDescription: string;
   seoKeywords: string;
   seoRobots: string;
+  seoCanonicalUrl: string;
+  seoOgTitle: string;
+  seoOgDescription: string;
+  seoOgImage: string;
+  seoTwitterTitle: string;
+  seoTwitterDescription: string;
+  seoTwitterImage: string;
   scheduledPublishAt: string;
 }
 
@@ -74,6 +88,13 @@ const emptyForm: EntryForm = {
   seoDescription: "",
   seoKeywords: "",
   seoRobots: "index,follow",
+  seoCanonicalUrl: "",
+  seoOgTitle: "",
+  seoOgDescription: "",
+  seoOgImage: "",
+  seoTwitterTitle: "",
+  seoTwitterDescription: "",
+  seoTwitterImage: "",
   scheduledPublishAt: "",
 };
 
@@ -126,7 +147,7 @@ export default function PostsPage() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingFeaturedImage, setUploadingFeaturedImage] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState<Set<string>>(() => new Set());
   const [role, setRole] = useState<"admin" | "editor" | "viewer">("viewer");
   const [history, setHistory] = useState<{ id: string; title: string; status: string; created_at: string; created_by: string | null }[]>([]);
   const previewWindow = useRef<Window | null>(null);
@@ -215,6 +236,13 @@ export default function PostsPage() {
       seoDescription: entry.seo_description || "",
       seoKeywords: entry.seo_keywords || "",
       seoRobots: entry.seo_robots || "index,follow",
+      seoCanonicalUrl: entry.seo_canonical_url || "",
+      seoOgTitle: entry.seo_og_title || "",
+      seoOgDescription: entry.seo_og_description || "",
+      seoOgImage: entry.seo_og_image || "",
+      seoTwitterTitle: entry.seo_twitter_title || "",
+      seoTwitterDescription: entry.seo_twitter_description || "",
+      seoTwitterImage: entry.seo_twitter_image || "",
       scheduledPublishAt: entry.scheduled_publish_at ? new Date(entry.scheduled_publish_at).toISOString().slice(0, 16) : "",
     });
     setNotice("");
@@ -227,7 +255,7 @@ export default function PostsPage() {
 
   const saveEntry = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (uploadingFeaturedImage) return;
+    if (uploadingImages.size) return;
     setSaving(true);
     setError("");
     setNotice("");
@@ -251,6 +279,13 @@ export default function PostsPage() {
           seoDescription: form.seoDescription,
           seoKeywords: form.seoKeywords,
           seoRobots: form.seoRobots,
+          seoCanonicalUrl: form.seoCanonicalUrl,
+          seoOgTitle: form.seoOgTitle,
+          seoOgDescription: form.seoOgDescription,
+          seoOgImage: form.seoOgImage,
+          seoTwitterTitle: form.seoTwitterTitle,
+          seoTwitterDescription: form.seoTwitterDescription,
+          seoTwitterImage: form.seoTwitterImage,
           scheduledPublishAt: form.scheduledPublishAt ? new Date(form.scheduledPublishAt).toISOString() : null,
         }),
       });
@@ -304,7 +339,7 @@ export default function PostsPage() {
     const slug = makeSlug(form.slug || form.title);
     if (!slug) { setError("Add a title or slug before previewing."); return; }
     if (!form.categoryId) { setError("Choose a category before previewing."); return; }
-    if (uploadingFeaturedImage) { setError("Wait for the featured image upload to finish before previewing."); return; }
+    if (uploadingImages.size) { setError("Wait for all image uploads to finish before previewing."); return; }
     const editorForm = document.getElementById("cms-entry-editor-form");
     if (!(editorForm instanceof HTMLFormElement) || !editorForm.reportValidity()) return;
     const openedWindow = window.open("about:blank", "_blank");
@@ -317,6 +352,14 @@ export default function PostsPage() {
 
   const setField = <K extends keyof EntryForm>(key: K, value: EntryForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+  const setImageUploading = (field: string, uploading: boolean) => {
+    setUploadingImages((current) => {
+      const next = new Set(current);
+      if (uploading) next.add(field);
+      else next.delete(field);
+      return next;
+    });
   };
   const selectedCategorySlug = categories.find((category) => category.id === form.categoryId)?.slug;
   const previewPath = form.slug && selectedCategorySlug
@@ -439,7 +482,7 @@ export default function PostsPage() {
             label="Featured image"
             value={form.imageUrl}
             onChange={(imageUrl) => setField("imageUrl", imageUrl)}
-            onUploadingChange={setUploadingFeaturedImage}
+            onUploadingChange={(uploading) => setImageUploading("featured", uploading)}
             previewMode="cover"
             previewPosition={form.imagePosition}
             previewAlt={form.imageAltText || "Featured image crop preview"}
@@ -508,11 +551,58 @@ export default function PostsPage() {
               <option value="noindex,nofollow">Do not index or follow links</option>
             </select>
           </label>
+          <label className="text-sm font-medium text-cms-text md:col-span-2">
+            Canonical URL override (optional)
+            <input type="url" maxLength={2048} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoCanonicalUrl} onChange={(event) => setField("seoCanonicalUrl", event.target.value)} placeholder={typeof window !== "undefined" ? `${window.location.origin}${previewPath}` : previewPath} />
+            <span className="mt-1 block text-xs font-normal text-cms-muted">Leave blank to use this content’s public URL. Use an absolute HTTP(S) URL only when this page should canonicalize elsewhere.</span>
+          </label>
+          <div className="md:col-span-2">
+            <h4 className="font-semibold text-cms-text">Social sharing overrides</h4>
+            <p className="mt-1 text-sm text-cms-muted">These control Open Graph and Twitter preview tags. Leave fields blank to use the SEO title, description, and featured image.</p>
+          </div>
+          <label className="text-sm font-medium text-cms-text">
+            Open Graph title
+            <input maxLength={200} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoOgTitle} onChange={(event) => setField("seoOgTitle", event.target.value)} placeholder={form.seoTitle || form.title} />
+          </label>
+          <label className="text-sm font-medium text-cms-text">
+            Open Graph description
+            <textarea maxLength={500} rows={2} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoOgDescription} onChange={(event) => setField("seoOgDescription", event.target.value)} placeholder={form.seoDescription || form.summary || form.excerpt} />
+          </label>
+          <MediaImageField
+            name="seo_og_image"
+            label="Open Graph image"
+            value={form.seoOgImage}
+            onChange={(value) => setField("seoOgImage", value)}
+            onUploadingChange={(uploading) => setImageUploading("og", uploading)}
+            previewMode="cover"
+          />
+          <label className="text-sm font-medium text-cms-text">
+            Twitter title
+            <input maxLength={200} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoTwitterTitle} onChange={(event) => setField("seoTwitterTitle", event.target.value)} placeholder={form.seoOgTitle || form.seoTitle || form.title} />
+          </label>
+          <label className="text-sm font-medium text-cms-text">
+            Twitter description
+            <textarea maxLength={500} rows={2} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoTwitterDescription} onChange={(event) => setField("seoTwitterDescription", event.target.value)} placeholder={form.seoOgDescription || form.seoDescription || form.summary || form.excerpt} />
+          </label>
+          <MediaImageField
+            name="seo_twitter_image"
+            label="Twitter image"
+            value={form.seoTwitterImage}
+            onChange={(value) => setField("seoTwitterImage", value)}
+            onUploadingChange={(uploading) => setImageUploading("twitter", uploading)}
+            previewMode="cover"
+          />
           <div className="rounded-lg border border-cms-border bg-cms-background p-4 md:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-cms-muted">Search preview</p>
             <p className="mt-2 truncate text-lg font-medium text-cms-primary">{form.seoTitle || (form.title ? `${form.title} | Roar Wellness` : "Page title")}</p>
-            <p className="text-xs text-cms-muted">{typeof window !== "undefined" ? window.location.origin : ""}{previewPath}</p>
+            <p className="text-xs text-cms-muted">{form.seoCanonicalUrl || `${typeof window !== "undefined" ? window.location.origin : ""}${previewPath}`}</p>
             <p className="mt-1 line-clamp-2 text-sm text-cms-muted">{form.seoDescription || form.summary || form.excerpt || "No page-specific description; search engines may use a site-level description."}</p>
+          </div>
+          <div className="rounded-lg border border-cms-border bg-cms-background p-4 md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-cms-muted">Social preview</p>
+            <p className="mt-2 truncate text-lg font-medium text-cms-primary">{form.seoOgTitle || form.seoTitle || (form.title ? `${form.title} | Roar Wellness` : "Page title")}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-cms-muted">{form.seoOgDescription || form.seoDescription || form.summary || form.excerpt || "Social platforms may use the page content as a description."}</p>
+            {(form.seoOgImage || form.imageUrl) && <img src={form.seoOgImage || form.imageUrl} alt="Social sharing image preview" className="mt-3 aspect-[1.91/1] max-h-48 rounded-lg border border-cms-border object-cover" />}
           </div>
           <label className="text-sm font-medium text-cms-text">
             Schedule publication (optional, local time)
@@ -522,7 +612,7 @@ export default function PostsPage() {
             }} />
           </label>
           <div className="flex gap-2 md:col-span-2">
-            <Button type="submit" loading={saving} disabled={uploadingFeaturedImage}>{editingId ? "Save changes" : "Create content"}</Button>
+            <Button type="submit" loading={saving} disabled={uploadingImages.size > 0}>{editingId ? "Save changes" : "Create content"}</Button>
             <Button type="button" variant="secondary" onClick={openPreview}>Save & preview</Button>
             {editingId && <Button type="button" variant="secondary" onClick={resetForm}>Cancel edit</Button>}
           </div>

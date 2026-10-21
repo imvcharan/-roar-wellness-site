@@ -45,14 +45,20 @@ export async function POST(
     database.prepare(`
       UPDATE content SET title = ?, slug = ?, category_id = ?, excerpt = ?, summary = ?,
         description = ?, content = ?, image_url = ?, image_alt_text = ?, image_position = ?, status = ?, seo_title = ?,
-        seo_description = ?, seo_keywords = ?, seo_robots = ?, scheduled_publish_at = ?, published_at = ?,
+        seo_description = ?, seo_keywords = ?, seo_robots = ?, seo_canonical_url = ?,
+        seo_og_title = ?, seo_og_description = ?, seo_og_image = ?,
+        seo_twitter_title = ?, seo_twitter_description = ?, seo_twitter_image = ?,
+        scheduled_publish_at = ?, published_at = ?,
         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE id = ?
     `).run(
       snapshot.title, snapshot.slug, category.id, text(snapshot.excerpt),
       text(snapshot.summary), text(snapshot.description), text(snapshot.content),
       text(snapshot.image_url), text(snapshot.image_alt_text), text(snapshot.image_position) ?? "50% 50%", status, text(snapshot.seo_title),
-      text(snapshot.seo_description), text(snapshot.seo_keywords), text(snapshot.seo_robots), text(snapshot.scheduled_publish_at),
+      text(snapshot.seo_description), text(snapshot.seo_keywords), text(snapshot.seo_robots),
+      text(snapshot.seo_canonical_url), text(snapshot.seo_og_title), text(snapshot.seo_og_description),
+      text(snapshot.seo_og_image), text(snapshot.seo_twitter_title), text(snapshot.seo_twitter_description),
+      text(snapshot.seo_twitter_image), text(snapshot.scheduled_publish_at),
       text(snapshot.published_at), id,
     );
     if (previousPath !== restoredPath) {

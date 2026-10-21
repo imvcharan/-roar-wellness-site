@@ -36,6 +36,13 @@ export interface CmsContent {
   seo_description: string | null;
   seo_keywords: string | null;
   seo_robots: string | null;
+  seo_canonical_url: string | null;
+  seo_og_title: string | null;
+  seo_og_description: string | null;
+  seo_og_image: string | null;
+  seo_twitter_title: string | null;
+  seo_twitter_description: string | null;
+  seo_twitter_image: string | null;
   scheduled_publish_at: string | null;
   created_at: string;
   updated_at: string;
@@ -83,6 +90,13 @@ function openDatabase(): DatabaseSync {
       seo_description TEXT,
       seo_keywords TEXT,
       seo_robots TEXT,
+      seo_canonical_url TEXT,
+      seo_og_title TEXT,
+      seo_og_description TEXT,
+      seo_og_image TEXT,
+      seo_twitter_title TEXT,
+      seo_twitter_description TEXT,
+      seo_twitter_image TEXT,
       scheduled_publish_at TEXT,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
       updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -231,6 +245,13 @@ function openDatabase(): DatabaseSync {
   addColumn("content", "seo_description", "TEXT");
   addColumn("content", "seo_keywords", "TEXT");
   addColumn("content", "seo_robots", "TEXT");
+  addColumn("content", "seo_canonical_url", "TEXT");
+  addColumn("content", "seo_og_title", "TEXT");
+  addColumn("content", "seo_og_description", "TEXT");
+  addColumn("content", "seo_og_image", "TEXT");
+  addColumn("content", "seo_twitter_title", "TEXT");
+  addColumn("content", "seo_twitter_description", "TEXT");
+  addColumn("content", "seo_twitter_image", "TEXT");
   addColumn("content", "scheduled_publish_at", "TEXT");
   addColumn("cms_sessions", "user_id", "TEXT REFERENCES cms_users(id) ON DELETE CASCADE");
   addColumn("cms_enquiries", "assigned_user_id", "TEXT REFERENCES cms_users(id) ON DELETE SET NULL");
@@ -891,7 +912,9 @@ export function findCategory(id: string): CmsCategory | undefined {
 const contentSelect = `
   SELECT c.id, c.title, c.slug, c.category_id, cat.name AS category_name,
     cat.slug AS category_slug, c.excerpt, c.summary, c.description, c.content,
-    c.image_url, c.image_alt_text, c.image_position, c.status, c.seo_title, c.seo_description, c.seo_keywords, c.seo_robots, c.scheduled_publish_at,
+    c.image_url, c.image_alt_text, c.image_position, c.status, c.seo_title, c.seo_description, c.seo_keywords, c.seo_robots,
+    c.seo_canonical_url, c.seo_og_title, c.seo_og_description, c.seo_og_image,
+    c.seo_twitter_title, c.seo_twitter_description, c.seo_twitter_image, c.scheduled_publish_at,
     c.created_at, c.updated_at, c.published_at
   FROM content c JOIN categories cat ON cat.id = c.category_id
 `;
