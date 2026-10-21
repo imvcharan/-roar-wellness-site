@@ -29,6 +29,8 @@ const legacySlugAliases: Record<string, string> = {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  htmlLimitedBots: /.*/,
+  compress: false,
   async redirects() {
     const canonicalRedirects = importedItems
       .filter(({ slug, category_slug }) => !appRoutes.has(slug) && !Object.hasOwn(legacySlugAliases, slug) && category_slug !== "main-pages")
