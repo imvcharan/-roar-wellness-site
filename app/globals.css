@@ -2136,17 +2136,25 @@
     .detail-hero { grid-template-columns: 1fr; }
     .detail-hero-copy { padding: 2.5rem 0; }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background-slide {
-      inset: 0 0 auto;
-      height: clamp(12rem, 58vw, 15rem);
+      inset: 0;
+      height: 100%;
       object-position: center 42%;
     }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background::after {
-      inset: 0 0 auto;
-      height: clamp(13rem, 64vw, 17rem);
-      background: linear-gradient(180deg, rgb(38 33 30 / .34), rgb(50 43 38 / .58) 68%, #51483f);
+      inset: 0;
+      background: linear-gradient(180deg, rgb(38 33 30 / .12) 8%, rgb(38 33 30 / .3) 38%, rgb(50 43 38 / .88) 100%);
+    }
+    .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero {
+      min-height: 34rem;
+      align-items: end;
     }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-copy {
-      padding: clamp(13rem, 60vw, 16rem) 0 2.5rem;
+      justify-content: flex-end;
+      padding: 12rem 0 2.5rem;
+    }
+    .detail-service-hero-band .detail-hero-summary {
+      text-align: left;
+      text-align-last: left;
     }
     .detail-hero-title { font-size: clamp(2.7rem, 12vw, 4rem); }
     .detail-hero-media { min-height: 14rem; }
