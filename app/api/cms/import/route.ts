@@ -114,6 +114,7 @@ export async function POST(request: Request) {
         || previous.description !== input.description || previous.content !== input.content
         || previous.image_url !== input.imageUrl || previous.image_alt_text !== input.imageAltText
         || previous.image_position !== input.imagePosition || previous.status !== input.status
+        || (input.publishedAt !== null && previous.published_at !== input.publishedAt)
         || previous.seo_title !== input.seoTitle || previous.seo_description !== input.seoDescription
         || previous.seo_keywords !== input.seoKeywords || previous.seo_robots !== input.seoRobots
       );
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
       }
       database.prepare(`
         INSERT INTO content (id, title, slug, category_id, excerpt, summary, description, content, image_url, image_alt_text, image_position, status, seo_title, seo_description, seo_keywords, seo_robots, published_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'published' THEN strftime('%Y-%m-%dT%H:%M:%fZ', 'now') ELSE NULL END)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'published' THEN COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ELSE NULL END)
         ON CONFLICT(slug) DO UPDATE SET title = excluded.title, category_id = excluded.category_id,
           excerpt = excluded.excerpt, summary = excluded.summary, description = excluded.description,
           content = excluded.content, image_url = excluded.image_url,
@@ -137,8 +138,8 @@ export async function POST(request: Request) {
           seo_title = excluded.seo_title, seo_description = excluded.seo_description,
           seo_keywords = excluded.seo_keywords, seo_robots = excluded.seo_robots,
           updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
-          published_at = CASE WHEN excluded.status = 'published' THEN COALESCE(content.published_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ELSE NULL END
-      `).run(randomUUID(), input.title, input.slug, input.categoryId, input.excerpt, input.summary, input.description, input.content, input.imageUrl, input.imageAltText, input.imagePosition, input.status, input.seoTitle, input.seoDescription, input.seoKeywords, input.seoRobots, input.status);
+          published_at = CASE WHEN excluded.status = 'published' THEN COALESCE(excluded.published_at, content.published_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ELSE NULL END
+      `).run(randomUUID(), input.title, input.slug, input.categoryId, input.excerpt, input.summary, input.description, input.content, input.imageUrl, input.imageAltText, input.imagePosition, input.status, input.seoTitle, input.seoDescription, input.seoKeywords, input.seoRobots, input.status, input.publishedAt);
       imported++;
     }
     if (failures.length) throw new Error(failures.slice(0, 10).join("\n"));

@@ -80,7 +80,7 @@ async function fetchPublished(type) {
   firstUrl.searchParams.set("page", "1");
   firstUrl.searchParams.set("status", "publish");
   firstUrl.searchParams.set("_embed", "1");
-  firstUrl.searchParams.set("_fields", "id,slug,title,content,excerpt,status,link,categories,featured_media,_embedded,meta,yoast_head_json");
+  firstUrl.searchParams.set("_fields", "id,slug,title,content,excerpt,status,date,date_gmt,modified,modified_gmt,link,categories,featured_media,_embedded,meta,yoast_head_json");
   const first = await fetch(firstUrl);
   if (!first.ok) throw new Error(`WordPress ${type} export failed with HTTP ${first.status}.`);
   const totalPages = Number(first.headers.get("x-wp-totalpages") || 1);
@@ -118,6 +118,10 @@ for (const type of ["pages", "posts"]) {
       post_type: type === "posts" ? "post" : "page",
       title: row.title.rendered,
       slug: row.slug,
+      date: row.date,
+      date_gmt: row.date_gmt,
+      modified: row.modified,
+      modified_gmt: row.modified_gmt,
       category_slug: categoryFor(
         type,
         row.slug,

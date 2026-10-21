@@ -8,6 +8,7 @@ import { getCmsContentImage } from "@/lib/cms-content-image";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
 import { getCmsContentHref } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
+import { getImportedPublishedAt } from "@/lib/cms-date";
 
 export interface CmsCategory {
   id: string;
@@ -731,6 +732,31 @@ function openDatabase(): DatabaseSync {
         );
       }
       importTransaction.run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  const publishedDateMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'wordpress-published-dates-v1'",
+  ).get();
+  if (!publishedDateMigration) {
+    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
+      items: Record<string, unknown>[];
+    };
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      const updatePublishedAt = database.prepare(
+        "UPDATE content SET published_at = ? WHERE slug = ? AND status = 'published'",
+      );
+      for (const row of snapshot.items) {
+        const slug = typeof row.slug === "string" ? row.slug : "";
+        if (!slug) continue;
+        const publishedAt = getImportedPublishedAt(row);
+        if (publishedAt) updatePublishedAt.run(publishedAt, slug);
+      }
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-published-dates-v1')").run();
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");

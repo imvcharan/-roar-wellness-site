@@ -8,6 +8,7 @@ import { getCmsCategoryLabel, getCmsContentHref } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { cmsRequest } from "@/services/cms-api";
 import { PageTitle } from "@/components/site/PageTitle";
+import { formatCmsPublishedDate } from "@/lib/cms-date";
 
 interface BlogEntry {
   title: string;
@@ -21,13 +22,6 @@ interface BlogEntry {
   featured_image_alt: string | null;
   featured_image_position: string;
   published_at: string | null;
-}
-
-function formatPublishedDate(value: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(date);
 }
 
 export default function BlogPage() {
@@ -90,7 +84,7 @@ export default function BlogPage() {
   const renderCard = (post: BlogEntry, index: number, featured = false) => {
     const href = getCmsContentHref(post.slug, post.category_slug);
     const image = post.featured_image_url || post.image_url;
-    const date = formatPublishedDate(post.published_at);
+    const date = formatCmsPublishedDate(post.published_at);
     const summary = normalizeCmsPlainText(post.excerpt || post.summary || "");
     const category = getCmsCategoryLabel(post.category_slug);
     return (

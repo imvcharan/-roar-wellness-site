@@ -1,5 +1,6 @@
 import { makeSlug, parseCmsContentInput } from "@/lib/cms-validation";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
+import { getImportedPublishedAt } from "@/lib/cms-date";
 
 const categoryAliases: Record<string, string> = {
   treatment: "treatments",
@@ -139,21 +140,24 @@ export function parseImportedContent(row: Record<string, unknown>, categoryId: s
     || embeddedImageAlt
     || (typeof imageUrl === "string" ? title : null);
 
-  return parseCmsContentInput({
-    title,
-    slug,
-    categoryId,
-    excerpt: excerpt?.slice(0, 500) || null,
-    summary: summary?.slice(0, 2000) || null,
-    description: renderedHtml(row.description),
-    content: renderedHtml(row.content) || getString(row, "body", "html"),
-    imageUrl: typeof imageUrl === "string" ? imageUrl : null,
-    imageAltText,
-    imagePosition: getString(row, "image_position", "featured_image_position") || "50% 50%",
-    seoTitle: getString(row, "seo_title", "meta_title"),
-    seoDescription: getString(row, "seo_description", "meta_description"),
-    seoKeywords: getString(row, "seo_keywords", "meta_keywords"),
-    seoRobots: getString(row, "seo_robots", "robots"),
-    status,
-  });
+  return {
+    ...parseCmsContentInput({
+      title,
+      slug,
+      categoryId,
+      excerpt: excerpt?.slice(0, 500) || null,
+      summary: summary?.slice(0, 2000) || null,
+      description: renderedHtml(row.description),
+      content: renderedHtml(row.content) || getString(row, "body", "html"),
+      imageUrl: typeof imageUrl === "string" ? imageUrl : null,
+      imageAltText,
+      imagePosition: getString(row, "image_position", "featured_image_position") || "50% 50%",
+      seoTitle: getString(row, "seo_title", "meta_title"),
+      seoDescription: getString(row, "seo_description", "meta_description"),
+      seoKeywords: getString(row, "seo_keywords", "meta_keywords"),
+      seoRobots: getString(row, "seo_robots", "robots"),
+      status,
+    }),
+    publishedAt: getImportedPublishedAt(row),
+  };
 }

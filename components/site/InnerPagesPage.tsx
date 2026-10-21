@@ -5,6 +5,7 @@ import { type Dispatch, type KeyboardEvent as ReactKeyboardEvent, type MouseEven
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getCmsCategoryLabel, getCmsContentHref, getCmsRouteKind, isLocationService, isServiceCategory } from "@/lib/cms-routes";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
+import { formatCmsPublishedDate } from "@/lib/cms-date";
 import { cmsRequest } from "@/services/cms-api";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
 import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
@@ -33,6 +34,7 @@ interface CmsItem {
   image_url?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  published_at?: string | null;
 }
 
 interface CmsCategory {
@@ -1229,6 +1231,7 @@ export default function InnerPagesPage({
               <div className="detail-hero-copy">
                 <p className="detail-hero-kicker">{isExpertsPage ? "Meet the people behind your care" : selectedKind === "blog" ? "From the Roar Wellness blog" : selectedSlug === "news" ? "News & updates" : selectedKind === "page" ? selectedCategory : selectedItem && isLocationService(selectedItem.slug) ? "Care close to home" : "Treatment and recovery"}</p>
                 <h2 id="treatment-detail-title" className="detail-hero-title">{selectedItem.title}</h2>
+                {selectedKind === "blog" && selectedItem.published_at && <time className="detail-hero-date" dateTime={selectedItem.published_at}>{formatCmsPublishedDate(selectedItem.published_at)}</time>}
                 {summary && <p className="detail-hero-summary">{summary}</p>}
                 {selectedKind === "service" && <Link className="detail-hero-cta" href="/appointment/">Request an appointment <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
