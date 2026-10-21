@@ -1420,6 +1420,11 @@
     font-size: 1.05rem;
     line-height: 1.6;
   }
+  .detail-hero-editorial .detail-hero-summary {
+    text-align: justify;
+    text-justify: inter-word;
+    text-align-last: left;
+  }
   .detail-service-hero-band .detail-hero-summary {
     text-align: justify;
     text-justify: inter-word;
@@ -2135,28 +2140,31 @@
     .cms-experts-page .e-con.e-parent:has(.elementor-widget-image-box) > .e-con-inner > .e-con.e-child { grid-template-columns: 1fr; gap: .85rem; }
     .detail-hero { grid-template-columns: 1fr; }
     .detail-hero-copy { padding: 2.5rem 0; }
+    .detail-hero-summary { display: none; }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background-slide {
       inset: 0;
       height: 100%;
-      object-position: center 42%;
+      object-position: 68% 42%;
     }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background::after {
       inset: 0;
-      background: linear-gradient(180deg, rgb(38 33 30 / .12) 8%, rgb(38 33 30 / .3) 38%, rgb(50 43 38 / .88) 100%);
+      background: linear-gradient(180deg, transparent 25%, rgb(38 33 30 / .08) 55%, rgb(50 43 38 / .52) 100%);
     }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero {
-      min-height: 34rem;
+      position: relative;
+      min-height: clamp(14rem, 60vw, 17rem);
       align-items: end;
     }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-copy {
+      position: absolute;
+      inset: 0;
       justify-content: flex-end;
-      padding: 12rem 0 2.5rem;
+      padding: 0 0 1.25rem;
     }
-    .detail-service-hero-band .detail-hero-summary {
-      text-align: left;
-      text-align-last: left;
+    .detail-service-hero-band:has(.detail-hero-background-has-images) :is(.detail-hero-summary, .detail-hero-cta, .detail-hero-note) {
+      display: none;
     }
-    .detail-hero-title { font-size: clamp(2.7rem, 12vw, 4rem); }
+    .detail-hero-title { font-size: clamp(2rem, 8.5vw, 2.7rem); letter-spacing: -.04em; line-height: 1.08; }
     .detail-hero-media { min-height: 14rem; }
     .detail-hero-image { min-height: 14rem; max-height: 22rem; }
     .detail-hero-media-editorial { min-height: 0; padding: 0; }
