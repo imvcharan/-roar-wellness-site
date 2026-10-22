@@ -410,7 +410,7 @@ export default function HomePageClient() {
             <p className="approach-kicker">{homeSettings.homepageApproachEyebrow || "Approach"}</p>
             <h2 className="approach-heading">{homeSettings.homepageApproachTitle || "Our Approach"}</h2>
             <p className="approach-intro">{homeSettings.homepageApproachDescription || "At Roar Wellness Rehab Centre, we believe that healing and transformation happen through experiences. Our Evidence Based Therapy is a unique and dynamic approach designed to support individuals struggling with addiction, mental health issues, and emotional distress. This therapy harnesses the power of real-life events and structured activities to promote personal growth, self-awareness, and long-term recovery."}</p>
-            <Link href="/services" className="approach-action">Explore Services <span aria-hidden="true">→</span></Link>
+            <Link href="/services?category=therapy" className="approach-action">Explore All Therapies <span aria-hidden="true"><ArrowRight size={18} strokeWidth={2} /></span></Link>
           </div>
 
           <div
@@ -460,8 +460,8 @@ export default function HomePageClient() {
               <p className="eyebrow text-coral">Services</p>
               <h2 className="section-title mt-5 text-olive">Our signature <em>services</em></h2>
             </div>
-            <Link href="/services/" className="services-browse-link">
-              <span>Explore all Services</span><span aria-hidden="true">→</span>
+            <Link href="/services/?category=treatments" className="services-browse-link">
+              <span>Explore All Treatments</span><span aria-hidden="true">→</span>
             </Link>
           </div>
 

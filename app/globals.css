@@ -114,7 +114,8 @@
   .home-theme .approach-kicker { background: #a1806e; }
   .home-theme .approach-action { border-color: transparent; background: #ede9dd; color: #51483f; box-shadow: none; }
   .home-theme .approach-action:hover { transform: translateY(-2px); background: #51483f; color: #fffcf5; }
-  .home-theme .approach-action span { width: 2rem; height: 2rem; margin: -.25rem -.35rem -.25rem 0; background: #fffcf5; }
+  .home-theme .approach-action span { width: 2rem; height: 2rem; margin: -.25rem -.35rem -.25rem 0; background: #fffcf5; color: #51483f; transition: background .2s ease, color .2s ease; }
+  .home-theme .approach-action:hover span { background: #ede9dd; color: #51483f; }
   .home-theme .approach-layout { align-items: start; }
   .home-theme .approach-lead { position: sticky; top: 8rem; align-self: start; }
   .home-theme .approach-steps { display: flex; height: auto; flex-direction: column; gap: 2rem; overflow: visible; border-radius: 0; }
@@ -3056,7 +3057,7 @@
 }
 
 @media (min-width: 768px) {
-  .home-theme .home-hero { min-height: clamp(36rem, 68svh, 46rem); }
+  .home-theme .home-hero { min-height: 92svh; }
   .about-page-hero { min-height: clamp(32rem, 62svh, 44rem); }
   .about-reference-hero { min-height: clamp(34rem, 62svh, 44rem); }
 }
