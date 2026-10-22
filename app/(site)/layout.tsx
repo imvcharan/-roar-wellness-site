@@ -61,7 +61,9 @@ export default function SiteLayout({
         sameAs: [
           "https://www.instagram.com/roarwellness/",
           "https://www.facebook.com/roarwellness",
+          "https://x.com/roar_wellness",
           "https://www.linkedin.com/in/roarwellness/",
+          "https://in.pinterest.com/roarwellnessrehab/",
         ],
       },
       {

@@ -1,6 +1,6 @@
 "use client";
 
-import { BriefcaseBusiness, Camera, Globe, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { AtSign, BriefcaseBusiness, Camera, Globe, Link2, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { AppointmentRequestForm } from "@/components/site/AppointmentRequestForm";
 
 interface ContactSectionProps {
@@ -35,7 +35,9 @@ export function ContactSection({
               <div className="contact-socials" aria-label="Social media">
                 <a href="https://www.instagram.com/roarwellness/" target="_blank" rel="noreferrer" aria-label="Roar Wellness on Instagram"><Camera size={18} aria-hidden="true" /></a>
                 <a href="https://www.facebook.com/roarwellness" target="_blank" rel="noreferrer" aria-label="Roar Wellness on Facebook"><Globe size={18} aria-hidden="true" /></a>
+                <a href="https://x.com/roar_wellness" target="_blank" rel="noreferrer" aria-label="Roar Wellness on X"><AtSign size={18} aria-hidden="true" /></a>
                 <a href="https://www.linkedin.com/in/roarwellness/" target="_blank" rel="noreferrer" aria-label="Roar Wellness on LinkedIn"><BriefcaseBusiness size={18} aria-hidden="true" /></a>
+                <a href="https://in.pinterest.com/roarwellnessrehab/" target="_blank" rel="noreferrer" aria-label="Roar Wellness on Pinterest"><Link2 size={18} aria-hidden="true" /></a>
                 <a href={`https://wa.me/${contactWhatsApp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" aria-label="Chat with Roar Wellness on WhatsApp"><MessageCircle size={18} aria-hidden="true" /></a>
               </div>
               {showContactDetails && <div className="contact-details lets-talk-contact-details" aria-label="Contact details">

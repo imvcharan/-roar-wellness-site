@@ -27,6 +27,13 @@ export default function GalleryPageContent() {
         <h2 className="section-title text-olive">Inside <em>Roar Wellness</em></h2>
         <p className="gallery-page-intro">Photos and videos from Roar Wellness.</p>
       </section>
+      <nav aria-label="Breadcrumb" className="desktop-page-breadcrumb site-container mt-4 px-5">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
+          <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
+          <li aria-hidden="true" className="text-beige">/</li>
+          <li aria-current="page" className="font-semibold text-brown">Gallery</li>
+        </ol>
+      </nav>
       <div className="gallery-tabs" role="tablist" aria-label="Gallery media type">
         <button type="button" role="tab" id="gallery-photos-tab" tabIndex={activeTab === "photos" ? 0 : -1} aria-selected={activeTab === "photos"} aria-controls="gallery-photos-panel" className={activeTab === "photos" ? "gallery-tab is-active" : "gallery-tab"} onClick={() => setActiveTab("photos")} onKeyDown={handleTabKeyDown}>Photos</button>
         <button type="button" role="tab" id="gallery-videos-tab" tabIndex={activeTab === "videos" ? 0 : -1} aria-selected={activeTab === "videos"} aria-controls="gallery-videos-panel" className={activeTab === "videos" ? "gallery-tab is-active" : "gallery-tab"} onClick={() => setActiveTab("videos")} onKeyDown={handleTabKeyDown}>Videos</button>

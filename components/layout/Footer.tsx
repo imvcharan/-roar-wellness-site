@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BriefcaseBusiness, Camera, Globe, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { AtSign, BriefcaseBusiness, Camera, Globe, Link2, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getCmsSettings } from "@/lib/cms-db";
 import { treatmentNavigationLinks } from "@/lib/treatment-navigation";
@@ -19,7 +19,9 @@ const quickLinks = [
 const socialLinks: Array<[string, string, LucideIcon]> = [
   ["Instagram", "https://www.instagram.com/roarwellness/", Camera],
   ["Facebook", "https://www.facebook.com/roarwellness", Globe],
+  ["X", "https://x.com/roar_wellness", AtSign],
   ["LinkedIn", "https://www.linkedin.com/in/roarwellness/", BriefcaseBusiness],
+  ["Pinterest", "https://in.pinterest.com/roarwellnessrehab/", Link2],
 ];
 
 export function Footer() {

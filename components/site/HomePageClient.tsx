@@ -385,7 +385,7 @@ export default function HomePageClient() {
   return (
     <main id="top" className="home-theme">
       <PageTitle>{homeSettings.homepageHeroTitle || "Roar Wellness"}</PageTitle>
-      <section className="home-hero relative flex min-h-[92vh] items-center justify-center bg-brand-plum px-6 py-32 text-cream md:px-12 md:py-36">
+      <section className="home-hero relative flex items-center justify-center bg-brand-plum px-6 py-32 text-cream md:px-12 md:py-36">
         <iframe
           title="Roar Wellness hero background"
           src="https://www.youtube.com/embed/zmzAImnceg8?autoplay=1&mute=1&controls=0&loop=1&playlist=zmzAImnceg8&playsinline=1&rel=0"

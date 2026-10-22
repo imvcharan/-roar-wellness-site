@@ -1190,6 +1190,13 @@ export default function InnerPagesPage({
               <div className="contact-page-divider" aria-hidden="true"><span>+</span></div>
             </div>
           </section>
+          <nav aria-label="Breadcrumb" className="desktop-page-breadcrumb site-container mt-4 px-5">
+            <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brown-muted">
+              <li><Link href="/" className="transition-colors hover:text-terracotta">Home</Link></li>
+              <li aria-hidden="true" className="text-beige">/</li>
+              <li aria-current="page" className="font-semibold text-brown">Contact</li>
+            </ol>
+          </nav>
           <section id="contact-details" className="contact-details-showcase site-container" aria-labelledby="contact-details-title">
             <div className="contact-details-image">
               <img src="/images/about-roar-wellness.webp" alt="A welcoming space at Roar Wellness" />
