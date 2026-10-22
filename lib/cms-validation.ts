@@ -239,6 +239,7 @@ export function parseHomepageSection(value: unknown) {
   if (typeof data.heading !== "string" || !data.heading.trim() || data.heading.length > 200) throw new Error("A heading of 200 characters or fewer is required.");
   if (typeof data.eyebrow !== "string" || data.eyebrow.length > 200) throw new Error("The label must be 200 characters or fewer.");
   if (typeof data.body !== "string" || data.body.length > 5000) throw new Error("The description must be 5000 characters or fewer.");
+  if (data.group_name === "reviews" && !data.body.trim()) throw new Error("A testimonial quote is required.");
   if (typeof data.image_url !== "string" || data.image_url.length > 2048) throw new Error("Image URL must be 2048 characters or fewer.");
   if (data.image_url && !isAllowedImageUrl(data.image_url)) {
     throw new Error("Image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");

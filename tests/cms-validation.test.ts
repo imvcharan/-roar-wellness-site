@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isReservedCmsRootSlug, parseCmsContentInput } from "../lib/cms-validation.ts";
+import { isReservedCmsRootSlug, parseCmsContentInput, parseHomepageSection } from "../lib/cms-validation.ts";
 
 const baseContent = {
   title: "Recovery services",
@@ -100,5 +100,35 @@ describe("CMS root-level service routes", () => {
     assert.equal(isReservedCmsRootSlug("services"), true);
     assert.equal(isReservedCmsRootSlug("appointment"), true);
     assert.equal(isReservedCmsRootSlug("poly-substance-abuse"), false);
+  });
+});
+
+describe("CMS homepage testimonial content", () => {
+  it("requires a quote while preserving optional client images", () => {
+    assert.throws(() => parseHomepageSection({
+      group_name: "reviews",
+      heading: "Jordan",
+      eyebrow: "Client review",
+      body: " ",
+      image_url: "",
+    }), /A testimonial quote is required/);
+
+    assert.deepEqual(parseHomepageSection({
+      group_name: "reviews",
+      heading: "Jordan",
+      eyebrow: "Client review",
+      body: "A helpful and supportive experience.",
+      image_url: "",
+      position: 2,
+      is_published: true,
+    }), {
+      group_name: "reviews",
+      heading: "Jordan",
+      eyebrow: "Client review",
+      body: "A helpful and supportive experience.",
+      image_url: "",
+      position: 2,
+      is_published: 1,
+    });
   });
 });

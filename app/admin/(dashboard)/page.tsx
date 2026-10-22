@@ -164,6 +164,7 @@ export default function AdminOverviewPage() {
               { href: "/admin/pages", label: "Pages" },
               { href: "/admin/services", label: "Services" },
               { href: "/admin/blog", label: "Blog" },
+              { href: "/admin/testimonials", label: "Testimonials" },
               { href: "/admin/homepage", label: "Homepage sections" },
               { href: "/admin/media", label: "Media library" },
             ].map((item) => (

@@ -225,6 +225,13 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
         "/images/bpd-treatment-hero-03.jpg",
       ];
     }
+    if (slug === "psychiatrist-in-delhi") {
+      return [
+        "/images/psychiatrist-in-delhi-hero-01.png",
+        "/images/psychiatrist-in-delhi-hero-02.png",
+        "/images/psychiatrist-in-delhi-hero-03.png",
+      ];
+    }
     const pageImages = getCmsPageImages(html);
     return pageImages.length ? pageImages : ["/images/facility-open-space.webp"];
   }, [html, slug]);

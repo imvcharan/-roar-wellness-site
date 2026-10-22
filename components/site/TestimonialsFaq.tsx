@@ -29,7 +29,7 @@ export const defaultFaqs: Faq[] = [
 interface CmsHomeSection {
   heading: string;
   body: string;
-  image_url: string;
+  image_url: string | null;
 }
 
 interface CmsFaq {
@@ -77,7 +77,9 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
                   <span className="review-featured-mark" aria-hidden="true">“</span>
                   <blockquote>{quote}</blockquote>
                   <div className="review-featured-author">
-                    <img src={avatar} alt="" className="review-featured-avatar" />
+                    {avatar
+                      ? <img src={avatar} alt="" className="review-featured-avatar" />
+                      : <span aria-hidden="true" className="review-featured-avatar review-featured-avatar-fallback rounded-full bg-[#ede9dd] font-semibold text-[#695f53]">{name.trim().charAt(0).toUpperCase()}</span>}
                     <p className="review-featured-name">{name}</p>
                   </div>
                 </article>
@@ -123,7 +125,12 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
               <article key={`${name}-${index}`} className="review-card review-card-animate min-h-[17rem]">
                 <p className="review-stars">★★★★★</p>
                 <blockquote>&ldquo;{quote}&rdquo;</blockquote>
-                <div className="review-name"><img src={avatar} alt="" className="review-avatar" /><span>{name}</span></div>
+                <div className="review-name">
+                  {avatar
+                    ? <img src={avatar} alt="" className="review-avatar" />
+                    : <span aria-hidden="true" className="review-avatar flex items-center justify-center bg-[#ede9dd] font-semibold text-[#695f53]">{name.trim().charAt(0).toUpperCase()}</span>}
+                  <span>{name}</span>
+                </div>
               </article>
             ))}
           </div>
@@ -166,7 +173,7 @@ export function DetailTestimonialsFaq({ showTestimonials = true }: { showTestimo
     if (showTestimonials) {
       cmsRequest<{ data: Record<string, CmsHomeSection[]> }>("/api/content/home")
         .then(({ data }) => {
-          if (mounted) setReviews((data.reviews || []).map((item) => [item.heading, item.body, item.image_url] as Review));
+          if (mounted) setReviews((data.reviews || []).map((item) => [item.heading, item.body, item.image_url || ""] as Review));
         })
         .catch((error: unknown) => console.error("Unable to load published testimonials.", error));
     }

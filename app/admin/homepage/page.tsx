@@ -20,7 +20,6 @@ type CmsRole = "admin" | "editor" | "viewer";
 
 const groups = [
   ["team", "Team"],
-  ["reviews", "Testimonials"],
   ["facility", "Facilities"],
   ["approach", "Approach cards"],
 ];
@@ -118,14 +117,14 @@ export default function HomepagePage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-cms-text">Homepage sections</h1>
-        <p className="mt-2 text-sm text-cms-muted">Manage team profiles, testimonials, facilities, and approach cards. Changes are served live from the CMS.</p>
+        <p className="mt-2 text-sm text-cms-muted">Manage team profiles, facilities, and approach cards. Manage testimonials from their dedicated section.</p>
       </header>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {notice && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
       <AdminAccordion
         id="homepage-new-card"
         title="Add homepage card"
-        summary="Create a team profile, testimonial, facility, or approach card."
+        summary="Create a team profile, facility, or approach card."
         open={activePanel === "new"}
         onToggle={() => {
           setActivePanel(activePanel === "new" ? null : "new");

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Activity, BarChart3, BookOpen, BriefcaseBusiness, FileText, FolderTree, Gauge, Image, LayoutPanelTop, LogOut, Mail, Settings, ShieldCheck } from "lucide-react";
+import { Activity, BarChart3, BookOpen, BriefcaseBusiness, FileText, FolderTree, Gauge, Image, LayoutPanelTop, LogOut, Mail, MessageSquareQuote, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { cmsRequest } from "@/services/cms-api";
 
@@ -16,6 +16,7 @@ const navItems = [
   { href: "/admin/pages", label: "Pages", icon: FileText, roles: ["admin", "editor", "viewer"] },
   { href: "/admin/services", label: "Services", icon: BriefcaseBusiness, roles: ["admin", "editor", "viewer"] },
   { href: "/admin/blog", label: "Blog", icon: BookOpen, roles: ["admin", "editor", "viewer"] },
+  { href: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote, roles: ["admin", "editor"] },
   { href: "/admin/homepage", label: "Homepage sections", icon: LayoutPanelTop, roles: ["admin", "editor"] },
   { href: "/admin/media", label: "Media library", icon: Image, roles: ["admin", "editor"] },
   { href: "/admin/enquiries", label: "Enquiries", icon: Mail, roles: ["admin"] },
