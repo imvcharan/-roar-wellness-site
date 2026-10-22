@@ -102,7 +102,7 @@
   .home-theme > section:first-child::before { position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, rgb(81 72 63 / .05), rgb(81 72 63 / .2)); content: ""; pointer-events: none; }
   .home-theme > section:first-child .hero-video { z-index: 0; opacity: .85; }
   .home-theme > section:first-child > .site-container { z-index: 2; }
-  .home-theme .home-hero { min-height: 92vh; }
+  .home-theme .home-hero { min-height: 92vh; overflow: hidden; isolation: isolate; }
   .home-theme .home-hero-content { max-width: 62rem; text-align: center; }
   .home-theme .home-hero-appointment { display: inline-flex; align-items: stretch; gap: .25rem; margin-top: 2rem; border-radius: .3rem; color: #51483f; font-size: .8rem; font-weight: 600; }
   .home-theme .home-hero-appointment > span { display: inline-flex; min-height: 2.8rem; align-items: center; justify-content: center; background: #fffcf5; padding: .75rem 1.2rem; }
