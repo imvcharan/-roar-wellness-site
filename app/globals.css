@@ -1108,7 +1108,7 @@
   body:has(.about-reference-page) .nav-link:hover, body:has(.about-reference-page) .nav-link:focus-visible { color: #8d6b57; }
   @media (max-width: 767px) {
     .about-reference-page { padding-top: 8rem; }
-    .about-reference-hero { min-height: min(44svh, 28rem); }
+    .about-reference-hero { min-height: clamp(14rem, 58vw, 20rem); }
     .about-reference-hero-content { width: calc(100% - 2.5rem); padding: .75rem 0 1.25rem; }
     .about-reference-hero .about-reference-kicker { margin-bottom: .65rem; }
     .about-reference-hero h2 { max-width: 14ch; font-size: clamp(2.65rem, 11.2vw, 3.5rem); line-height: .98; }
@@ -1116,14 +1116,27 @@
     .about-mobile-breadcrumb { display: block; }
     .about-reference-story { width: calc(100% - 2.5rem); padding: 5rem 0; }
     .about-reference-story-grid { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
-    .about-reference-story-image img { aspect-ratio: .9; }
-    .about-reference-film { min-height: 65svh; }
+    .about-reference-story-image img { aspect-ratio: 966 / 430; }
+    .about-reference-story-copy p { text-align: left; text-align-last: auto; }
+    .about-reference-film { min-height: 0; aspect-ratio: 16 / 10; }
     .about-reference-foundation { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; padding: 5rem 1.5rem; }
     .about-reference-foundation-title { position: static; }
     .about-reference-foundation-title h2 { max-width: 12ch; }
-    .about-reference-appointment { min-height: 43rem; }
+    .about-reference-appointment { min-height: 0; padding: 3rem 1rem; }
+    .about-reference-appointment-card { width: min(100%, 27rem); }
+    .about-reference-appointment-card > img { height: auto; aspect-ratio: 16 / 10; }
+    .about-reference-appointment-copy { padding: 1.5rem 1.25rem 1.75rem; }
+    .about-reference-appointment-copy h2 { font-size: clamp(1.7rem, 7vw, 2rem); }
     .about-reference-video-modal { padding: 1.25rem; }
+    .about-reference-video-frame { width: 100%; }
     .about-reference-video-close { top: .75rem; right: .75rem; }
+  }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .about-reference-appointment-card > img { height: auto; aspect-ratio: 16 / 10; }
+    .about-reference-appointment-copy { padding: 1.75rem 1.5rem 2rem; }
+  }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .about-reference-story-image img { aspect-ratio: 966 / 430; }
   }
   @media (prefers-reduced-motion: reduce) {
     .about-reference-hero-content, .about-reference-story-image img, .about-reference-scroll svg, .about-reference-film-overlay, .about-reference-play, .about-reference-reveal { animation: none; transition: none; }
@@ -2208,6 +2221,8 @@
     .footer-meta { margin-top: 1.5rem; }
   }
   @media (min-width: 768px) and (max-width: 1023px) {
+    .footer-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3rem 2rem; }
+    .footer-brand-column { grid-column: 1 / -1; }
     .contact-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .contact-detail:nth-child(odd) { padding-left: 0; border-left: 0; }
     .contact-detail:nth-child(even) { border-left: 1px solid var(--color-beige); }
@@ -2887,8 +2902,8 @@
         linear-gradient(180deg, transparent 12%, rgb(24 25 19 / .18) 34%, rgb(24 25 19 / .7) 100%),
         linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%),
         url("/images/facility-open-space.webp");
-      background-position: center, center, top center;
-      background-size: 100% 100%, 100% 100%, 100% auto;
+      background-position: center, center, center 55%;
+      background-size: 100% 100%, 100% 100%, cover;
       background-repeat: no-repeat;
       transform: none;
     }
@@ -2986,6 +3001,11 @@
 }
 
 @media (max-width: 767px) {
+  main.about-reference-page p:not(.eyebrow):not([class*="kicker"]) {
+    text-align: left;
+    text-align-last: auto;
+    text-justify: auto;
+  }
   .contact-details-showcase { padding-right: 0; padding-left: 0; }
   .contact-details-image,
   .appointment-booking-image,
