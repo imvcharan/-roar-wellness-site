@@ -80,7 +80,7 @@ export function AppointmentRequestForm({
   return (
     submitted ? <div className="appointment-request-success" role="status">
       <CheckCircle2 size={24} aria-hidden="true" />
-      <div><strong>Request received</strong><p>Thank you. Our team will contact you privately using the details you provided.</p></div>
+      <div><strong>Request received</strong><p>Thank you. Our team will contact you using the details provided.</p></div>
     </div> : <form
       className={isContact ? "appointment-request-form lets-talk-form" : "appointment-request-form"}
       onSubmit={handleSubmit}
