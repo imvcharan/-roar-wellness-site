@@ -78,6 +78,8 @@ const serviceHeroColorPalettes = [
 
 function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
   const images = useMemo(() => {
+    if (slug === "game-therapy") return ["/images/game-therapy-hero-01.webp"];
+    if (slug === "yoga-and-meditation") return ["/images/yoga-and-meditation-hero-01.webp"];
     if (slug === "alcohol-addiction") {
       return [
       "/images/alcohol-addiction-hero-01.jpg",
