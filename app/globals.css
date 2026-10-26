@@ -1376,7 +1376,24 @@
   }
   .detail-hero-band-fallback-image { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
   .detail-hero-band-fallback-image::before { position: absolute; z-index: 0; inset: 0; background: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .55)), url("/images/facility-open-space.webp") center 48% / cover; content: ""; }
+  .twelve-step-detail-hero-band { position: relative; min-height: clamp(22rem, 34vw, 30rem); isolation: isolate; overflow: hidden; background-color: #51483f; background-image: linear-gradient(90deg, rgb(38 33 30 / .94) 0%, rgb(50 43 38 / .82) 48%, rgb(58 49 43 / .24) 100%), url("/images/12-step-program-delhi-hero-01.webp"); background-position: center, 78% center; background-size: 100% 100%, cover; background-repeat: no-repeat; }
+  .twelve-step-detail-hero-band > .site-container { position: relative; z-index: 1; }
+  .twelve-step-detail-hero-band .detail-hero { min-height: clamp(22rem, 34vw, 30rem); grid-template-columns: minmax(0, 1fr); }
+  .twelve-step-detail-hero-band .detail-hero-copy { position: relative; z-index: 2; width: min(55%, 40rem); padding: clamp(2.5rem, 5vw, 4.5rem) 0; }
+  .twelve-step-detail-hero-band .detail-hero-media { display: none; }
+  .experts-detail-hero-band { position: relative; min-height: clamp(22rem, 34vw, 30rem); isolation: isolate; overflow: hidden; background-color: #51483f; background-image: linear-gradient(90deg, rgb(38 33 30 / .94) 0%, rgb(50 43 38 / .82) 48%, rgb(58 49 43 / .24) 100%), url("/images/drug-alcohol-rehabilitation-experts-hero-01.webp"); background-position: center, 78% center; background-size: 100% 100%, cover; background-repeat: no-repeat; }
+  .experts-detail-hero-band > .site-container { position: relative; z-index: 1; }
+  .experts-detail-hero-band .detail-hero { min-height: clamp(22rem, 34vw, 30rem); grid-template-columns: minmax(0, 1fr); }
+  .experts-detail-hero-band .detail-hero-copy { width: min(55%, 40rem); padding: clamp(2.5rem, 5vw, 4.5rem) 0; }
+  .experts-detail-hero-band .detail-hero-media { display: none; }
   .news-detail-hero-band::before { background-image: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .4)), url("/images/news-page-hero.webp"); background-position: center, center 48%; }
+  .videos-detail-hero-band { position: relative; aspect-ratio: 1600 / 503; isolation: isolate; overflow: hidden; background: #fffcf5 url("/images/videos-page-hero.webp") center / 100% 100% no-repeat; }
+  .videos-detail-hero-band > .site-container { position: relative; z-index: 1; }
+  .videos-detail-hero-band .detail-hero { height: 100%; min-height: 0; grid-template-columns: minmax(0, 1fr); }
+  .videos-detail-hero-band .detail-hero-copy { width: min(55%, 40rem); }
+  .detail-content-theme .videos-detail-hero-band .detail-hero-copy,
+  .detail-content-theme .videos-detail-hero-band .detail-hero-kicker,
+  .detail-content-theme .videos-detail-hero-band .detail-hero-title { color: #51483f; }
   .detail-hero-band-fallback-image > .site-container { position: relative; z-index: 1; }
   .detail-service-hero-band { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
   .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-"]) { aspect-ratio: 966 / 430; }
@@ -2197,6 +2214,8 @@
       height: 100%;
       object-position: 68% 42%;
     }
+    .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-"]) { width: 100%; aspect-ratio: auto; min-height: clamp(14rem, 60vw, 17rem); }
+    .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background-slide[src*="rehab-centre-female-delhi"] { object-position: 78% 45%; }
     .detail-service-hero-band:has(.detail-hero-background-has-images) .detail-hero-background::after {
       inset: 0;
       background: linear-gradient(180deg, transparent 25%, rgb(38 33 30 / .08) 55%, rgb(50 43 38 / .52) 100%);
@@ -2219,6 +2238,16 @@
     .detail-hero-title { font-size: clamp(2rem, 8.5vw, 2.7rem); letter-spacing: -.04em; line-height: 1.08; }
     .detail-hero-media { min-height: 14rem; }
     .detail-hero-image { min-height: 14rem; max-height: 22rem; }
+    .twelve-step-detail-hero-band { min-height: clamp(23rem, 88vw, 29rem); }
+    .twelve-step-detail-hero-band { background-image: linear-gradient(90deg, rgb(38 33 30 / .95) 0%, rgb(50 43 38 / .82) 58%, rgb(58 49 43 / .45) 100%), linear-gradient(0deg, rgb(38 33 30 / .48), transparent 68%), url("/images/12-step-program-delhi-hero-01.webp"); background-position: center, center, 78% center; background-size: 100% 100%, 100% 100%, cover; }
+    .twelve-step-detail-hero-band .detail-hero { min-height: clamp(23rem, 88vw, 29rem); }
+    .twelve-step-detail-hero-band .detail-hero-copy { width: min(82%, 34rem); justify-content: flex-end; padding: 0 0 2rem; }
+    .experts-detail-hero-band { min-height: clamp(23rem, 88vw, 29rem); background-image: linear-gradient(90deg, rgb(38 33 30 / .95) 0%, rgb(50 43 38 / .82) 58%, rgb(58 49 43 / .45) 100%), linear-gradient(0deg, rgb(38 33 30 / .48), transparent 68%), url("/images/drug-alcohol-rehabilitation-experts-hero-01.webp"); background-position: center, center, 78% center; background-size: 100% 100%, 100% 100%, cover; }
+    .experts-detail-hero-band .detail-hero { min-height: clamp(23rem, 88vw, 29rem); }
+    .experts-detail-hero-band .detail-hero-copy { width: min(82%, 34rem); justify-content: flex-end; padding: 0 0 2rem; }
+    .videos-detail-hero-band { min-height: 0; background-position: center; }
+    .videos-detail-hero-band .detail-hero { min-height: 0; }
+    .videos-detail-hero-band .detail-hero-copy { width: 100%; min-height: 0; padding: .5rem 0; }
     .detail-hero-media-editorial { min-height: 0; padding: 0; }
     .detail-hero-media-editorial .detail-hero-image { height: auto; max-height: none; }
     .detail-sidebar { position: static; align-self: auto; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
@@ -2935,10 +2964,18 @@
         linear-gradient(180deg, transparent 12%, rgb(24 25 19 / .18) 34%, rgb(24 25 19 / .7) 100%),
         linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%),
         url("/images/about-roarwellness-hero.webp");
-      background-position: center, center, center 55%;
+      background-position: center, center, 78% 55%;
       background-size: 100% 100%, 100% 100%, cover;
       background-repeat: no-repeat;
       transform: none;
+    }
+    .news-detail-hero-band { min-height: clamp(16rem, 68vw, 18rem); }
+    .news-detail-hero-band .detail-hero { min-height: inherit; }
+    .news-detail-hero-band .detail-hero-copy { min-height: clamp(16rem, 68vw, 18rem); padding: 1.5rem 0; }
+    .news-detail-hero-band::before {
+      background-position: center, right center;
+      background-size: 100% 100%, cover;
+      background-repeat: no-repeat;
     }
     .contact-page-hero::before {
       background-image:

@@ -81,6 +81,7 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
     if (slug === "game-therapy") return ["/images/game-therapy-hero-01.webp"];
     if (slug === "yoga-and-meditation") return ["/images/yoga-and-meditation-hero-01.webp"];
     if (slug === "rehab-centre-female-delhi") return ["/images/rehab-centre-female-delhi-hero-01.webp"];
+    if (slug === "rehab-centre-female-delhi") return ["/images/rehab-centre-female-delhi-hero-01.webp"];
     if (slug === "alcohol-addiction") {
       return [
       "/images/alcohol-addiction-hero-01.jpg",
@@ -1156,7 +1157,7 @@ export default function InnerPagesPage({
       || selectedItem?.image_url
       || (isTwelveStepPage ? "/images/12-step-program-delhi-hero-01.webp" : null)
       || (isExpertsPage ? "/images/drug-alcohol-rehabilitation-experts-hero-01.webp" : null);
-    const heroImage = selectedKind === "service" ? null : image;
+    const heroImage = selectedKind === "service" || isVideosPage ? null : image;
     const selectedCategory = selectedItem ? getCmsCategoryLabel(selectedItem.category_slug) : "Content";
     const relatedItems = allItems
       .filter((item) => item.slug !== selectedSlug && item.category_slug === selectedCategorySlug)
@@ -1252,7 +1253,7 @@ export default function InnerPagesPage({
       <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
         <PageTitle>{selectedItem?.title || (selectedSlug ? "Page content" : listingKind === "services" ? "Services" : "Treatments & site pages")}</PageTitle>
         {selectedItem ? <>
-          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage ? " detail-hero-band-fallback-image" : ""}${isFacilityPage ? " facility-detail-hero-band" : ""}${selectedSlug === "news" ? " news-detail-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
+          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage && !isVideosPage ? " detail-hero-band-fallback-image" : ""}${isFacilityPage ? " facility-detail-hero-band" : ""}${selectedSlug === "news" ? " news-detail-hero-band" : ""}${isVideosPage ? " videos-detail-hero-band" : ""}${isTwelveStepPage ? " twelve-step-detail-hero-band" : ""}${isExpertsPage ? " experts-detail-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
@@ -1265,7 +1266,7 @@ export default function InnerPagesPage({
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "service" && <p className="detail-hero-note">Private, supportive, and without obligation</p>}
               </div>
-              {heroImage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial blog-hero-image-frame" : ""}`}><img src={heroImage} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
+              {heroImage && !isTwelveStepPage && !isExpertsPage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial blog-hero-image-frame" : ""}`}><img src={heroImage} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
           </section>
