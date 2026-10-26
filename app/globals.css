@@ -1388,12 +1388,20 @@
   .experts-detail-hero-band .detail-hero-media { display: none; }
   .news-detail-hero-band::before { background-image: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .4)), url("/images/news-page-hero.webp"); background-position: center, center 48%; }
   .videos-detail-hero-band { position: relative; aspect-ratio: 1600 / 503; isolation: isolate; overflow: hidden; background: #fffcf5 url("/images/videos-page-hero.webp") center / 100% 100% no-repeat; }
-  .videos-detail-hero-band > .site-container { position: relative; z-index: 1; }
+  .videos-detail-hero-band > .site-container { position: relative; z-index: 1; height: 100%; }
   .videos-detail-hero-band .detail-hero { height: 100%; min-height: 0; grid-template-columns: minmax(0, 1fr); }
   .videos-detail-hero-band .detail-hero-copy { width: min(55%, 40rem); }
   .detail-content-theme .videos-detail-hero-band .detail-hero-copy,
   .detail-content-theme .videos-detail-hero-band .detail-hero-kicker,
   .detail-content-theme .videos-detail-hero-band .detail-hero-title { color: #51483f; }
+  .substance-abuse-detail-hero-band { position: relative; aspect-ratio: 1600 / 518; isolation: isolate; overflow: hidden; background: #fffcf5 url("/images/about-substance-abuse-hero.webp") center / 100% 100% no-repeat; }
+  .substance-abuse-detail-hero-band > .site-container { position: relative; z-index: 1; height: 100%; }
+  .substance-abuse-detail-hero-band .detail-hero { height: 100%; min-height: 0; grid-template-columns: minmax(0, 1fr); }
+  .detail-content-theme .substance-abuse-detail-hero-band .detail-hero-copy,
+  .detail-content-theme .substance-abuse-detail-hero-band .detail-hero-kicker,
+  .detail-content-theme .substance-abuse-detail-hero-band .detail-hero-title { color: #51483f; }
+  .substance-abuse-detail-hero-band .detail-hero-no-media .detail-hero-copy { width: min(68%, 50rem); max-width: none; padding: 0; }
+  .substance-abuse-detail-hero-band .detail-hero-title { font-size: clamp(2.25rem, 4.5vw, 3.8rem); line-height: 1; letter-spacing: -.05em; }
   .detail-hero-band-fallback-image > .site-container { position: relative; z-index: 1; }
   .detail-service-hero-band { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
   .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-"]) { aspect-ratio: 966 / 430; }
@@ -2248,6 +2256,9 @@
     .videos-detail-hero-band { min-height: 0; background-position: center; }
     .videos-detail-hero-band .detail-hero { min-height: 0; }
     .videos-detail-hero-band .detail-hero-copy { width: 100%; min-height: 0; padding: .5rem 0; }
+    .substance-abuse-detail-hero-band .detail-hero-no-media .detail-hero-copy { width: 76%; }
+    .substance-abuse-detail-hero-band .detail-hero-kicker { margin-bottom: .35rem; font-size: .55rem; }
+    .substance-abuse-detail-hero-band .detail-hero-title { font-size: clamp(1.25rem, 6vw, 1.8rem); line-height: 1.05; letter-spacing: -.04em; }
     .detail-hero-media-editorial { min-height: 0; padding: 0; }
     .detail-hero-media-editorial .detail-hero-image { height: auto; max-height: none; }
     .detail-sidebar { position: static; align-self: auto; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }

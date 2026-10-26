@@ -1144,7 +1144,7 @@ export default function InnerPagesPage({
         ? "Explore a balanced introduction to the 12-step peer-support framework and the role connection can play in recovery."
       : isAaQuestionsPage
         ? "A private, non-diagnostic set of questions to help you reflect on how drinking or substance use may be affecting everyday life."
-      : !isVideosPage && (selectedItem?.excerpt || selectedItem?.summary)
+      : !isVideosPage && selectedSlug.toLowerCase() !== "about-substance-abuse" && (selectedItem?.excerpt || selectedItem?.summary)
         ? normalizeCmsPlainText(selectedItem.excerpt || selectedItem.summary || "")
         : null;
     const pageVideos = isVideosPage
@@ -1157,7 +1157,7 @@ export default function InnerPagesPage({
       || selectedItem?.image_url
       || (isTwelveStepPage ? "/images/12-step-program-delhi-hero-01.webp" : null)
       || (isExpertsPage ? "/images/drug-alcohol-rehabilitation-experts-hero-01.webp" : null);
-    const heroImage = selectedKind === "service" || isVideosPage ? null : image;
+    const heroImage = selectedKind === "service" || isVideosPage || isSubstanceAbusePage ? null : image;
     const selectedCategory = selectedItem ? getCmsCategoryLabel(selectedItem.category_slug) : "Content";
     const relatedItems = allItems
       .filter((item) => item.slug !== selectedSlug && item.category_slug === selectedCategorySlug)
@@ -1253,7 +1253,7 @@ export default function InnerPagesPage({
       <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
         <PageTitle>{selectedItem?.title || (selectedSlug ? "Page content" : listingKind === "services" ? "Services" : "Treatments & site pages")}</PageTitle>
         {selectedItem ? <>
-          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage && !isVideosPage ? " detail-hero-band-fallback-image" : ""}${isFacilityPage ? " facility-detail-hero-band" : ""}${selectedSlug === "news" ? " news-detail-hero-band" : ""}${isVideosPage ? " videos-detail-hero-band" : ""}${isTwelveStepPage ? " twelve-step-detail-hero-band" : ""}${isExpertsPage ? " experts-detail-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
+          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage && !isVideosPage && !isSubstanceAbusePage ? " detail-hero-band-fallback-image" : ""}${isFacilityPage ? " facility-detail-hero-band" : ""}${selectedSlug === "news" ? " news-detail-hero-band" : ""}${isVideosPage ? " videos-detail-hero-band" : ""}${isSubstanceAbusePage ? " substance-abuse-detail-hero-band" : ""}${isTwelveStepPage ? " twelve-step-detail-hero-band" : ""}${isExpertsPage ? " experts-detail-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>
