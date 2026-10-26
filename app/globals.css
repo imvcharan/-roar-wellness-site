@@ -3173,7 +3173,7 @@ main.detail-content-theme {
 
 .floating-review-badge {
   display: flex;
-  width: min(19rem, calc(100vw - 9rem));
+  width: min(20rem, calc(100vw - 9rem));
   min-height: 5.3rem;
   align-items: center;
   gap: .75rem;
@@ -3217,6 +3217,7 @@ main.detail-content-theme {
   font-size: 1.04rem;
   font-weight: 600;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .floating-review-subtitle {
@@ -3350,13 +3351,15 @@ main.detail-content-theme {
   .floating-contact-tools { right: .75rem; bottom: .75rem; left: .75rem; }
   .floating-review-badge {
     width: min(15rem, calc(100vw - 11rem));
-    min-height: 4.7rem;
-    gap: .55rem;
+    min-height: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .2rem;
     border-radius: .8rem;
-    padding: .65rem .7rem;
+    padding: .55rem .7rem;
   }
-  .floating-review-google-icon { width: 2.1rem; height: 2.1rem; }
-  .floating-review-title { font-size: .88rem; }
+  .floating-review-google-icon { width: 1.45rem; height: 1.45rem; }
+  .floating-review-title { font-size: .78rem; }
   .floating-review-subtitle { font-size: .68rem; }
   .floating-review-rating { gap: .35rem; margin-top: .22rem; }
   .floating-review-count { font-size: .9rem; }
@@ -3371,9 +3374,9 @@ main.detail-content-theme {
 }
 
 @media (max-width: 360px) {
-  .floating-review-badge { width: min(11rem, calc(100vw - 11rem)); gap: .4rem; padding: .55rem; }
-  .floating-review-google-icon { width: 1.8rem; height: 1.8rem; }
-  .floating-review-title { font-size: .8rem; }
+  .floating-review-badge { width: min(11rem, calc(100vw - 11rem)); gap: .2rem; padding: .5rem; }
+  .floating-review-google-icon { width: 1.25rem; height: 1.25rem; }
+  .floating-review-title { font-size: .66rem; }
   .floating-review-subtitle { font-size: .62rem; }
   .floating-review-count { font-size: .8rem; }
   .floating-review-stars { font-size: .78rem; }
