@@ -80,6 +80,7 @@ function ServiceHeroBackground({ html, slug }: { html: string; slug: string }) {
   const images = useMemo(() => {
     if (slug === "game-therapy") return ["/images/game-therapy-hero-01.webp"];
     if (slug === "yoga-and-meditation") return ["/images/yoga-and-meditation-hero-01.webp"];
+    if (slug === "rehab-centre-female-delhi") return ["/images/rehab-centre-female-delhi-hero-01.webp"];
     if (slug === "alcohol-addiction") {
       return [
       "/images/alcohol-addiction-hero-01.jpg",
@@ -309,6 +310,7 @@ const serviceImageFallbacks: Record<string, string> = {
   "gambling-addiction": "/images/Gambling Addiction.png",
   "gambling-treatment": "/images/Gambling Addiction.png",
   "sex-addiction": "/images/sex Addiction.png",
+  "rehab-centre-female-delhi": "/images/rehab-centre-female-delhi-hero-01.webp",
   "game-therapy": "/images/game-therapy.webp",
   "yoga-and-meditation": "/images/facility-yoga-meditation.webp",
   "schizophrenia-treatment-in-delhi": "/images/Schizophrenia.png",
@@ -1150,7 +1152,10 @@ export default function InnerPagesPage({
     const isSubstanceAbusePage = selectedSlug.toLowerCase() === "about-substance-abuse";
     const selectedCategorySlug = selectedItem?.category_slug;
     const selectedKind = detailKind ?? (selectedItem ? getCmsRouteKind(selectedItem.category_slug) : "service");
-    const image = selectedItem?.featured_image_url || selectedItem?.image_url;
+    const image = selectedItem?.featured_image_url
+      || selectedItem?.image_url
+      || (isTwelveStepPage ? "/images/12-step-program-delhi-hero-01.webp" : null)
+      || (isExpertsPage ? "/images/drug-alcohol-rehabilitation-experts-hero-01.webp" : null);
     const heroImage = selectedKind === "service" ? null : image;
     const selectedCategory = selectedItem ? getCmsCategoryLabel(selectedItem.category_slug) : "Content";
     const relatedItems = allItems
@@ -1247,7 +1252,7 @@ export default function InnerPagesPage({
       <main className={`pt-32 pb-20 md:pb-24${selectedSlug ? " detail-content-theme" : ""}`}>
         <PageTitle>{selectedItem?.title || (selectedSlug ? "Page content" : listingKind === "services" ? "Services" : "Treatments & site pages")}</PageTitle>
         {selectedItem ? <>
-          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage ? " detail-hero-band-fallback-image" : ""}${isFacilityPage ? " facility-detail-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
+          <section className={`detail-hero-band mt-6${selectedKind === "service" ? " detail-service-hero-band" : !heroImage ? " detail-hero-band-fallback-image" : ""}${isFacilityPage ? " facility-detail-hero-band" : ""}${selectedSlug === "news" ? " news-detail-hero-band" : ""}`} aria-labelledby="treatment-detail-title">
             {selectedKind === "service" && <ServiceHeroBackground html={selectedItem.content || selectedItem.description || ""} slug={selectedSlug} />}
             <div className="site-container px-5">
               <div className={`detail-hero${heroImage ? "" : " detail-hero-no-media"}${selectedKind === "blog" ? " detail-hero-editorial" : ""}`}>

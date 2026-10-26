@@ -1042,7 +1042,7 @@
   .about-reference-page { overflow: hidden; background: #fffcf5; color: #51483f; }
   .about-mobile-breadcrumb { display: block; }
   .about-reference-hero { position: relative; display: flex; min-height: min(100svh, 60rem); align-items: flex-end; overflow: hidden; background: #342e29; color: #fffcf5; }
-  .about-reference-hero-backdrop { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%), linear-gradient(0deg, rgb(24 25 19 / .38), transparent 65%), url("/images/facility-open-space.webp") center 55% / cover; transform: scale(1.02); }
+  .about-reference-hero-backdrop { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%), linear-gradient(0deg, rgb(24 25 19 / .38), transparent 65%), url("/images/about-roarwellness-hero.webp") center 55% / cover; transform: scale(1.02); }
   .about-reference-hero-content { position: relative; width: min(calc(100% - 3rem), 82rem); margin: 0 auto; padding: 12rem 0 clamp(4rem, 10vh, 8rem); animation: aboutReferenceRise .85s cubic-bezier(.2,.7,.2,1) both; }
   .about-reference-kicker { margin: 0 0 1.15rem; color: #a1806e; font-family: var(--font-body); font-size: .7rem; font-weight: 700; letter-spacing: .17em; line-height: 1.5; text-transform: uppercase; }
   .about-reference-hero .about-reference-kicker { color: rgb(255 252 245 / .82); }
@@ -1376,6 +1376,7 @@
   }
   .detail-hero-band-fallback-image { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
   .detail-hero-band-fallback-image::before { position: absolute; z-index: 0; inset: 0; background: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .55)), url("/images/facility-open-space.webp") center 48% / cover; content: ""; }
+  .news-detail-hero-band::before { background-image: linear-gradient(90deg, rgb(38 33 30 / .84), rgb(50 43 38 / .68) 58%, rgb(58 49 43 / .4)), url("/images/news-page-hero.webp"); background-position: center, center 48%; }
   .detail-hero-band-fallback-image > .site-container { position: relative; z-index: 1; }
   .detail-service-hero-band { position: relative; isolation: isolate; overflow: hidden; background: #51483f; }
   .detail-service-hero-band:has(.detail-hero-background-slide[src*="-hero-"]) { aspect-ratio: 966 / 430; }
@@ -1528,6 +1529,19 @@
   .contact-page .contact-section-light .lets-talk-copy :is(h1, h2) { font-size: clamp(2.7rem, 4.5vw, 4.25rem); }
   .contact-page .contact-section-light .lets-talk-section { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(2rem, 6vw, 6rem); }
   .appointment-page { padding-top: clamp(8.5rem, 13vw, 11rem); }
+  .thank-you-page { display: grid; min-height: min(72svh, 54rem); place-items: center; padding: clamp(9rem, 15vw, 12rem) 1.25rem clamp(4rem, 8vw, 7rem); background: radial-gradient(ellipse at 50% 0%, #f1eadb 0%, #fffcf5 58%); }
+  .thank-you-card { width: min(100%, 43rem); border: 1px solid rgb(81 72 63 / .12); border-radius: .5rem; background: rgb(255 254 250 / .92); padding: clamp(2rem, 6vw, 4.5rem); text-align: center; box-shadow: 0 24px 70px rgb(49 38 30 / .08); }
+  .thank-you-check { display: grid; width: 4.25rem; height: 4.25rem; place-items: center; margin: 0 auto 1.75rem; border: 1px solid rgb(161 128 110 / .25); border-radius: 50%; background: #f1eadb; color: #7c604f; }
+  .thank-you-card .appointment-eyebrow { margin-bottom: .85rem; }
+  .thank-you-card h2 { margin: 0; color: #51483f; font-family: var(--font-serif); font-size: clamp(2.7rem, 7vw, 5rem); font-weight: 400; letter-spacing: -.055em; line-height: .98; }
+  .thank-you-message { max-width: 32rem; margin: 1.25rem auto 0; color: rgb(81 72 63 / .75); font-size: .95rem; line-height: 1.75; }
+  .thank-you-note { margin: 1.2rem 0 0; color: rgb(81 72 63 / .62); font-size: .82rem; line-height: 1.6; }
+  .thank-you-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .75rem; margin-top: 2rem; }
+  .thank-you-home-link, .thank-you-call-link { display: inline-flex; min-height: 3rem; align-items: center; justify-content: center; gap: .55rem; border: 1px solid #51483f; border-radius: .2rem; padding: .8rem 1rem; color: #51483f; font-size: .76rem; font-weight: 700; text-decoration: none; transition: background .2s ease, color .2s ease, border-color .2s ease; }
+  .thank-you-home-link { background: #51483f; color: #fffcf5; }
+  .thank-you-home-link:hover { border-color: #7c604f; background: #7c604f; }
+  .thank-you-call-link:hover { background: #f1eadb; }
+  .thank-you-home-link:focus-visible, .thank-you-call-link:focus-visible { outline: 2px solid #a1806e; outline-offset: 3px; }
   .appointment-booking { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); align-items: stretch; gap: clamp(2rem, 6vw, 6rem); padding-bottom: clamp(4rem, 9vw, 8rem); }
   .appointment-booking-image { position: relative; min-height: 42rem; overflow: hidden; border-radius: .35rem; background: #dad3be; }
   .appointment-booking-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
@@ -2920,7 +2934,7 @@
       background-image:
         linear-gradient(180deg, transparent 12%, rgb(24 25 19 / .18) 34%, rgb(24 25 19 / .7) 100%),
         linear-gradient(90deg, rgb(24 25 19 / .58), rgb(24 25 19 / .08) 75%),
-        url("/images/facility-open-space.webp");
+        url("/images/about-roarwellness-hero.webp");
       background-position: center, center, center 55%;
       background-size: 100% 100%, 100% 100%, cover;
       background-repeat: no-repeat;

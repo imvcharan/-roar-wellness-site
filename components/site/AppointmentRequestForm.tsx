@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, RefreshCw, ArrowUpRight } from "lucide-react";
 import { recordOptedInAnalytics } from "@/components/site/AnalyticsConsent";
 
@@ -9,6 +10,7 @@ export function AppointmentRequestForm({
 }: {
   variant?: "appointment" | "contact";
 }) {
+  const router = useRouter();
   const isContact = variant === "contact";
   const [challenge, setChallenge] = useState<{ question: string; token: string } | null>(null);
   const [answer, setAnswer] = useState("");
@@ -66,8 +68,12 @@ export function AppointmentRequestForm({
         if (response.status === 400) await loadChallenge(true);
       } else {
         recordOptedInAnalytics("appointment_submit", variant === "contact" ? "/contact" : "/appointment");
-        setSubmitted(true);
         formElement.reset();
+        if (variant === "appointment") {
+          router.replace("/thank-you");
+        } else {
+          setSubmitted(true);
+        }
       }
     } catch (error) {
       console.error("Unable to submit appointment request.", error);
