@@ -3173,14 +3173,14 @@ main.detail-content-theme {
 
 .floating-review-badge {
   display: flex;
-  width: min(20rem, calc(100vw - 9rem));
-  min-height: 5.3rem;
+  width: min(17rem, calc(100vw - 9rem));
+  min-height: 4.35rem;
   align-items: center;
-  gap: .75rem;
+  gap: .6rem;
   border: 1px solid rgb(255 255 255 / .72);
-  border-radius: 1rem;
+  border-radius: .85rem;
   background: linear-gradient(135deg, #fffefa 0%, #f4eee2 100%);
-  padding: .9rem 1rem;
+  padding: .65rem .8rem;
   color: #51483f;
   box-shadow: 0 12px 35px rgb(49 38 30 / .2), inset 0 1px 0 rgb(255 255 255 / .9);
   transition: transform .2s ease, box-shadow .2s ease;
@@ -3194,8 +3194,8 @@ main.detail-content-theme {
 
 .floating-review-google-icon {
   display: block;
-  width: 2.7rem;
-  height: 2.7rem;
+  width: 2rem;
+  height: 2rem;
   flex: 0 0 auto;
 }
 
@@ -3214,37 +3214,37 @@ main.detail-content-theme {
 
 .floating-review-title {
   font-family: var(--font-serif);
-  font-size: 1.04rem;
+  font-size: .9rem;
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
 }
 
 .floating-review-subtitle {
-  margin-top: .12rem;
+  margin-top: .08rem;
   color: #786f66;
-  font-size: .79rem;
+  font-size: .69rem;
   line-height: 1.2;
 }
 
 .floating-review-rating {
   display: flex;
   align-items: center;
-  gap: .45rem;
-  margin-top: .28rem;
+  gap: .35rem;
+  margin-top: .2rem;
 }
 
 .floating-review-count {
   color: #df8951;
-  font-size: 1.05rem;
+  font-size: .9rem;
   font-weight: 550;
   line-height: 1;
 }
 
 .floating-review-stars {
   color: #e6a72e;
-  font-size: 1.08rem;
-  letter-spacing: .08em;
+  font-size: .92rem;
+  letter-spacing: .06em;
   line-height: 1;
 }
 
@@ -3297,13 +3297,14 @@ main.detail-content-theme {
 
 .floating-whatsapp-link {
   display: flex;
-  min-height: 4.4rem;
+  width: min(13rem, calc(100vw - 9rem));
+  min-height: 3.7rem;
   align-items: center;
-  gap: .9rem;
+  gap: .55rem;
   border: 1px solid rgb(255 255 255 / .8);
-  border-radius: 1.1rem;
+  border-radius: .9rem;
   background: #fffefa;
-  padding: .65rem .7rem .65rem 1rem;
+  padding: .5rem .55rem .5rem .8rem;
   color: #51483f;
   box-shadow: 0 12px 32px rgb(49 38 30 / .2);
   transition: transform .2s ease, box-shadow .2s ease;
@@ -3318,22 +3319,24 @@ main.detail-content-theme {
 .floating-whatsapp-eyebrow { color: #398a56; }
 
 .floating-whatsapp-title {
-  margin-top: .12rem;
-  font-size: .85rem;
+  margin-top: .08rem;
+  font-size: .78rem;
   font-weight: 750;
   line-height: 1.25;
 }
 
+.floating-whatsapp-title-compact { display: none; }
+
 .floating-whatsapp-action {
-  margin-top: .1rem;
+  margin-top: .06rem;
   color: #6c6259;
-  font-size: .68rem;
+  font-size: .62rem;
 }
 
 .floating-whatsapp-icon {
   display: grid;
-  width: 2.9rem;
-  height: 2.9rem;
+  width: 2.4rem;
+  height: 2.4rem;
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
@@ -3348,42 +3351,47 @@ main.detail-content-theme {
 }
 
 @media (max-width: 600px) {
-  .floating-contact-tools { right: .75rem; bottom: .75rem; left: .75rem; }
+  .floating-contact-tools { right: .75rem; bottom: .75rem; left: .75rem; gap: .5rem; }
   .floating-review-badge {
-    width: min(15rem, calc(100vw - 11rem));
+    width: min(48vw, 11.5rem);
     min-height: 0;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: .2rem;
-    border-radius: .8rem;
-    padding: .55rem .7rem;
+    gap: .4rem;
+    border-radius: .7rem;
+    padding: .45rem .55rem;
   }
-  .floating-review-google-icon { width: 1.45rem; height: 1.45rem; }
-  .floating-review-title { font-size: .78rem; }
-  .floating-review-subtitle { font-size: .68rem; }
-  .floating-review-rating { gap: .35rem; margin-top: .22rem; }
-  .floating-review-count { font-size: .9rem; }
-  .floating-review-stars { font-size: .88rem; letter-spacing: .05em; }
+  .floating-review-google-icon { width: 1.35rem; height: 1.35rem; }
+  .floating-review-title { font-size: clamp(.5rem, 2.5vw, .68rem); }
+  .floating-review-subtitle { font-size: .58rem; }
+  .floating-review-rating { gap: .25rem; margin-top: .14rem; }
+  .floating-review-count { font-size: .75rem; }
+  .floating-review-stars { font-size: .77rem; letter-spacing: .035em; }
   .floating-call-link { right: .2rem; bottom: 5.8rem; width: 3.2rem; height: 3.2rem; }
-  .floating-whatsapp-link { min-height: 3.75rem; gap: .55rem; border-radius: .9rem; padding: .5rem; }
-  .floating-whatsapp-title { font-size: .72rem; }
-  .floating-whatsapp-action { font-size: .58rem; }
-  .floating-whatsapp-eyebrow { font-size: .48rem; }
-  .floating-whatsapp-icon { width: 2.35rem; height: 2.35rem; }
-  .floating-whatsapp-icon svg { width: 20px; height: 20px; }
+  .floating-whatsapp-link {
+    width: min(39vw, 9.5rem);
+    min-height: 0;
+    gap: .35rem;
+    border-radius: .7rem;
+    padding: .4rem;
+  }
+  .floating-whatsapp-title { font-size: clamp(.55rem, 2.3vw, .68rem); }
+  .floating-whatsapp-title-full { display: none; }
+  .floating-whatsapp-title-compact { display: inline; }
+  .floating-whatsapp-action,
+  .floating-whatsapp-eyebrow { display: none; }
+  .floating-whatsapp-icon { width: 1.9rem; height: 1.9rem; }
+  .floating-whatsapp-icon svg { width: 17px; height: 17px; }
 }
 
 @media (max-width: 360px) {
-  .floating-review-badge { width: min(11rem, calc(100vw - 11rem)); gap: .2rem; padding: .5rem; }
-  .floating-review-google-icon { width: 1.25rem; height: 1.25rem; }
-  .floating-review-title { font-size: .66rem; }
-  .floating-review-subtitle { font-size: .62rem; }
-  .floating-review-count { font-size: .8rem; }
-  .floating-review-stars { font-size: .78rem; }
-  .floating-whatsapp-eyebrow,
-  .floating-whatsapp-action { display: none; }
-  .floating-whatsapp-link { gap: .4rem; }
-  .floating-whatsapp-title { font-size: .68rem; }
+  .floating-review-badge { width: min(48vw, 9.5rem); gap: .3rem; padding: .4rem; }
+  .floating-review-google-icon { width: 1.2rem; height: 1.2rem; }
+  .floating-review-title { font-size: .48rem; }
+  .floating-review-subtitle { font-size: .54rem; }
+  .floating-review-count { font-size: .7rem; }
+  .floating-review-stars { font-size: .7rem; }
+  .floating-whatsapp-link { width: min(39vw, 7.75rem); gap: .25rem; }
+  .floating-whatsapp-title { font-size: .53rem; }
+  .floating-whatsapp-icon { width: 1.7rem; height: 1.7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

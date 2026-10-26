@@ -55,7 +55,10 @@ export function FloatingContactWidgets({ phone, whatsapp }: FloatingContactWidge
       >
         <span className="floating-whatsapp-copy">
           <span className="floating-whatsapp-eyebrow">HERE TO HELP</span>
-          <span className="floating-whatsapp-title">Chat with our team</span>
+          <span className="floating-whatsapp-title">
+            <span className="floating-whatsapp-title-full">Chat with our team</span>
+            <span className="floating-whatsapp-title-compact">WhatsApp us</span>
+          </span>
           <span className="floating-whatsapp-action">Message us on WhatsApp</span>
         </span>
         <span className="floating-whatsapp-icon" aria-hidden="true"><MessageCircle size={23} /></span>
