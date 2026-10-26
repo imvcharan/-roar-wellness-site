@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { FloatingContactWidgets } from "@/components/site/FloatingContactWidgets";
 import type { Metadata } from "next";
 import { getCmsSettings } from "@/lib/cms-db";
 
@@ -87,6 +88,10 @@ export default function SiteLayout({
       <Navbar />
       {children}
       <Footer />
+      <FloatingContactWidgets
+        phone={settings.contactPhone || "+919319977207"}
+        whatsapp={settings.contactWhatsApp || "+919773890499"}
+      />
     </div>
   );
 }
