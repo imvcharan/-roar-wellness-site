@@ -1118,12 +1118,13 @@ export default function InnerPagesPage({
     let mounted = true;
     setTeamProfilesLoaded(false);
     setTeamProfilesError("");
-    cmsRequest<{ data: Record<string, TeamProfile[]> }>("/api/content/home")
-      .then(({ data }) => {
+    cmsRequest<{ data: Record<string, TeamProfile[]>; meta?: { teamProfilesManaged?: boolean } }>("/api/content/home")
+      .then(({ data, meta }) => {
         if (!mounted) return;
         const publishedProfiles = data.team || [];
-        setTeamProfiles(publishedProfiles.length ? publishedProfiles : defaultTeamProfiles);
-        setShowingDefaultTeamProfiles(publishedProfiles.length === 0);
+        const teamProfilesManaged = meta?.teamProfilesManaged ?? publishedProfiles.length > 0;
+        setTeamProfiles(teamProfilesManaged ? publishedProfiles : defaultTeamProfiles);
+        setShowingDefaultTeamProfiles(!teamProfilesManaged);
         setTeamProfilesLoaded(true);
       })
       .catch((error: unknown) => {

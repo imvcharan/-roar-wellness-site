@@ -37,6 +37,7 @@ export function MediaImageField({
   const [url, setUrl] = useState(value ?? defaultValue ?? "");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [imageFailed, setImageFailed] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -45,10 +46,11 @@ export function MediaImageField({
     setImageFailed(false);
   }, [value, defaultValue]);
 
-  const updateUrl = (nextUrl: string) => {
+  const updateUrl = (nextUrl: string, uploaded = false) => {
     setUrl(nextUrl);
     setImageFailed(false);
     setError("");
+    setNotice(uploaded ? "Image uploaded. Save this form to apply it." : "");
     onChange?.(nextUrl);
   };
 
@@ -64,7 +66,7 @@ export function MediaImageField({
         method: "POST",
         body: form,
       });
-      updateUrl(response.data.url);
+      updateUrl(response.data.url, true);
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
     } finally {
@@ -104,6 +106,7 @@ export function MediaImageField({
         <p className="text-xs text-cms-muted">JPEG, PNG, WebP, GIF, TIFF, or AVIF · maximum 50 MB</p>
       </div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+      {notice && <p role="status" className="text-sm text-cms-muted">{notice}</p>}
       {url && !imageFailed && (
         <img
           src={url}
