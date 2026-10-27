@@ -13,6 +13,7 @@ import { AppointmentRequestForm } from "@/components/site/AppointmentRequestForm
 import { AboutPage } from "@/components/site/AboutPage";
 import { ContactSection } from "@/components/site/ContactSection";
 import { PageTitle } from "@/components/site/PageTitle";
+import { defaultTeamProfiles, TeamProfilesGrid, type TeamProfile } from "@/components/site/TeamProfilesGrid";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
@@ -1007,6 +1008,10 @@ export default function InnerPagesPage({
   const [selectedSlug, setSelectedSlug] = useState<string | null>(detailSlug ?? null);
   const [selectedItem, setSelectedItem] = useState<CmsItem | null>(null);
   const [serviceHeadings, setServiceHeadings] = useState<ContentHeading[]>([]);
+  const [teamProfiles, setTeamProfiles] = useState<TeamProfile[]>(defaultTeamProfiles);
+  const [teamProfilesLoaded, setTeamProfilesLoaded] = useState(false);
+  const [teamProfilesError, setTeamProfilesError] = useState("");
+  const [showingDefaultTeamProfiles, setShowingDefaultTeamProfiles] = useState(true);
   const [pagesMessage, setPagesMessage] = useState("Loading published content...");
   const [detailMessage, setDetailMessage] = useState("Loading page...");
   const [contactSettings, setContactSettings] = useState<ContactSettings>({});
@@ -1107,6 +1112,28 @@ export default function InnerPagesPage({
       });
     return () => { mounted = false; };
   }, [listingKind]);
+
+  useEffect(() => {
+    if (selectedSlug?.toLowerCase() !== "drug-alcohol-rehabilitation-experts") return;
+    let mounted = true;
+    setTeamProfilesLoaded(false);
+    setTeamProfilesError("");
+    cmsRequest<{ data: Record<string, TeamProfile[]> }>("/api/content/home")
+      .then(({ data }) => {
+        if (!mounted) return;
+        const publishedProfiles = data.team || [];
+        setTeamProfiles(publishedProfiles.length ? publishedProfiles : defaultTeamProfiles);
+        setShowingDefaultTeamProfiles(publishedProfiles.length === 0);
+        setTeamProfilesLoaded(true);
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        console.error("Unable to load published team profiles.", error);
+        setTeamProfilesError(error instanceof Error ? error.message : "Team profiles are temporarily unavailable.");
+        setTeamProfilesLoaded(true);
+      });
+    return () => { mounted = false; };
+  }, [selectedSlug]);
 
   useEffect(() => {
     if (!selectedItem || !selectedSlug) return;
@@ -1323,6 +1350,23 @@ export default function InnerPagesPage({
                   ? pageVideos.length
                     ? <GalleryVideoGrid videos={pageVideos} gridClassName="cms-videos-page-grid" />
                     : <p role="status">Videos are temporarily unavailable. Please check back soon.</p>
+                  : isExpertsPage
+                    ? !teamProfilesLoaded
+                      ? <p role="status">Loading published team profiles...</p>
+                      : teamProfiles.length
+                        ? <section className="team-section" aria-labelledby="team-profiles-heading">
+                            <header className="team-heading-row mb-8">
+                              <div className="team-heading-copy">
+                                <p className="eyebrow text-coral">Meet our experts</p>
+                                <h2 id="team-profiles-heading" className="section-title mt-4 text-olive">The people behind your care</h2>
+                              </div>
+                            </header>
+                            {teamProfilesError
+                              ? <p role="alert" className="mb-5 text-sm text-cms-muted">{teamProfilesError} Default profiles are shown.</p>
+                              : showingDefaultTeamProfiles && <p role="status" className="mb-5 text-sm text-cms-muted">Default profiles are shown until team profiles are published in the CMS.</p>}
+                            <TeamProfilesGrid profiles={teamProfiles} />
+                          </section>
+                        : <p role="status">No team profiles are currently available.</p>
                   : (selectedItem.content || selectedItem.description) && <CmsPageContent
                     html={selectedItem.content || selectedItem.description || ""}
                     slug={selectedSlug}

@@ -132,3 +132,25 @@ describe("CMS homepage testimonial content", () => {
     });
   });
 });
+
+describe("CMS homepage team profiles", () => {
+  it("accepts a team profile with an optional role badge, image, and biography", () => {
+    assert.deepEqual(parseHomepageSection({
+      group_name: "team",
+      heading: "Jordan Lee",
+      eyebrow: "Clinical Director",
+      body: "A short team biography.",
+      image_url: "/images/team-jordan.webp",
+      position: 2,
+      is_published: true,
+    }), {
+      group_name: "team",
+      heading: "Jordan Lee",
+      eyebrow: "Clinical Director",
+      body: "A short team biography.",
+      image_url: "/images/team-jordan.webp",
+      position: 2,
+      is_published: 1,
+    });
+  });
+});
