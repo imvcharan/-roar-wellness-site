@@ -357,6 +357,62 @@ function openDatabase(): DatabaseSync {
     });
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('homepage-defaults')").run();
   }
+  const madhavSinghPhotoMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-madhav-photo-v1'",
+  ).get();
+  if (!madhavSinghPhotoMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'team-madhav'
+        AND group_name = 'team'
+        AND image_url = ?
+    `).run(
+      "/images/team-madhav-singh.webp",
+      "https://www.roarwellness.org/wp-content/uploads/2025/05/111383828753madhav-1.jpg",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-madhav-photo-v1')").run();
+  }
+  const dhruvTanwarPhotoMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-dhruv-photo-v1'",
+  ).get();
+  if (!dhruvTanwarPhotoMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections SET image_url = ?
+      WHERE section_key = 'team-dhruv'
+        AND group_name = 'team'
+        AND image_url = ?
+    `).run(
+      "/images/team-dhruv-tanwar.webp",
+      "https://www.roarwellness.org/wp-content/uploads/2025/05/880816739116Dhruv-Singh-Tanwa-1.jpg",
+    );
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-dhruv-photo-v1')").run();
+  }
+  const missingTeamProfilesMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-live-profiles-v1'",
+  ).get();
+  if (!missingTeamProfilesMigration) {
+    const nextPosition = database.prepare(
+      "SELECT COALESCE(MAX(position), -1) + 1 AS position FROM cms_home_sections WHERE group_name = 'team'",
+    ).get() as { position: number };
+    const addTeamProfile = database.prepare(`
+      INSERT OR IGNORE INTO cms_home_sections
+        (section_key, group_name, heading, eyebrow, body, image_url, position, is_published)
+      VALUES (?, 'team', ?, ?, ?, ?, ?, 1)
+    `);
+    let position = nextPosition.position;
+    homepageSeeds.filter((item) => item.group === "team").forEach((item) => {
+      const result = addTeamProfile.run(
+          item.key,
+          item.heading,
+          item.eyebrow,
+          item.body,
+          item.imageUrl,
+          position,
+      );
+      if (Number(result.changes) > 0) position += 1;
+    });
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-live-profiles-v1')").run();
+  }
   const gameTherapyImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-game-therapy-image-v1'",
   ).get();

@@ -10,7 +10,7 @@ import { defaultFaqs, defaultReviews, FaqSection, getReviewAvatar, TestimonialsS
 import { ContactSection } from "@/components/site/ContactSection";
 import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
 import { PageTitle } from "@/components/site/PageTitle";
-import { defaultTeamProfiles, TeamFaceCluster, TeamProfilesGrid } from "@/components/site/TeamProfilesGrid";
+import { YouTubeHeroBackground } from "@/components/site/YouTubeHeroBackground";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { locationNavigationLinks } from "@/lib/location-navigation";
 
@@ -370,7 +370,6 @@ export default function HomePageClient() {
   const activeApproachItems = cmsHomeLoaded
     ? (cmsHome.approach || []).map((item) => ({ title: item.heading, description: item.body, image: item.image_url, position: "center center" }))
     : approachItems;
-  const teamMembers = cmsHomeLoaded && cmsHome.team?.length ? cmsHome.team : defaultTeamProfiles;
 
   useEffect(() => {
     const stepElements = approachStepsRef.current?.querySelectorAll<HTMLElement>(".approach-step");
@@ -404,14 +403,7 @@ export default function HomePageClient() {
     <main id="top" className="home-theme">
       <PageTitle>{homeSettings.homepageHeroTitle || "Roar Wellness"}</PageTitle>
       <section className="home-hero relative flex items-center justify-center bg-brand-plum px-6 py-32 text-cream md:px-12 md:py-36">
-        <iframe
-          title="Roar Wellness hero background"
-          src="https://www.youtube.com/embed/zmzAImnceg8?autoplay=1&mute=1&controls=0&loop=1&playlist=zmzAImnceg8&playsinline=1&rel=0"
-          allow="autoplay; encrypted-media"
-          referrerPolicy="origin"
-          className="hero-video"
-          aria-hidden="true"
-        />
+        <YouTubeHeroBackground />
         <div className="home-hero-content relative site-container">
           <p className="eyebrow mb-6 text-cream/75">{homeSettings.homepageHeroEyebrow || "Rehabilitation centre · Delhi"}</p>
           <h2 className="mx-auto max-w-5xl font-serif text-[clamp(3.8rem,10vw,9.5rem)] leading-[.86] tracking-[-.06em]">{homeSettings.homepageHeroTitle || "Roar Wellness"}</h2>
@@ -470,22 +462,6 @@ export default function HomePageClient() {
           </Link>
         </div>
       </section>
-
-      {teamMembers.length > 0 && <section id="team" className="team-section bg-sand px-6 py-20 md:px-12 md:py-28" aria-labelledby="team-heading">
-        <div className="site-container">
-          <div className="team-heading-row mb-10">
-            <div className="team-heading-copy">
-              <p className="eyebrow text-coral">The people behind your care</p>
-              <h2 id="team-heading" className="section-title mt-5 text-olive">Meet our <em>team</em></h2>
-            </div>
-            <TeamFaceCluster profiles={teamMembers} />
-            <Link href="/drug-alcohol-rehabilitation-experts/" className="services-browse-link">
-              <span>Meet the team</span><span aria-hidden="true">→</span>
-            </Link>
-          </div>
-          <TeamProfilesGrid profiles={teamMembers} />
-        </div>
-      </section>}
 
       <section id="services" className="services-section px-6 py-20 md:px-12 md:py-28">
         <div className="site-container">
