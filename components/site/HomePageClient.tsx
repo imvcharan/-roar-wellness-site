@@ -6,11 +6,11 @@ import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
 import { getCmsContentHref } from "@/lib/cms-routes";
 import { cmsRequest } from "@/services/cms-api";
-import { defaultFaqs, defaultReviews, FaqSection, TestimonialsSection, type Faq, type Review } from "@/components/site/TestimonialsFaq";
+import { defaultFaqs, defaultReviews, FaqSection, getReviewAvatar, TestimonialsSection, type Faq, type Review } from "@/components/site/TestimonialsFaq";
 import { ContactSection } from "@/components/site/ContactSection";
 import { AppointmentShowcase } from "@/components/site/AppointmentShowcase";
 import { PageTitle } from "@/components/site/PageTitle";
-import { defaultTeamProfiles, TeamProfilesGrid } from "@/components/site/TeamProfilesGrid";
+import { defaultTeamProfiles, TeamFaceCluster, TeamProfilesGrid } from "@/components/site/TeamProfilesGrid";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { locationNavigationLinks } from "@/lib/location-navigation";
 
@@ -81,6 +81,14 @@ const careInterludeImages = [
   "/images/recovery-space-05.webp",
   "/images/recovery-space-06.webp",
 ];
+
+const rootedRecoveryImages = [
+  { src: "/images/rooted-recovery-lake.webp", alt: "A peaceful mountain lake surrounded by green forest." },
+  { src: "/images/rooted-recovery-sunset.webp", alt: "A warm sunset over a quiet lake and flower-covered hillside." },
+  { src: "/images/rooted-recovery-stream.webp", alt: "A clear stream flowing through a green mountain valley." },
+];
+const essenceGalleryImages = [...galleryImages, ...rootedRecoveryImages.map((image) => image.src)];
+const essenceGalleryAlts = [...galleryImageAlts, ...rootedRecoveryImages.map((image) => image.alt)];
 
 export default function HomePageClient() {
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -228,7 +236,7 @@ export default function HomePageClient() {
   };
 
   const activeReviews = cmsHomeLoaded
-    ? (cmsHome.reviews || []).map((item) => [item.heading, item.body, item.image_url] as Review)
+    ? (cmsHome.reviews || []).map((item) => [item.heading, item.body, getReviewAvatar(item.heading, item.image_url)] as Review)
     : defaultReviews;
 
   const activeFaqs: Faq[] = cmsFaqsLoaded ? cmsFaqs : defaultFaqs;
@@ -260,15 +268,23 @@ export default function HomePageClient() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setGalleryIndex((current) => (current + 1) % galleryImages.length);
+      setGalleryIndex((current) => (current + 1) % rootedRecoveryImages.length);
     }, 3600);
 
     return () => window.clearInterval(timer);
-  }, [galleryImages.length]);
+  }, []);
 
-  const renderGalleryImages = (offset: number) => (
+  const renderRecoveryImages = () => (
     <div className="mosaic-gallery" aria-label="Roar Wellness gallery slideshow">
-      {galleryImages.map((image, index) => <img key={image} src={image} alt={galleryImageAlts[index]} data-gallery-index={index} className={`mosaic-gallery-image ${index === (galleryIndex + offset) % galleryImages.length ? "is-active" : ""}`} />)}
+      {rootedRecoveryImages.map((image, index) => (
+        <img
+          key={image.src}
+          src={image.src}
+          alt={image.alt}
+          data-gallery-index={galleryImages.length + index}
+          className={`mosaic-gallery-image ${index === galleryIndex ? "is-active" : ""}`}
+        />
+      ))}
     </div>
   );
 
@@ -462,6 +478,7 @@ export default function HomePageClient() {
               <p className="eyebrow text-coral">The people behind your care</p>
               <h2 id="team-heading" className="section-title mt-5 text-olive">Meet our <em>team</em></h2>
             </div>
+            <TeamFaceCluster profiles={teamMembers} />
             <Link href="/drug-alcohol-rehabilitation-experts/" className="services-browse-link">
               <span>Meet the team</span><span aria-hidden="true">→</span>
             </Link>
@@ -588,10 +605,10 @@ export default function HomePageClient() {
             <p className="eyebrow">Essence</p>
             <h2 id="essence-heading">Care that <em>connects</em></h2>
           </div>
-          <GalleryLightbox images={galleryImages}>
+          <GalleryLightbox images={essenceGalleryImages} imageAlts={essenceGalleryAlts}>
             <div className="essence-mosaic">
               <article className="mosaic-card mosaic-rooted" tabIndex={0}>
-                {renderGalleryImages(0)}
+                {renderRecoveryImages()}
                 <span className="mosaic-shade" aria-hidden="true" />
                 <span className="mosaic-plus" aria-hidden="true">+</span>
                 <span className="mosaic-card-copy">

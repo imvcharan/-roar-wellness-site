@@ -809,6 +809,16 @@
   .team-section { overflow: hidden; }
   .team-heading-copy { flex: 1; }
   .team-heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; }
+  .team-preview { display: flex; align-items: center; gap: .9rem; }
+  .team-face-stack { display: flex; align-items: center; padding-left: .35rem; }
+  .team-face { display: grid; width: 3rem; height: 3rem; flex: 0 0 3rem; place-items: center; overflow: hidden; margin-left: -.35rem; border: 3px solid var(--color-sand); border-radius: 50%; background: var(--color-cream); color: var(--color-olive); font-family: var(--font-serif); font-size: 1.15rem; box-shadow: 0 2px 8px rgb(81 72 63 / .12); }
+  .team-face img { width: 100%; height: 100%; object-fit: cover; }
+  .team-face-count { background: var(--color-olive); color: var(--color-cream); font-family: var(--font-body); font-size: .72rem; font-weight: 700; }
+  .team-preview-roster { display: grid; gap: .25rem; margin: 0; padding: 0; list-style: none; }
+  .team-preview-roster li { display: flex; align-items: baseline; gap: .4rem; }
+  .team-preview-name { color: var(--color-olive); font-family: var(--font-body); font-size: .72rem; font-weight: 700; }
+  .team-preview-role { color: rgb(81 72 63 / .7); font-family: var(--font-body); font-size: .66rem; }
+  .team-preview-more { color: var(--color-coral); font-family: var(--font-body); font-size: .66rem; font-weight: 600; }
   .team-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
   .team-card { background: var(--color-cream); }
   .team-image-wrap { aspect-ratio: 1 / 1.08; overflow: hidden; background: var(--color-beige); }
@@ -828,6 +838,14 @@
   .review-card blockquote { margin: 2.5rem 0 2rem; color: var(--color-olive); font-family: var(--font-serif); font-size: 1.5rem; line-height: 1.1; }
   .review-name { display: flex; align-items: center; gap: .7rem; margin-top: auto; color: var(--color-coral); font-family: var(--font-body); font-size: .68rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
   .review-avatar { width: 2.25rem; height: 2.25rem; border: 2px solid var(--color-cream); border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1px rgb(161 128 110 / .35); }
+  .testimonial-archive-heading { max-width: 52rem; }
+  .testimonial-archive-heading > p:last-child { max-width: 38rem; margin-top: 1.4rem; color: rgb(81 72 63 / .75); line-height: 1.7; }
+  .testimonial-archive-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 3rem; }
+  .testimonial-archive-card { position: relative; display: flex; min-height: 17rem; flex-direction: column; border: 1px solid rgb(81 72 63 / .12); background: var(--color-sand); padding: 1.5rem; }
+  .testimonial-archive-mark { color: var(--color-coral); font-family: var(--font-serif); font-size: 4.5rem; line-height: .8; }
+  .testimonial-archive-card blockquote { margin: 1.2rem 0 2rem; color: var(--color-olive); font-family: var(--font-serif); font-size: 1.3rem; line-height: 1.25; }
+  .testimonial-archive-card .review-name { margin-top: auto; }
+  .testimonial-archive-note { margin-top: 1.5rem; color: rgb(81 72 63 / .65); font-size: .75rem; }
   .contact-main-row { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: clamp(2.5rem, 8vw, 7rem); }
   .contact-intro h2 { max-width: 38rem; }
   .contact-intro-copy { max-width: 29rem; margin-top: 1.75rem; color: rgb(255 252 245 / .86); font-size: 1rem; line-height: 1.7; }
@@ -2045,11 +2063,14 @@
     .footer-main-row { align-items: flex-start; flex-wrap: wrap; }
     .footer-navigation { order: 3; flex-basis: 100%; flex-wrap: wrap; justify-content: flex-start; }
     .footer-contact-inline { margin-left: auto; text-align: right; }
-    .team-heading-row { align-items: flex-start; flex-direction: column; }
+    .team-heading-row { align-items: flex-start; flex-direction: column; gap: 1.25rem; }
+    .team-preview { align-items: flex-start; }
+    .team-face { width: 2.7rem; height: 2.7rem; flex-basis: 2.7rem; }
     .team-grid { grid-template-columns: 1fr; gap: 1rem; }
     .team-image-wrap { aspect-ratio: 1 / .92; }
     .team-card-copy { padding: 1.25rem 1.25rem 1.6rem; }
     .review-grid { grid-template-columns: 1fr; }
+    .testimonial-archive-grid { grid-template-columns: 1fr; }
     .tms-heading { font-size: clamp(3rem, 16vw, 5rem); line-height: .9; }
     .tms-copy p, .tms-copy a { max-width: 100%; }
     .tms-visual { min-height: 260px; }

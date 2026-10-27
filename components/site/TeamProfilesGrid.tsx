@@ -18,6 +18,37 @@ export const defaultTeamProfiles: TeamProfile[] = homepageSeeds
     image_url: item.imageUrl,
   }));
 
+export function TeamFaceCluster({ profiles }: { profiles: TeamProfile[] }) {
+  const featuredProfiles = profiles.slice(0, 3);
+  const additionalCount = Math.max(0, profiles.length - featuredProfiles.length);
+
+  if (!featuredProfiles.length) return null;
+
+  return (
+    <div className="team-preview" aria-label="Meet some of our team">
+      <div className="team-face-stack" aria-hidden="true">
+        {featuredProfiles.map((profile) => (
+          <span className="team-face" key={profile.section_key}>
+            {profile.image_url
+              ? <img src={profile.image_url} alt="" loading="lazy" />
+              : profile.heading.trim().charAt(0).toUpperCase()}
+          </span>
+        ))}
+        {additionalCount > 0 && <span className="team-face team-face-count">+{additionalCount}</span>}
+      </div>
+      <ul className="team-preview-roster">
+        {featuredProfiles.map((profile) => (
+          <li key={profile.section_key}>
+            <span className="team-preview-name">{profile.heading}</span>
+            {profile.eyebrow && <span className="team-preview-role">{profile.eyebrow}</span>}
+          </li>
+        ))}
+        {additionalCount > 0 && <li className="team-preview-more">+{additionalCount} more team {additionalCount === 1 ? "member" : "members"}</li>}
+      </ul>
+    </div>
+  );
+}
+
 export function TeamProfilesGrid({ profiles }: { profiles: TeamProfile[] }) {
   return (
     <div className="team-grid" role="list" aria-label="Roar Wellness team">

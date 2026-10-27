@@ -1,19 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { faqAnchorId } from "@/lib/faq";
 import { cmsRequest } from "@/services/cms-api";
 
 export type Review = [name: string, quote: string, avatar: string];
 export type Faq = [question: string, answer: string];
 
+const femaleReviewerNames = new Set(["neha jha", "yosika patel"]);
+const maleReviewerNames = new Set(["sumit kumar", "suraj kumar", "rohit yadav"]);
+const organizationReviewerNames = new Set(["empirecraft limos"]);
+
+export function getReviewAvatar(name: string, avatar: string | null | undefined): string {
+  const normalizedName = name.trim().toLocaleLowerCase("en");
+  if (femaleReviewerNames.has(normalizedName)) return "/images/testimonial-avatar-female.webp";
+  if (maleReviewerNames.has(normalizedName)) return "/images/testimonial-avatar-male.webp";
+  if (organizationReviewerNames.has(normalizedName)) return "";
+  return avatar || "";
+}
+
 export const defaultReviews: Review[] = [
-  ["Sumit Kumar", "If you're serious about recovery, RoarWellness is the place to go! Incredible staff, great facilities, and real results.", "https://i.pravatar.cc/96?img=12"],
-  ["Suraj Kumar", "Best rehab centre in Delhi I ever visited. My friend Ravi Kumar recovered from alcohol addiction from here after suffering for 19 years.", "https://i.pravatar.cc/96?img=13"],
-  ["Neha Jha", "One of the best rehab centre in Delhi I must say. My brother recovered from alcohol addiction from Roar Wellness. Thanks to Dhruv sir and the Roar Wellness team.", "https://i.pravatar.cc/96?img=47"],
-  ["Yosika Patel", "Thanks to Mr. Dhruv sir and his team for supporting us. My brother is happy now after treatment of alcohol addiction.", "https://i.pravatar.cc/96?img=32"],
-  ["EmpireCraft Limos", "I must say that Roar Wellness Rehab Centre is one of the best luxury rehab centres for alcohol in Delhi. Thanks for the great service.", "https://i.pravatar.cc/96?img=68"],
-  ["Rohit Yadav", "A supportive and professional rehab center! The therapy and care I received at RoarWellness helped me regain control of my life.", "https://i.pravatar.cc/96?img=11"],
+  ["Sumit Kumar", "If you're serious about recovery, RoarWellness is the place to go! Incredible staff, great facilities, and real results.", "/images/testimonial-avatar-male.webp"],
+  ["Suraj Kumar", "Best rehab centre in Delhi I ever visited. My friend Ravi Kumar recovered from alcohol addiction from here after suffering for 19 years.", "/images/testimonial-avatar-male.webp"],
+  ["Neha Jha", "One of the best rehab centre in Delhi I must say. My brother recovered from alcohol addiction from Roar Wellness. Thanks to Dhruv sir and the Roar Wellness team.", "/images/testimonial-avatar-female.webp"],
+  ["Yosika Patel", "Thanks to Mr. Dhruv sir and his team for supporting us. My brother is happy now after treatment of alcohol addiction.", "/images/testimonial-avatar-female.webp"],
+  ["EmpireCraft Limos", "I must say that Roar Wellness Rehab Centre is one of the best luxury rehab centres for alcohol in Delhi. Thanks for the great service.", ""],
+  ["Rohit Yadav", "A supportive and professional rehab center! The therapy and care I received at RoarWellness helped me regain control of my life.", "/images/testimonial-avatar-male.webp"],
 ];
 
 export const defaultFaqs: Faq[] = [
@@ -69,6 +82,7 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
           <div className="review-featured-heading">
             <p className="eyebrow">Testimonials</p>
             <h2>Healing through <em>their eyes</em></h2>
+            <Link href="/testimonials/" className="services-browse-link">Read all testimonials <span aria-hidden="true">→</span></Link>
           </div>
           {featuredReviews.length > 0 && (
             <div className="review-featured-layout" aria-live="polite">
@@ -137,6 +151,69 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
         </div>
       </div>
     </section>
+  );
+}
+
+export function TestimonialsArchive() {
+  const [reviews, setReviews] = useState<Review[]>(defaultReviews);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    cmsRequest<{ data: Record<string, CmsHomeSection[]> }>("/api/content/home")
+      .then(({ data }) => {
+        if (!mounted) return;
+        const publishedReviews = (data.reviews || []).map((item) => [
+          item.heading,
+          item.body || "",
+          getReviewAvatar(item.heading, item.image_url),
+        ] as Review).filter(([, quote]) => quote.trim().length > 0);
+        setReviews(publishedReviews.length ? publishedReviews : defaultReviews);
+        setError("");
+      })
+      .catch((loadError: unknown) => {
+        if (!mounted) return;
+        console.error("Unable to load published testimonials.", loadError);
+        setError(loadError instanceof Error ? loadError.message : "Published testimonials are temporarily unavailable.");
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => { mounted = false; };
+  }, []);
+
+  return (
+    <main className="testimonial-archive px-6 py-20 md:px-12 md:py-28">
+      <div className="site-container">
+        <header className="testimonial-archive-heading">
+          <p className="eyebrow text-coral">Stories from our community</p>
+          <h1 className="section-title mt-5 text-olive">Words from the <em>recovery journey</em></h1>
+          <p>Experiences shared by people and families who have connected with Roar Wellness.</p>
+        </header>
+        {loading && <p role="status" className="mt-8 text-sm text-cms-muted">Loading testimonials...</p>}
+        {error && <p role="status" className="mt-8 text-sm text-cms-muted">{error} Showing available stories.</p>}
+        {!loading && reviews.length > 0 && (
+          <div className="testimonial-archive-grid" aria-label="Client testimonials">
+            {reviews.map(([name, quote, avatar], index) => (
+              <article key={`${name}-${index}`} className="testimonial-archive-card">
+                <span className="testimonial-archive-mark" aria-hidden="true">“</span>
+                <blockquote>{quote}</blockquote>
+                <div className="review-name">
+                  {avatar
+                    ? <img src={avatar} alt="" className="review-avatar" loading="lazy" />
+                    : <span aria-hidden="true" className="review-avatar flex items-center justify-center bg-[#ede9dd] font-semibold text-[#695f53]">{name.trim().charAt(0).toUpperCase()}</span>}
+                  <span>{name}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+        {!loading && reviews.length === 0 && <p role="status" className="mt-8">No testimonials are currently available.</p>}
+        <p className="testimonial-archive-note">Testimonials reflect individual experiences; outcomes vary.</p>
+      </div>
+    </main>
   );
 }
 

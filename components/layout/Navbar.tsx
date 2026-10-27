@@ -20,6 +20,7 @@ const navigationLinks: NavigationLink[] = [
     children: [
       { label: "Company Profile", href: "/about-roarwellness/" },
       { label: "Our Team", href: "/drug-alcohol-rehabilitation-experts/" },
+      { label: "Testimonials", href: "/testimonials/" },
       { label: "Videos", href: "/videos/" },
     ],
   },
