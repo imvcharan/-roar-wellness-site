@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminAccordion } from "@/components/admin/AdminAccordion";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { Button } from "@/components/ui/Button";
 import { cmsRequest } from "@/services/cms-api";
 
@@ -37,6 +38,22 @@ export default function SettingsPage() {
   const [importText, setImportText] = useState("");
   const [loading, setLoading] = useState(true);
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState("");
+
+  const runAction = async (progress: string, action: () => Promise<void>): Promise<boolean> => {
+    setError("");
+    setNotice("");
+    setPendingAction(progress);
+    try {
+      await action();
+      return true;
+    } catch (actionError) {
+      setError(requestError(actionError));
+      return false;
+    } finally {
+      setPendingAction("");
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,11 +63,16 @@ export default function SettingsPage() {
       cmsRequest<{ data: CmsFaq[] }>("/api/cms/faqs"),
       cmsRequest<{ data: CmsUser }>("/api/cms/session"),
     ]);
+    const failures: string[] = [];
     if (settled[0].status === "fulfilled") setSettings({ ...defaultSettings, ...settled[0].value.data });
-    else setError(requestError(settled[0].reason));
+    else failures.push(`Site settings: ${requestError(settled[0].reason)}`);
     if (settled[1].status === "fulfilled") setUsers(settled[1].value.data);
+    else failures.push(`CMS accounts: ${requestError(settled[1].reason)}`);
     if (settled[2].status === "fulfilled") setFaqs(settled[2].value.data);
+    else failures.push(`FAQs: ${requestError(settled[2].reason)}`);
     if (settled[3].status === "fulfilled") setUser(settled[3].value.data);
+    else failures.push(`Current account: ${requestError(settled[3].reason)}`);
+    setError(failures.length ? `Some settings could not be loaded. ${failures.join(" ")}` : "");
     setLoading(false);
   }, []);
 
@@ -58,18 +80,15 @@ export default function SettingsPage() {
 
   const saveSettings = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError("");
-    setNotice("");
-    try {
+    if (await runAction("Saving site settings…", async () => {
       await cmsRequest("/api/cms/settings", { method: "PUT", body: JSON.stringify(settings) });
-      setNotice("Site settings saved. Updated text appears on the next page load.");
-    } catch (saveError) { setError(requestError(saveError)); }
+    })) setNotice("Site settings saved. Changes are available on the next page load.");
   };
 
   const saveFaq = async (faq?: CmsFaq) => {
-    setError("");
-    setNotice("");
-    try {
+    const editingExistingFaq = Boolean(faq || editingFaq);
+    const savedStatus = faq ? (faq.status === "published" ? "draft" : "published") : faqStatus;
+    const success = await runAction(faq ? "Updating FAQ publication status…" : editingExistingFaq ? "Saving FAQ changes…" : "Adding FAQ…", async () => {
       if (faq) {
         await cmsRequest(`/api/cms/faqs/${encodeURIComponent(faq.id)}`, {
           method: "PUT",
@@ -90,89 +109,104 @@ export default function SettingsPage() {
         setFaqStatus("published");
         setEditingFaq(null);
       }
-      setNotice(faq ? "FAQ publication status updated." : editingFaq ? "FAQ updated." : "FAQ published.");
       await load();
-    } catch (faqError) { setError(requestError(faqError)); }
+    });
+    if (success) setNotice(faq
+      ? `FAQ “${faq.question}” is now ${savedStatus === "published" ? "published" : "unpublished"}.`
+      : editingExistingFaq ? "FAQ changes saved." : `FAQ ${savedStatus === "draft" ? "saved as draft" : "published"}.`);
   };
 
   const deleteFaq = async (faq: CmsFaq) => {
     if (!window.confirm(`Delete FAQ “${faq.question}”?`)) return;
-    try {
+    if (await runAction("Deleting FAQ…", async () => {
       await cmsRequest(`/api/cms/faqs/${encodeURIComponent(faq.id)}`, { method: "DELETE" });
-      setNotice("FAQ deleted.");
       await load();
-    } catch (deleteError) { setError(requestError(deleteError)); }
+    })) setNotice(`FAQ “${faq.question}” was deleted.`);
   };
 
   const addUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    try {
+    const accountName = newUser.name;
+    const accountRole = newUser.role;
+    if (await runAction("Creating CMS account…", async () => {
       await cmsRequest("/api/cms/users", { method: "POST", body: JSON.stringify(newUser) });
       setNewUser({ name: "", email: "", password: "", role: "editor" });
-      setNotice("CMS account created.");
       await load();
-    } catch (userError) { setError(requestError(userError)); }
+    })) setNotice(`CMS account for ${accountName} was created with the ${accountRole} role.`);
   };
 
   const changeRole = async (account: CmsUser, role: Role) => {
-    try {
+    if (await runAction(`Updating ${account.name}’s role…`, async () => {
       await cmsRequest(`/api/cms/users/${encodeURIComponent(account.id)}`, { method: "PATCH", body: JSON.stringify({ role }) });
-      setNotice("Account role updated.");
       await load();
-    } catch (roleError) { setError(requestError(roleError)); }
+    })) setNotice(`${account.name}’s role was changed to ${role}.`);
   };
 
   const deleteUser = async (account: CmsUser) => {
     if (!window.confirm(`Remove CMS access for ${account.email}?`)) return;
-    try {
+    if (await runAction(`Removing ${account.name}’s CMS account…`, async () => {
       await cmsRequest(`/api/cms/users/${encodeURIComponent(account.id)}`, { method: "DELETE" });
-      setNotice("CMS account removed.");
       await load();
-    } catch (deleteError) { setError(requestError(deleteError)); }
+    })) setNotice(`CMS account for ${account.name} was removed.`);
   };
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    try {
+    if (await runAction("Changing password and securing sessions…", async () => {
       await cmsRequest("/api/cms/profile/password", { method: "POST", body: JSON.stringify(passwordForm) });
       setPasswordForm({ currentPassword: "", newPassword: "" });
-      setNotice("Your password has been changed.");
-    } catch (passwordError) { setError(requestError(passwordError)); }
+    })) setNotice("Your password was changed and other active sessions were signed out.");
   };
 
   const downloadBackup = async () => {
     if (!window.confirm("Download a full backup containing enquiry contact details, staff activity, and analytics events? Store the file in encrypted, access-controlled storage.")) return;
-    try {
+    if (await runAction("Preparing secure CMS backup…", async () => {
       const response = await fetch("/api/cms/backup", { cache: "no-store" });
-      if (!response.ok) throw new Error((await response.json()).error || "Backup download failed.");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(payload?.error || "Backup download failed.");
+      }
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = `roar-cms-backup-${new Date().toISOString().slice(0, 10)}.json`;
       anchor.click();
-      URL.revokeObjectURL(url);
-      setNotice("Backup downloaded.");
-    } catch (backupError) { setError(requestError(backupError)); }
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    })) setNotice("CMS backup downloaded. Store it in encrypted, access-controlled storage.");
   };
 
   const restoreBackup = async () => {
     if (!importText.trim()) { setError("Select a JSON backup or paste a PHP CMS content export first."); return; }
+    let payload: unknown;
     try {
-      const payload: unknown = JSON.parse(importText);
-      const isBackup = typeof payload === "object" && payload !== null && "format" in payload && payload.format === "roar-cms-backup";
-      const confirmMessage = isBackup
-        ? "Restore this full backup? It replaces current CMS content, enquiries, analytics events, staff activity, settings, and media records. CMS accounts and active sessions are excluded. Export a backup first."
-        : "Import this legacy CMS export? Legacy content imports are merged. Export a backup first.";
-      if (!window.confirm(confirmMessage)) return;
+      payload = JSON.parse(importText);
+    } catch (parseError) {
+      setError(requestError(parseError));
+      return;
+    }
+    const isBackup = typeof payload === "object" && payload !== null && "format" in payload && payload.format === "roar-cms-backup";
+    const confirmMessage = isBackup
+      ? "Restore this full backup? It replaces current CMS content, enquiries, analytics events, staff activity, settings, and media records. CMS accounts and active sessions are excluded. Export a backup first."
+      : "Import this legacy CMS export? Legacy content imports are merged. Export a backup first.";
+    if (!window.confirm(confirmMessage)) return;
+    let completionMessage = "";
+    const success = await runAction("Applying CMS backup or import…", async () => {
       const response = await cmsRequest<{ data: { restored?: boolean; imported?: number } }>(
         isBackup ? "/api/cms/backup" : "/api/cms/import",
         { method: "POST", body: JSON.stringify(payload) },
       );
       setImportText("");
-      setNotice(isBackup ? "CMS backup restored." : `Imported ${response.data.imported ?? 0} content items.`);
+      completionMessage = isBackup ? "CMS backup restored successfully." : `Imported ${response.data.imported ?? 0} content items.`;
       await load();
-    } catch (importError) { setError(importError instanceof Error ? importError.message : "Import failed."); }
+    });
+    if (success) setNotice(completionMessage);
+  };
+
+  const readImportFile = async (file: File) => {
+    if (await runAction("Reading import file…", async () => {
+      setImportText(await file.text());
+    })) setNotice(`${file.name} loaded. Review the JSON, then choose Import / restore JSON to apply it.`);
   };
 
   const setSetting = (key: string, value: string) => setSettings((current) => ({ ...current, [key]: value }));
@@ -191,8 +225,7 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold text-cms-text">CMS settings</h1>
         <p className="mt-2 text-sm text-cms-muted">Site metadata, homepage copy, FAQs, accounts, backups, and migration tools.</p>
       </header>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {notice && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
+      <AdminFeedback error={error} notice={notice} progress={pendingAction} />
 
       <AdminAccordion
         id="settings-identity"
@@ -223,7 +256,7 @@ export default function SettingsPage() {
           {settingInput("homepageApproachEyebrow", "Eyebrow")}
           {settingInput("homepageApproachTitle", "Heading")}
           {settingInput("homepageApproachDescription", "Description", true, 5000)}
-          <div className="md:col-span-2"><Button type="submit">Save settings</Button></div>
+          <div className="md:col-span-2"><Button type="submit" disabled={Boolean(pendingAction)}>{pendingAction ? "Working…" : "Save settings"}</Button></div>
         </form>
       </AdminAccordion>
 
@@ -242,17 +275,17 @@ export default function SettingsPage() {
             <select className="rounded-lg border border-cms-border bg-white px-3 py-2" value={faqStatus} onChange={(event) => setFaqStatus(event.target.value as "draft" | "published")}>
               <option value="published">Published</option><option value="draft">Draft</option>
             </select>
-            <Button type="submit">{editingFaq ? "Save FAQ" : "Add FAQ"}</Button>
-            {editingFaq && <Button type="button" variant="secondary" onClick={() => { setEditingFaq(null); setFaqQuestion(""); setFaqAnswer(""); setFaqStatus("published"); }}>Cancel edit</Button>}
+            <Button type="submit" disabled={Boolean(pendingAction)}>{pendingAction ? "Working…" : editingFaq ? "Save FAQ" : "Add FAQ"}</Button>
+            {editingFaq && <Button type="button" variant="secondary" disabled={Boolean(pendingAction)} onClick={() => { setEditingFaq(null); setFaqQuestion(""); setFaqAnswer(""); setFaqStatus("published"); }}>Cancel edit</Button>}
           </div>
         </form>
         <div className="mt-5 divide-y divide-cms-border border-y border-cms-border">
           {faqs.map((faq) => <article key={faq.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
             <div><h3 className="font-semibold text-cms-text">{faq.question}</h3><p className="mt-1 whitespace-pre-wrap text-sm text-cms-muted">{faq.answer}</p><span className="text-xs uppercase text-cms-muted">{faq.status}</span></div>
             <div className="flex gap-3">
-              <button type="button" onClick={() => { setActivePanel("faqs"); setEditingFaq(faq.id); setFaqQuestion(faq.question); setFaqAnswer(faq.answer); setFaqStatus(faq.status); }} className="text-sm text-cms-primary">Edit</button>
-              <button type="button" onClick={() => void saveFaq(faq)} className="text-sm text-cms-primary">{faq.status === "published" ? "Unpublish" : "Publish"}</button>
-              {user?.role === "admin" && <button type="button" onClick={() => void deleteFaq(faq)} className="text-sm text-red-700">Delete</button>}
+              <button type="button" disabled={Boolean(pendingAction)} onClick={() => { setActivePanel("faqs"); setEditingFaq(faq.id); setFaqQuestion(faq.question); setFaqAnswer(faq.answer); setFaqStatus(faq.status); }} className="text-sm text-cms-primary disabled:opacity-50">Edit</button>
+              <button type="button" disabled={Boolean(pendingAction)} onClick={() => void saveFaq(faq)} className="text-sm text-cms-primary disabled:opacity-50">{faq.status === "published" ? "Unpublish" : "Publish"}</button>
+              {user?.role === "admin" && <button type="button" disabled={Boolean(pendingAction)} onClick={() => void deleteFaq(faq)} className="text-sm text-red-700 disabled:opacity-50">Delete</button>}
             </div>
           </article>)}
           {!loading && !faqs.length && <p className="py-4 text-sm text-cms-muted">No FAQs yet.</p>}
@@ -275,16 +308,16 @@ export default function SettingsPage() {
             <select className="rounded-lg border border-cms-border bg-white px-3 py-2" value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value as Role })}>
               <option value="editor">Editor</option><option value="viewer">Viewer</option><option value="admin">Admin</option>
             </select>
-            <Button type="submit">Add account</Button>
+            <Button type="submit" disabled={Boolean(pendingAction)}>{pendingAction ? "Working…" : "Add account"}</Button>
           </form>
           <div className="mt-4 divide-y divide-cms-border border-y border-cms-border">
             {users.map((account) => <div key={account.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div><p className="font-medium text-cms-text">{account.name}</p><p className="text-sm text-cms-muted">{account.email}</p></div>
               <div className="flex items-center gap-3">
-                <select aria-label={`Role for ${account.email}`} className="rounded-lg border border-cms-border bg-white px-2 py-1.5" value={account.role} onChange={(event) => void changeRole(account, event.target.value as Role)}>
+                <select aria-label={`Role for ${account.email}`} disabled={Boolean(pendingAction)} className="rounded-lg border border-cms-border bg-white px-2 py-1.5 disabled:opacity-50" value={account.role} onChange={(event) => void changeRole(account, event.target.value as Role)}>
                   <option value="admin">Admin</option><option value="editor">Editor</option><option value="viewer">Viewer</option>
                 </select>
-                {account.id !== user.id && <button type="button" onClick={() => void deleteUser(account)} className="text-sm text-red-700">Remove</button>}
+                {account.id !== user.id && <button type="button" disabled={Boolean(pendingAction)} onClick={() => void deleteUser(account)} className="text-sm text-red-700 disabled:opacity-50">Remove</button>}
               </div>
             </div>)}
           </div>
@@ -301,7 +334,7 @@ export default function SettingsPage() {
         <form onSubmit={changePassword} className="mt-4 grid gap-3 sm:grid-cols-3">
           <input required type="password" autoComplete="current-password" className="rounded-lg border border-cms-border px-3 py-2" placeholder="Current password" value={passwordForm.currentPassword} onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })} />
           <input required minLength={12} type="password" autoComplete="new-password" className="rounded-lg border border-cms-border px-3 py-2" placeholder="New password (12+)" value={passwordForm.newPassword} onChange={(event) => setPasswordForm({ ...passwordForm, newPassword: event.target.value })} />
-          <Button type="submit">Update password</Button>
+          <Button type="submit" disabled={Boolean(pendingAction)}>{pendingAction ? "Working…" : "Update password"}</Button>
         </form>
       </AdminAccordion>
 
@@ -315,18 +348,18 @@ export default function SettingsPage() {
         <p className="mt-1 text-sm text-cms-muted">Full backups include content, revision history, media, enquiry contact details, staff activity, and anonymous analytics events. CMS accounts and active sessions are excluded. Import WordPress or legacy CMS JSON exports containing `pages`, `posts`, `services`, `content`, or `items` arrays.</p>
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Backups are downloaded manually; they are not encrypted or stored off-site automatically. Protect each file in encrypted, access-controlled storage and keep the CMS secrets separately.</p>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Button type="button" onClick={() => void downloadBackup()}>Download full backup</Button>
+          <Button type="button" disabled={Boolean(pendingAction)} onClick={() => void downloadBackup()}>{pendingAction ? "Working…" : "Download full backup"}</Button>
           <label className="cursor-pointer rounded-lg border border-cms-border px-4 py-2 font-medium text-cms-text">
             Choose JSON file
-            <input className="sr-only" type="file" accept="application/json,.json" onChange={async (event) => {
+            <input className="sr-only" type="file" accept="application/json,.json" onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) setImportText(await file.text());
+              if (file) void readImportFile(file);
               event.currentTarget.value = "";
             }} />
           </label>
         </div>
         <textarea rows={6} className="mt-3 w-full rounded-lg border border-cms-border px-3 py-2 font-mono text-xs" placeholder="Select a backup/export JSON or paste it here" value={importText} onChange={(event) => setImportText(event.target.value)} />
-        <Button type="button" variant="danger" onClick={() => void restoreBackup()}>Import / restore JSON</Button>
+        <Button type="button" variant="danger" disabled={Boolean(pendingAction)} onClick={() => void restoreBackup()}>{pendingAction ? "Working…" : "Import / restore JSON"}</Button>
       </AdminAccordion>
 
     </div>

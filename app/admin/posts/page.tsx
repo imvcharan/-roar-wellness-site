@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { AdminAccordion } from "@/components/admin/AdminAccordion";
 import { MediaImageField } from "@/components/admin/MediaImageField";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
@@ -147,6 +148,8 @@ export default function PostsPage() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [restoringRevision, setRestoringRevision] = useState<string | null>(null);
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(() => new Set());
   const [role, setRole] = useState<"admin" | "editor" | "viewer">("viewer");
   const [history, setHistory] = useState<{ id: string; title: string; status: string; created_at: string; created_by: string | null }[]>([]);
@@ -315,24 +318,34 @@ export default function PostsPage() {
     if (!window.confirm(`Delete “${entry.title}”? This cannot be undone.`)) return;
     setError("");
     setNotice("");
+    setDeletingId(entry.id);
     try {
       await cmsRequest(`/api/cms/content/${encodeURIComponent(entry.id)}`, { method: "DELETE" });
-      setNotice("Content deleted.");
+      setNotice(`“${entry.title}” was deleted.`);
       if (editingId === entry.id) resetForm();
       await load();
     } catch (deleteError) {
       setError(messageOf(deleteError));
+    } finally {
+      setDeletingId(null);
     }
   };
 
   const restoreRevision = async (revisionId: string) => {
     if (!editingId || !window.confirm("Restore this earlier version? The current version will be saved in history first.")) return;
+    setError("");
+    setNotice("");
+    setRestoringRevision(revisionId);
     try {
       const { data } = await cmsRequest<{ data: CmsEntry }>(`/api/cms/content/${encodeURIComponent(editingId)}/revisions/${encodeURIComponent(revisionId)}`, { method: "POST" });
-      setNotice("Revision restored.");
+      setNotice(`An earlier version of “${data.title}” was restored and saved to history.`);
       await load();
       editEntry(data);
-    } catch (restoreError) { setError(messageOf(restoreError)); }
+    } catch (restoreError) {
+      setError(messageOf(restoreError));
+    } finally {
+      setRestoringRevision(null);
+    }
   };
 
   const openPreview = () => {
@@ -382,8 +395,11 @@ export default function PostsPage() {
         </Button>}
       </header>
 
-      {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {notice && <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
+      <AdminFeedback
+        error={error}
+        notice={notice}
+        progress={saving ? "Saving content…" : deletingId ? "Deleting content…" : restoringRevision ? "Restoring previous version…" : undefined}
+      />
 
       <AdminAccordion
         id="content-library"
@@ -430,7 +446,7 @@ export default function PostsPage() {
                 <div className="flex gap-2">
                   {entry.status === "published" && <a href={getCmsContentHref(entry.slug, entry.category_slug)} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-lg border border-cms-border px-3 py-1.5 text-xs font-medium text-cms-text hover:bg-cms-background">Open page</a>}
                   {role !== "viewer" && <Button type="button" variant="secondary" size="sm" onClick={() => editEntry(entry)}>Edit</Button>}
-                  {role === "admin" && <Button type="button" variant="danger" size="sm" onClick={() => void deleteEntry(entry)}>Delete</Button>}
+                  {role === "admin" && <Button type="button" variant="danger" size="sm" disabled={saving || deletingId !== null} onClick={() => void deleteEntry(entry)}>{deletingId === entry.id ? "Deleting…" : "Delete"}</Button>}
                 </div>
               </article>
             ))}
@@ -634,7 +650,7 @@ export default function PostsPage() {
           <div className="mt-2 divide-y divide-cms-border">
             {history.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
               <span className="text-cms-muted">{new Date(revision.created_at).toLocaleString()} · {revision.created_by || "System"} · {revision.status} · {revision.title}</span>
-              <Button type="button" size="sm" variant="secondary" onClick={() => void restoreRevision(revision.id)}>Restore</Button>
+              <Button type="button" size="sm" variant="secondary" disabled={saving || restoringRevision !== null} onClick={() => void restoreRevision(revision.id)}>{restoringRevision === revision.id ? "Restoring…" : "Restore"}</Button>
             </div>)}
             {!history.length && <p className="py-2 text-sm text-cms-muted">No earlier versions recorded.</p>}
           </div>

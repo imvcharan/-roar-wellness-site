@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { LogOut, ShieldCheck } from "lucide-react";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { cmsRequest } from "@/services/cms-api";
 
 interface Session {
@@ -25,6 +26,9 @@ export default function SecurityPage() {
   const [disableCode, setDisableCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [progress, setProgress] = useState("");
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -48,20 +52,30 @@ export default function SecurityPage() {
 
   const revoke = async (session: Session) => {
     if (!window.confirm("Sign out this session?")) return;
+    setError("");
+    setNotice("");
+    setRevokingId(session.session_id);
+    setProgress("Signing out the selected session…");
     try {
       await cmsRequest("/api/cms/profile/sessions", {
         method: "DELETE",
         body: JSON.stringify({ sessionId: session.session_id }),
       });
+      setNotice("The selected CMS session was signed out.");
       await load();
     } catch (revokeError) {
       setError(revokeError instanceof Error ? revokeError.message : "Unable to revoke session.");
+    } finally {
+      setRevokingId(null);
+      setProgress("");
     }
   };
 
   const startMfa = async () => {
     setBusy(true);
     setError("");
+    setNotice("");
+    setProgress("Preparing authenticator setup…");
     try {
       const result = await cmsRequest<{ data: { secret: string } }>("/api/cms/profile/mfa", {
         method: "POST",
@@ -70,10 +84,12 @@ export default function SecurityPage() {
       setSetupSecret(result.data.secret);
       setSetupCode("");
       setRecoveryCodes([]);
+      setNotice("Authenticator setup is ready. Verify a code to enable MFA.");
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : "Unable to start authenticator setup.");
     } finally {
       setBusy(false);
+      setProgress("");
     }
   };
 
@@ -81,6 +97,8 @@ export default function SecurityPage() {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setNotice("");
+    setProgress("Verifying authenticator and enabling MFA…");
     try {
       const result = await cmsRequest<{ data: { recoveryCodes: string[] } }>("/api/cms/profile/mfa", {
         method: "POST",
@@ -90,10 +108,12 @@ export default function SecurityPage() {
       setMfaEnabled(true);
       setSetupSecret("");
       setSetupCode("");
+      setNotice("Multi-factor authentication is enabled. Save your recovery codes now.");
     } catch (verifyError) {
       setError(verifyError instanceof Error ? verifyError.message : "Unable to verify authenticator code.");
     } finally {
       setBusy(false);
+      setProgress("");
     }
   };
 
@@ -101,6 +121,8 @@ export default function SecurityPage() {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setNotice("");
+    setProgress("Verifying credentials and disabling MFA…");
     try {
       await cmsRequest("/api/cms/profile/mfa", {
         method: "POST",
@@ -110,16 +132,19 @@ export default function SecurityPage() {
       setDisablePassword("");
       setDisableCode("");
       setRecoveryCodes([]);
+      setNotice("Multi-factor authentication is disabled.");
     } catch (disableError) {
       setError(disableError instanceof Error ? disableError.message : "Unable to disable multi-factor authentication.");
     } finally {
       setBusy(false);
+      setProgress("");
     }
   };
 
   const copyRecoveryCodes = async () => {
     try {
       await navigator.clipboard.writeText(recoveryCodes.join("\n"));
+      setNotice("Recovery codes copied to the clipboard. Store them securely.");
     } catch (copyError) {
       setError(copyError instanceof Error ? copyError.message : "Unable to copy recovery codes.");
     }
@@ -135,7 +160,7 @@ export default function SecurityPage() {
       <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
         CMS sessions expire after 8 hours. Device details and IP addresses are not collected. If you do not recognize a session, sign it out and change your password in Settings.
       </p>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      <AdminFeedback error={error} notice={notice} progress={progress} />
       <section className="rounded-xl border border-cms-border bg-cms-surface p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -177,7 +202,7 @@ export default function SecurityPage() {
                 <p className="font-medium text-cms-text">{session.is_current ? "This session" : "Other session"}{session.is_current && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">Current</span>}</p>
                 <p className="mt-1 text-sm text-cms-muted">Signed in {dateLabel(session.created_at)} · expires {dateLabel(new Date(session.expires_at * 1000).toISOString())}</p>
               </div>
-              {!session.is_current && <button type="button" onClick={() => void revoke(session)} className="inline-flex items-center gap-2 rounded-lg border border-cms-border px-3 py-2 text-sm font-medium text-cms-text hover:bg-red-50 hover:text-red-700"><LogOut size={15} />Sign out</button>}
+              {!session.is_current && <button type="button" disabled={revokingId !== null} onClick={() => void revoke(session)} className="inline-flex items-center gap-2 rounded-lg border border-cms-border px-3 py-2 text-sm font-medium text-cms-text hover:bg-red-50 hover:text-red-700 disabled:opacity-50"><LogOut size={15} />{revokingId === session.session_id ? "Signing out…" : "Sign out"}</button>}
             </li>)}
           </ul> : <p className="p-6 text-sm text-cms-muted">No active sessions found.</p>}
       </section>

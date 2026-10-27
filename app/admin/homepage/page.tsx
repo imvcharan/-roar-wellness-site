@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminAccordion } from "@/components/admin/AdminAccordion";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { MediaImageField } from "@/components/admin/MediaImageField";
 import { Button } from "@/components/ui/Button";
 import { cmsRequest } from "@/services/cms-api";
@@ -31,6 +32,8 @@ export default function HomepagePage() {
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [newCardMediaKey, setNewCardMediaKey] = useState(0);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingCard, setDeletingCard] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [role, setRole] = useState<CmsRole | null>(null);
@@ -56,6 +59,9 @@ export default function HomepagePage() {
     if (uploadingImage) return;
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    setError("");
+    setNotice("");
+    setSaving(true);
     try {
       await cmsRequest("/api/cms/home", {
         method: "POST",
@@ -71,10 +77,14 @@ export default function HomepagePage() {
       });
       formElement.reset();
       setNewCardMediaKey((current) => current + 1);
-      setNotice("Homepage card created.");
+      const heading = String(form.get("heading") || "Homepage card");
+      const published = form.get("is_published") === "on";
+      setNotice(`${heading} was created and ${published ? "published" : "saved as unpublished"}.`);
       await load();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to create homepage card.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -82,6 +92,9 @@ export default function HomepagePage() {
     event.preventDefault();
     if (uploadingImage) return;
     const form = new FormData(event.currentTarget);
+    setError("");
+    setNotice("");
+    setSaving(true);
     try {
       await cmsRequest(`/api/cms/home/${encodeURIComponent(card.section_key)}`, {
         method: "PATCH",
@@ -95,21 +108,31 @@ export default function HomepagePage() {
           is_published: form.get("is_published") === "on",
         }),
       });
-      setNotice("Homepage card saved.");
+      const heading = String(form.get("heading") || card.heading);
+      const imageChanged = String(form.get("image_url") || "") !== card.image_url;
+      const published = form.get("is_published") === "on";
+      setNotice(`${heading} was updated${imageChanged ? ", including its image" : ""} and ${published ? "is published" : "is unpublished"}.`);
       await load();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save homepage card.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const deleteCard = async (card: HomeCard) => {
     if (!window.confirm(`Remove “${card.heading}” from the homepage?`)) return;
+    setError("");
+    setNotice("");
+    setDeletingCard(card.section_key);
     try {
       await cmsRequest(`/api/cms/home/${encodeURIComponent(card.section_key)}`, { method: "DELETE" });
-      setNotice("Homepage card deleted.");
+      setNotice(`${card.heading} was deleted.`);
       await load();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Unable to delete homepage card.");
+    } finally {
+      setDeletingCard(null);
     }
   };
 
@@ -119,8 +142,11 @@ export default function HomepagePage() {
         <h1 className="text-3xl font-bold text-cms-text">Homepage sections</h1>
         <p className="mt-2 text-sm text-cms-muted">Manage team profiles, facilities, and approach cards. Manage testimonials from their dedicated section.</p>
       </header>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {notice && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
+      <AdminFeedback
+        error={error}
+        notice={notice}
+        progress={saving ? "Saving homepage card…" : deletingCard ? "Deleting homepage card…" : undefined}
+      />
       <AdminAccordion
         id="homepage-new-card"
         title="Add homepage card"
@@ -143,7 +169,7 @@ export default function HomepagePage() {
           <label className="text-sm font-medium text-cms-text">Position<input name="position" type="number" min="0" max="1000" defaultValue={0} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
           <label className="flex items-center gap-2 text-sm font-medium text-cms-text"><input name="is_published" type="checkbox" defaultChecked /> Published</label>
           <label className="text-sm font-medium text-cms-text md:col-span-2">Description<textarea name="body" rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
-          <div className="md:col-span-2"><Button type="submit" disabled={uploadingImage}>Add card</Button></div>
+          <div className="md:col-span-2"><Button type="submit" disabled={uploadingImage || saving}>{saving ? "Saving…" : "Add card"}</Button></div>
         </form>
         <p className="mt-3 text-xs text-cms-muted">Published cards are shown on the homepage in their configured order. Unpublished cards remain saved in this editor.</p>
       </AdminAccordion>
@@ -178,7 +204,7 @@ export default function HomepagePage() {
                   <label className="text-sm font-medium text-cms-text">Position<input name="position" type="number" min="0" max="1000" defaultValue={card.position} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
                   <label className="flex items-center gap-2 text-sm font-medium text-cms-text"><input name="is_published" type="checkbox" defaultChecked={card.is_published === 1} /> Published</label>
                   <label className="text-sm font-medium text-cms-text md:col-span-2">Description<textarea name="body" rows={3} maxLength={5000} defaultValue={card.body || ""} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
-                  <div className="flex gap-2 md:col-span-2"><Button type="submit" size="sm" disabled={uploadingImage}>Save card</Button>{role === "admin" && <Button type="button" size="sm" variant="danger" onClick={() => void deleteCard(card)}>Delete</Button>}</div>
+                  <div className="flex gap-2 md:col-span-2"><Button type="submit" size="sm" disabled={uploadingImage || saving || deletingCard !== null}>{saving ? "Saving…" : "Save card"}</Button>{role === "admin" && <Button type="button" size="sm" variant="danger" disabled={saving || deletingCard !== null} onClick={() => void deleteCard(card)}>{deletingCard === card.section_key ? "Deleting…" : "Delete"}</Button>}</div>
                 </form>
               </AdminAccordion>
             ))}

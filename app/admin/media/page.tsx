@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { cmsRequest } from "@/services/cms-api";
 
 interface CmsMedia {
@@ -21,6 +22,7 @@ export default function MediaPage() {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,7 +53,7 @@ export default function MediaPage() {
       const form = new FormData();
       form.set("file", file);
       await cmsRequest("/api/cms/media", { method: "POST", body: form });
-      setMessage("Image uploaded and optimized.");
+      setMessage(`${file.name} was uploaded, optimized, and saved to the media library.`);
       await load();
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
@@ -63,12 +65,16 @@ export default function MediaPage() {
   const remove = async (item: CmsMedia) => {
     if (!window.confirm(`Delete ${item.filename}?`)) return;
     setError("");
+    setMessage("");
+    setDeletingId(item.id);
     try {
       await cmsRequest(`/api/cms/media/${encodeURIComponent(item.id)}`, { method: "DELETE" });
-      setMessage("Image deleted.");
+      setMessage(`${item.filename} was deleted from the media library.`);
       await load();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Image deletion failed.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -93,8 +99,11 @@ export default function MediaPage() {
           <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif" disabled={busy} onChange={(event) => { void upload(event.target.files?.[0]); event.currentTarget.value = ""; }} />
         </label>
       </header>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {message && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{message}</p>}
+      <AdminFeedback
+        error={error}
+        notice={message}
+        progress={busy ? "Uploading and optimizing image…" : deletingId ? "Deleting image…" : undefined}
+      />
       {media.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {media.map((item) => (
           <article key={item.id} className="overflow-hidden rounded-xl border border-cms-border bg-cms-surface">
@@ -104,7 +113,7 @@ export default function MediaPage() {
               <p className="text-xs text-cms-muted">{item.width} × {item.height} · {(item.size / 1024).toFixed(0)} KB</p>
               <div className="flex gap-2">
                 <button type="button" onClick={() => void copyUrl(item.url)} className="text-sm font-medium text-cms-primary">Copy URL</button>
-                {isAdmin && <button type="button" onClick={() => void remove(item)} className="text-sm font-medium text-red-700">Delete</button>}
+                {isAdmin && <button type="button" disabled={busy || deletingId !== null} onClick={() => void remove(item)} className="text-sm font-medium text-red-700 disabled:opacity-50">{deletingId === item.id ? "Deleting…" : "Delete"}</button>}
               </div>
             </div>
           </article>

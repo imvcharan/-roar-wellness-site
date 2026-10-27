@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminAccordion } from "@/components/admin/AdminAccordion";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { MediaImageField } from "@/components/admin/MediaImageField";
 import { Button } from "@/components/ui/Button";
 import { cmsRequest } from "@/services/cms-api";
@@ -25,6 +26,8 @@ export default function TeamManagementPage() {
   const [newMemberOpen, setNewMemberOpen] = useState(false);
   const [newMemberMediaKey, setNewMemberMediaKey] = useState(0);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingMember, setDeletingMember] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -55,6 +58,8 @@ export default function TeamManagementPage() {
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     setError("");
+    setNotice("");
+    setSaving(true);
     try {
       await cmsRequest("/api/cms/home", {
         method: "POST",
@@ -71,10 +76,14 @@ export default function TeamManagementPage() {
       formElement.reset();
       setNewMemberMediaKey((current) => current + 1);
       setNewMemberOpen(false);
-      setNotice("Team profile created.");
+      const heading = String(form.get("heading") || "Team member");
+      const published = form.get("is_published") === "on";
+      setNotice(`${heading} was created and ${published ? "published" : "saved as unpublished"}.`);
       await load();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to create team profile.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -83,6 +92,8 @@ export default function TeamManagementPage() {
     if (uploadingImage) return;
     const form = new FormData(event.currentTarget);
     setError("");
+    setNotice("");
+    setSaving(true);
     try {
       await cmsRequest(`/api/cms/home/${encodeURIComponent(member.section_key)}`, {
         method: "PATCH",
@@ -96,23 +107,32 @@ export default function TeamManagementPage() {
           is_published: form.get("is_published") === "on",
         }),
       });
-      setNotice("Team profile saved.");
+      const heading = String(form.get("heading") || member.heading);
+      const imageChanged = String(form.get("image_url") || "") !== member.image_url;
+      const published = form.get("is_published") === "on";
+      setNotice(`${heading} was updated${imageChanged ? ", including the profile photo" : ""} and ${published ? "is published" : "is unpublished"}.`);
       await load();
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save team profile.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const deleteMember = async (member: TeamMember) => {
     if (!window.confirm(`Delete the profile for “${member.heading}”?`)) return;
     setError("");
+    setNotice("");
+    setDeletingMember(member.section_key);
     try {
       await cmsRequest(`/api/cms/home/${encodeURIComponent(member.section_key)}`, { method: "DELETE" });
-      setNotice("Team profile deleted.");
+      setNotice(`${member.heading} was deleted from team profiles.`);
       setActiveMember(null);
       await load();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Unable to delete team profile.");
+    } finally {
+      setDeletingMember(null);
     }
   };
 
@@ -120,10 +140,13 @@ export default function TeamManagementPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-cms-text">Team management</h1>
-        <p className="mt-2 text-sm text-cms-muted">Create and manage the profiles shown in the homepage team section. The label is displayed as each member’s role badge.</p>
+        <p className="mt-2 text-sm text-cms-muted">Create and manage the profiles shown in the Our Team archive. The label is displayed as each member’s role badge.</p>
       </header>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {notice && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
+      <AdminFeedback
+        error={error}
+        notice={notice}
+        progress={saving ? "Saving team profile…" : deletingMember ? "Deleting team profile…" : undefined}
+      />
       <AdminAccordion
         id="team-new-member"
         title="Add team member"
@@ -141,7 +164,7 @@ export default function TeamManagementPage() {
           <label className="text-sm font-medium text-cms-text">Display order<input name="position" type="number" min="0" max="1000" defaultValue={members.length} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
           <label className="flex items-center gap-2 text-sm font-medium text-cms-text"><input name="is_published" type="checkbox" defaultChecked /> Published on website</label>
           <label className="text-sm font-medium text-cms-text md:col-span-2">Biography<textarea name="body" rows={4} maxLength={5000} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
-          <div className="md:col-span-2"><Button type="submit" disabled={uploadingImage}>Add team member</Button></div>
+          <div className="md:col-span-2"><Button type="submit" disabled={uploadingImage || saving}>{saving ? "Saving…" : "Add team member"}</Button></div>
         </form>
       </AdminAccordion>
       <section aria-label="Team profiles" className="space-y-3">
@@ -166,8 +189,8 @@ export default function TeamManagementPage() {
               <label className="flex items-center gap-2 text-sm font-medium text-cms-text"><input name="is_published" type="checkbox" defaultChecked={member.is_published === 1} /> Published on website</label>
               <label className="text-sm font-medium text-cms-text md:col-span-2">Biography<textarea name="body" rows={4} maxLength={5000} defaultValue={member.body || ""} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
               <div className="flex gap-2 md:col-span-2">
-                <Button type="submit" size="sm" disabled={uploadingImage}>Save profile</Button>
-                {role === "admin" && <Button type="button" size="sm" variant="danger" onClick={() => void deleteMember(member)}>Delete</Button>}
+                <Button type="submit" size="sm" disabled={uploadingImage || saving || deletingMember !== null}>{saving ? "Saving…" : "Save profile"}</Button>
+                {role === "admin" && <Button type="button" size="sm" variant="danger" disabled={saving || deletingMember !== null} onClick={() => void deleteMember(member)}>{deletingMember === member.section_key ? "Deleting…" : "Delete"}</Button>}
               </div>
             </form>
           </AdminAccordion>

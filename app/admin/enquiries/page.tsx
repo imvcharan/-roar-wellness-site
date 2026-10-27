@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Mail, Phone, Search, Trash2 } from "lucide-react";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { cmsRequest } from "@/services/cms-api";
 
 type EnquiryStatus = "new" | "contacted" | "scheduled" | "closed";
@@ -57,6 +58,8 @@ export default function EnquiriesPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,11 +87,13 @@ export default function EnquiriesPage() {
   const update = async (enquiry: Enquiry, changes: { status?: EnquiryStatus; assignedUserId?: string | null; followUpAt?: string | null }) => {
     setSavingId(enquiry.id);
     setError("");
+    setNotice("");
     try {
       await cmsRequest("/api/cms/enquiries", {
         method: "PATCH",
         body: JSON.stringify({ id: enquiry.id, ...changes }),
       });
+      setNotice(`Enquiry from ${enquiry.name} was updated.`);
       await load();
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to update enquiry.");
@@ -104,11 +109,17 @@ export default function EnquiriesPage() {
 
   const remove = async (enquiry: Enquiry) => {
     if (!window.confirm(`Permanently delete the enquiry from ${enquiry.name}?`)) return;
+    setError("");
+    setNotice("");
+    setDeletingId(enquiry.id);
     try {
       await cmsRequest(`/api/cms/enquiries?id=${encodeURIComponent(enquiry.id)}`, { method: "DELETE" });
+      setNotice(`Enquiry from ${enquiry.name} was permanently deleted.`);
       await load();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Unable to delete enquiry.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -138,7 +149,11 @@ export default function EnquiriesPage() {
           <p className="mt-1 text-2xl font-bold text-cms-text">{loading ? "—" : stat.value}</p>
         </article>)}
       </section>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      <AdminFeedback
+        error={error}
+        notice={notice}
+        progress={savingId ? "Saving enquiry changes…" : deletingId ? "Deleting enquiry…" : undefined}
+      />
       <section className="rounded-xl border border-cms-border bg-cms-surface p-4 shadow-sm">
         <form onSubmit={(event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); }} className="flex flex-wrap gap-3">
           <label className="relative min-w-0 flex-1">
@@ -195,7 +210,7 @@ export default function EnquiriesPage() {
                     <input type="datetime-local" disabled={savingId === item.id} value={followUpDrafts[item.id] ?? ""} onChange={(event) => setFollowUpDrafts((current) => ({ ...current, [item.id]: event.target.value }))} className="min-w-0 flex-1 rounded-lg border border-cms-border bg-white px-2 py-2 text-xs text-cms-text" />
                     <button type="button" disabled={savingId === item.id || (followUpDrafts[item.id] ?? "") === dateTimeInputValue(item.follow_up_at)} onClick={() => saveFollowUp(item)} className="rounded-md border border-cms-border px-2 py-2 text-xs font-medium text-cms-text disabled:opacity-50">Save</button>
                   </label>
-                  <button type="button" aria-label={`Delete enquiry from ${item.name}`} onClick={() => void remove(item)} className="justify-self-start rounded-lg p-2 text-cms-muted hover:bg-red-50 hover:text-red-700 xl:justify-self-center"><Trash2 size={17} /></button>
+                  <button type="button" aria-label={`Delete enquiry from ${item.name}`} disabled={savingId !== null || deletingId !== null} onClick={() => void remove(item)} className="justify-self-start rounded-lg p-2 text-cms-muted hover:bg-red-50 hover:text-red-700 disabled:opacity-50 xl:justify-self-center">{deletingId === item.id ? "Deleting…" : <Trash2 size={17} />}</button>
                 </div>
               </article>;
             })}

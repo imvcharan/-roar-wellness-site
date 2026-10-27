@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { FolderTree, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { Button } from "@/components/ui/Button";
 import { cmsRequest } from "@/services/cms-api";
 
@@ -40,6 +41,7 @@ export default function CategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -94,7 +96,7 @@ export default function CategoriesPage() {
         method: editingId ? "PATCH" : "POST",
         body: JSON.stringify({ name, slug }),
       });
-      setNotice(editingId ? "Category updated." : "Category created.");
+      setNotice(editingId ? `Category “${name}” was updated.` : `Category “${name}” was created.`);
       resetForm();
       await load();
     } catch (saveError) {
@@ -108,12 +110,15 @@ export default function CategoriesPage() {
     if (!window.confirm(`Delete “${category.name}”? This cannot be undone.`)) return;
     setError("");
     setNotice("");
+    setDeletingId(category.id);
     try {
       await cmsRequest(`/api/cms/categories/${encodeURIComponent(category.id)}`, { method: "DELETE" });
-      setNotice(`“${category.name}” was deleted.`);
+      setNotice(`Category “${category.name}” was deleted.`);
       await load();
     } catch (deleteError) {
       setError(messageOf(deleteError));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -125,8 +130,11 @@ export default function CategoriesPage() {
         <p className="mt-2 max-w-2xl text-cms-muted">Organize content into categories used by public archives and website navigation.</p>
       </header>
 
-      {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {notice && <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
+      <AdminFeedback
+        error={error}
+        notice={notice}
+        progress={saving ? "Saving category…" : deletingId ? "Deleting category…" : undefined}
+      />
 
       {role !== "viewer" && <section aria-labelledby="category-form-title" className="rounded-xl border border-cms-border bg-cms-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
@@ -195,8 +203,8 @@ export default function CategoriesPage() {
                 {role !== "viewer" && category.is_default !== 1 && <Button type="button" variant="secondary" size="sm" onClick={() => startEdit(category)} aria-label={`Edit ${category.name}`}>
                   <Pencil size={14} /> Edit
                 </Button>}
-                {role === "admin" && category.is_default !== 1 && <Button type="button" variant="danger" size="sm" onClick={() => void deleteCategory(category)} aria-label={`Delete ${category.name}`}>
-                  <Trash2 size={14} /> Delete
+                {role === "admin" && category.is_default !== 1 && <Button type="button" variant="danger" size="sm" disabled={saving || deletingId !== null} onClick={() => void deleteCategory(category)} aria-label={`Delete ${category.name}`}>
+                  <Trash2 size={14} /> {deletingId === category.id ? "Deleting…" : "Delete"}
                 </Button>}
               </div>
             </article>)}

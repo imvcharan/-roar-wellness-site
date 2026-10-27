@@ -92,7 +92,7 @@ export function MediaImageField({
       </label>
       <div className="flex flex-wrap items-center gap-3">
         <label className={`cursor-pointer rounded-lg border border-cms-border px-3 py-2 text-sm font-medium text-cms-primary hover:bg-cms-background ${uploading ? "pointer-events-none opacity-60" : ""}`}>
-          {uploading ? "Uploading…" : "Upload image"}
+          <span aria-live="polite">{uploading ? "Uploading…" : "Upload image"}</span>
           <input
             ref={fileInput}
             className="sr-only"

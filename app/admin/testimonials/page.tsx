@@ -2,6 +2,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { MessageSquareQuote, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { MediaImageField } from "@/components/admin/MediaImageField";
 import { Button } from "@/components/ui/Button";
 import { cmsRequest } from "@/services/cms-api";
@@ -141,8 +142,11 @@ export default function TestimonialsPage() {
         <p className="mt-2 max-w-2xl text-cms-muted">Add and manage the client stories shown on the public website. Unpublished testimonials remain private in the CMS.</p>
       </header>
 
-      {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {notice && <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
+      <AdminFeedback
+        error={error}
+        notice={notice}
+        progress={saving ? "Saving testimonial…" : deletingId ? "Deleting testimonial…" : undefined}
+      />
 
       {canEdit && <section aria-labelledby="testimonial-form-title" className="rounded-xl border border-cms-border bg-cms-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
