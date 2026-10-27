@@ -838,6 +838,25 @@
   .review-card blockquote { margin: 2.5rem 0 2rem; color: var(--color-olive); font-family: var(--font-serif); font-size: 1.5rem; line-height: 1.1; }
   .review-name { display: flex; align-items: center; gap: .7rem; margin-top: auto; color: var(--color-coral); font-family: var(--font-body); font-size: .68rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
   .review-avatar { width: 2.25rem; height: 2.25rem; border: 2px solid var(--color-cream); border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1px rgb(161 128 110 / .35); }
+  .testimonial-archive {
+    --color-brand-plum: #a1806e;
+    --color-brand-plum-deep: #51483f;
+    --color-brand-mauve: #a1806e;
+    --color-brand-blush: #dad3be;
+    --color-cream: #fffcf5;
+    --color-cream-dark: #ede9dd;
+    --color-beige: #dad3be;
+    --color-beige-light: #ede9dd;
+    --color-brown: #51483f;
+    --color-brown-muted: #51483f80;
+    --color-terracotta: #a1806e;
+    --color-teal: #a1806e;
+    --color-olive: #51483f;
+    --color-sand: #ede9dd;
+    --color-coral: #a1806e;
+    background: #fffcf5;
+    color: #51483f;
+  }
   .testimonial-archive-heading { max-width: 52rem; }
   .testimonial-archive-heading > p:last-child { max-width: 38rem; margin-top: 1.4rem; color: rgb(81 72 63 / .75); line-height: 1.7; }
   .testimonial-archive-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 3rem; }
