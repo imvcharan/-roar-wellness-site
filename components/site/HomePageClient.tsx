@@ -74,9 +74,9 @@ function servicePlaceholderImage(title: string, slug: string, category: string):
 }
 
 const careInterludeImages = [
-  "/images/care-interlude-team.webp",
-  "/images/care-interlude-campus.webp",
-  "/images/care-interlude-treatments.webp",
+  "/images/home-care-consultation.webp",
+  "/images/home-care-facility.webp",
+  "/images/home-care-campus.webp",
 ];
 
 const rootedRecoveryImages = [
