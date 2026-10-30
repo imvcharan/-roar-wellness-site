@@ -80,13 +80,8 @@ const careInterludeImages = [
 ];
 
 const rootedRecoveryImages = [
-  { src: "/images/rooted-recovery-lake.webp", alt: "A peaceful mountain lake surrounded by green forest." },
-  { src: "/images/rooted-recovery-sunset.webp", alt: "A warm sunset over a quiet lake and flower-covered hillside." },
-  { src: "/images/rooted-recovery-stream.webp", alt: "A clear stream flowing through a green mountain valley." },
-];
-const personalizedCareImages = [
-  "/images/personalized-care-1.webp",
-  "/images/personalized-care-2.webp",
+  { src: "/images/rooted-recovery-campus.webp", alt: "An aerial view of Roar Wellness surrounded by trees." },
+  { src: "/images/rooted-recovery-terrace.webp", alt: "A quiet terrace surrounded by greenery at Roar Wellness." },
 ];
 const personalizedCareTitle = "Personalized care at Roar Wellness";
 const personalizedCareDescription = "Professional guidance and compassionate support through recovery.";
@@ -95,7 +90,6 @@ const essenceGalleryAlts = [...galleryImageAlts, ...rootedRecoveryImages.map((im
 
 export default function HomePageClient() {
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [personalizedCareImageIndex, setPersonalizedCareImageIndex] = useState(0);
   const [activeInterludeStep, setActiveInterludeStep] = useState(0);
   const [careInterludeImageIndex, setCareInterludeImageIndex] = useState(0);
   const [isCareInterludeVisible, setIsCareInterludeVisible] = useState(false);
@@ -277,15 +271,6 @@ export default function HomePageClient() {
 
     return () => window.clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    if (reducedMotion) return;
-    const timer = window.setInterval(() => {
-      if (document.visibilityState !== "visible") return;
-      setPersonalizedCareImageIndex((current) => (current + 1) % personalizedCareImages.length);
-    }, 4200);
-    return () => window.clearInterval(timer);
-  }, [reducedMotion]);
 
   const renderRecoveryImages = () => (
     <div className="mosaic-gallery" aria-label="Roar Wellness gallery slideshow">
@@ -617,15 +602,12 @@ export default function HomePageClient() {
 
               <article className="mosaic-card mosaic-feature" tabIndex={0}>
                 <span className="mosaic-feature-slider" aria-hidden="true">
-                  {personalizedCareImages.map((defaultImage, index) => (
-                    <img
-                      key={index}
-                      src={homeSettings[`homepagePersonalizedCareImage${index + 1}`] || defaultImage}
-                      alt=""
-                      loading={index === 0 ? "eager" : "lazy"}
-                      className={`mosaic-feature-slide${index === personalizedCareImageIndex ? " is-active" : ""}`}
-                    />
-                  ))}
+                  <img
+                    src={homeSettings.homepagePersonalizedCareImage1 || "/images/personalized-care-1.webp"}
+                    alt=""
+                    loading="eager"
+                    className="mosaic-feature-slide is-active"
+                  />
                 </span>
                 <span className="mosaic-shade" aria-hidden="true" />
                 <span className="mosaic-plus" aria-hidden="true">+</span>

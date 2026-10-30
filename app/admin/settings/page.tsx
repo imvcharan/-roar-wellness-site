@@ -18,7 +18,6 @@ const defaultSettings: Record<string, string> = {
   homepageApproachDescription: "", homepagePersonalizedCareTitle: "Personalized care at Roar Wellness",
   homepagePersonalizedCareDescription: "Professional guidance and compassionate support through recovery.",
   homepagePersonalizedCareImage1: "/images/personalized-care-1.webp",
-  homepagePersonalizedCareImage2: "/images/personalized-care-2.webp",
   contactEmail: "", contactPhone: "",
   contactWhatsApp: "", contactAddress: "",
 };
@@ -266,18 +265,10 @@ export default function SettingsPage() {
           {settingInput("homepagePersonalizedCareTitle", "Heading")}
           {settingInput("homepagePersonalizedCareDescription", "Description", true, 5000)}
           <MediaImageField
-            label="Slider image 1"
+            label="Image"
             name="homepagePersonalizedCareImage1"
             value={settings.homepagePersonalizedCareImage1}
             onChange={(value) => setSetting("homepagePersonalizedCareImage1", value)}
-            onUploadingChange={setUploadingImage}
-            previewMode="cover"
-          />
-          <MediaImageField
-            label="Slider image 2"
-            name="homepagePersonalizedCareImage2"
-            value={settings.homepagePersonalizedCareImage2}
-            onChange={(value) => setSetting("homepagePersonalizedCareImage2", value)}
             onUploadingChange={setUploadingImage}
             previewMode="cover"
           />
