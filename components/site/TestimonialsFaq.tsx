@@ -52,6 +52,15 @@ interface CmsFaq {
 
 export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: Review[]; variant?: "cards" | "featured" }) {
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    const updateIsMobile = () => setIsMobile(mobileQuery.matches);
+    updateIsMobile();
+    mobileQuery.addEventListener("change", updateIsMobile);
+    return () => mobileQuery.removeEventListener("change", updateIsMobile);
+  }, []);
 
   useEffect(() => {
     if (variant === "featured" || reviews.length === 0) return;
@@ -68,9 +77,10 @@ export function TestimonialsSection({ reviews, variant = "cards" }: { reviews: R
   );
 
   if (variant === "featured") {
-    const featuredPageCount = Math.ceil(reviews.length / 2);
+    const pageSize = isMobile ? 1 : 2;
+    const featuredPageCount = Math.ceil(reviews.length / pageSize);
     const currentPage = featuredPageCount ? reviewIndex % featuredPageCount : 0;
-    const featuredReviews = reviews.slice(currentPage * 2, currentPage * 2 + 2);
+    const featuredReviews = reviews.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
     const moveReview = (offset: number) => {
       if (featuredPageCount < 2) return;
       setReviewIndex((current) => (current + offset + featuredPageCount) % featuredPageCount);

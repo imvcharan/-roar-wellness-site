@@ -91,7 +91,7 @@ function sanitizeRichText(value: string | null, requireImageAlt: boolean): strin
   return sanitized;
 }
 
-function isAllowedImageUrl(value: string): boolean {
+export function isAllowedImageUrl(value: string): boolean {
   if (/^\/(?:api\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|uploads\/[0-9a-f-]+\.webp)$/i.test(value)) {
     return true;
   }

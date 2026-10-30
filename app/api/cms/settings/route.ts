@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase, getCmsSettings } from "@/lib/cms-db";
+import { isAllowedImageUrl } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,8 @@ const editableKeys = new Set([
   "siteName", "siteDescription", "siteUrl", "seoTitle", "seoDescription",
   "homepageHeroTitle", "homepageHeroEyebrow", "homepageHeroDescription",
   "homepageApproachTitle", "homepageApproachEyebrow", "homepageApproachDescription",
+  "homepagePersonalizedCareTitle", "homepagePersonalizedCareDescription",
+  "homepagePersonalizedCareImage1", "homepagePersonalizedCareImage2",
   "contactEmail", "contactPhone", "contactWhatsApp", "contactAddress", "postsPerPage",
 ]);
 
@@ -29,8 +32,12 @@ export async function PUT(request: Request) {
 
   for (const [key, value] of Object.entries(values)) {
     if (!editableKeys.has(key)) return NextResponse.json({ error: `Setting “${key}” cannot be edited.` }, { status: 400 });
-    if (typeof value !== "string" || value.length > (key.endsWith("Description") ? 5000 : 300)) {
+    const isImageSetting = key.startsWith("homepagePersonalizedCareImage");
+    if (typeof value !== "string" || value.length > (key.endsWith("Description") ? 5000 : isImageSetting ? 2048 : 300)) {
       return NextResponse.json({ error: `Setting “${key}” has an invalid value or is too long.` }, { status: 400 });
+    }
+    if (isImageSetting && value && !isAllowedImageUrl(value)) {
+      return NextResponse.json({ error: `Setting “${key}” must be an HTTP or HTTPS URL or a valid uploaded media path.` }, { status: 400 });
     }
     if (["siteUrl"].includes(key)) {
       try {

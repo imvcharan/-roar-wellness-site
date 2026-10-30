@@ -84,11 +84,18 @@ const rootedRecoveryImages = [
   { src: "/images/rooted-recovery-sunset.webp", alt: "A warm sunset over a quiet lake and flower-covered hillside." },
   { src: "/images/rooted-recovery-stream.webp", alt: "A clear stream flowing through a green mountain valley." },
 ];
+const personalizedCareImages = [
+  "/images/personalized-care-1.webp",
+  "/images/personalized-care-2.webp",
+];
+const personalizedCareTitle = "Personalized care at Roar Wellness";
+const personalizedCareDescription = "Professional guidance and compassionate support through recovery.";
 const essenceGalleryImages = [...galleryImages, ...rootedRecoveryImages.map((image) => image.src)];
 const essenceGalleryAlts = [...galleryImageAlts, ...rootedRecoveryImages.map((image) => image.alt)];
 
 export default function HomePageClient() {
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [personalizedCareImageIndex, setPersonalizedCareImageIndex] = useState(0);
   const [activeInterludeStep, setActiveInterludeStep] = useState(0);
   const [careInterludeImageIndex, setCareInterludeImageIndex] = useState(0);
   const [isCareInterludeVisible, setIsCareInterludeVisible] = useState(false);
@@ -270,6 +277,15 @@ export default function HomePageClient() {
 
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      setPersonalizedCareImageIndex((current) => (current + 1) % personalizedCareImages.length);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [reducedMotion]);
 
   const renderRecoveryImages = () => (
     <div className="mosaic-gallery" aria-label="Roar Wellness gallery slideshow">
@@ -600,12 +616,22 @@ export default function HomePageClient() {
               </article>
 
               <article className="mosaic-card mosaic-feature" tabIndex={0}>
-                <img src="/images/atlas-session.png" alt="" className="mosaic-feature-image" />
+                <span className="mosaic-feature-slider" aria-hidden="true">
+                  {personalizedCareImages.map((defaultImage, index) => (
+                    <img
+                      key={index}
+                      src={homeSettings[`homepagePersonalizedCareImage${index + 1}`] || defaultImage}
+                      alt=""
+                      loading={index === 0 ? "eager" : "lazy"}
+                      className={`mosaic-feature-slide${index === personalizedCareImageIndex ? " is-active" : ""}`}
+                    />
+                  ))}
+                </span>
                 <span className="mosaic-shade" aria-hidden="true" />
                 <span className="mosaic-plus" aria-hidden="true">+</span>
                 <span className="mosaic-card-copy">
-                  <span className="mosaic-card-title">Personalized care at Roar Wellness</span>
-                  <span className="mosaic-card-description">Professional guidance and compassionate support through recovery.</span>
+                  <span className="mosaic-card-title">{homeSettings.homepagePersonalizedCareTitle || personalizedCareTitle}</span>
+                  <span className="mosaic-card-description">{homeSettings.homepagePersonalizedCareDescription || personalizedCareDescription}</span>
                 </span>
               </article>
 
