@@ -7,6 +7,7 @@ import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
 import { PageTitle } from "@/components/site/PageTitle";
 import { cmsRequest } from "@/services/cms-api";
+import { FallbackImage } from "@/components/site/FallbackImage";
 
 interface GalleryItem {
   id: string;
@@ -64,7 +65,7 @@ export default function GalleryPageContent() {
           <div className="gallery-page-grid">
             {galleryUrls.map((image, index) => (
               <button key={`${image}-${index}`} type="button" className="gallery-page-item" data-gallery-index={index} aria-label={`Open image: ${galleryAlts[index]}`}>
-                <img src={image} alt={galleryAlts[index]} loading="lazy" />
+                <FallbackImage src={image} fallbackSrc={galleryImages[index % galleryImages.length] || "/images/rooted-recovery-campus.webp"} alt={galleryAlts[index]} loading="lazy" />
                 <span className="gallery-page-zoom" aria-hidden="true">+</span>
               </button>
             ))}

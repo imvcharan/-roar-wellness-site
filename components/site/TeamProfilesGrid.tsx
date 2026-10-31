@@ -1,4 +1,5 @@
 import { homepageSeeds } from "@/lib/homepage-seed-data";
+import { FallbackImage } from "@/components/site/FallbackImage";
 
 export interface TeamProfile {
   section_key: string;
@@ -25,7 +26,7 @@ export function TeamProfilesGrid({ profiles }: { profiles: TeamProfile[] }) {
         <article key={profile.section_key} className="team-card" role="listitem">
           <div className="team-image-wrap">
             {profile.image_url
-              ? <img src={profile.image_url} alt={profile.heading} loading="lazy" className="team-image" />
+              ? <FallbackImage src={profile.image_url} fallbackSrc="/images/team-madhav-singh.webp" alt={profile.heading} loading="lazy" className="team-image" />
               : <span className="team-image-placeholder" aria-hidden="true" />}
           </div>
           <div className="team-card-copy">

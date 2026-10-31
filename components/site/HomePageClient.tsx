@@ -13,6 +13,7 @@ import { PageTitle } from "@/components/site/PageTitle";
 import { YouTubeHeroBackground } from "@/components/site/YouTubeHeroBackground";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { locationNavigationLinks } from "@/lib/location-navigation";
+import { FallbackImage } from "@/components/site/FallbackImage";
 
 interface CmsService {
   title: string;
@@ -364,9 +365,10 @@ export default function HomePageClient() {
   const renderRecoveryImages = () => (
     <div className="mosaic-gallery" aria-label="Roar Wellness gallery slideshow">
       {rootedRecoveryImages.map((image, index) => (
-        <img
+        <FallbackImage
           key={image.src}
           src={image.src}
+          fallbackSrc="/images/rooted-recovery-campus.webp"
           alt={image.alt}
           data-gallery-index={galleryImages.length + index}
           className={`mosaic-gallery-image ${index === galleryIndex ? "is-active" : ""}`}
@@ -574,7 +576,7 @@ export default function HomePageClient() {
                   role="listitem"
                 >
                   {service.imageUrl
-                    ? <img src={service.imageUrl} alt="" loading="lazy" style={{ objectPosition: service.imagePosition }} className="service-tile-image" />
+                    ? <FallbackImage src={service.imageUrl} fallbackSrc={servicePlaceholderImage(service.title, service.slug, service.categorySlug)} alt="" loading="lazy" style={{ objectPosition: service.imagePosition }} className="service-tile-image" />
                     : <span className="service-tile-placeholder" aria-hidden="true" />}
                   <span className="service-tile-overlay" aria-hidden="true" />
                   <span className="service-tile-plus" aria-hidden="true">+</span>
@@ -627,9 +629,10 @@ export default function HomePageClient() {
       <section ref={careInterludeRef} className="care-interlude" aria-label="Care centered around you">
         <div className="care-interlude-scene" data-step={activeInterludeStep}>
           {careInterludeImages.map((image, index) => (
-            <img
+            <FallbackImage
               key={image}
               src={image}
+              fallbackSrc="/images/home-care-campus.webp"
               alt=""
               aria-hidden="true"
               loading={index === 0 ? "eager" : "lazy"}
@@ -639,9 +642,10 @@ export default function HomePageClient() {
           <span className="care-interlude-shade" aria-hidden="true" />
           <span className="care-interlude-frame" aria-hidden="true">
             {careInterludeImages.map((image, index) => (
-              <img
+              <FallbackImage
                 key={image}
                 src={image}
+                fallbackSrc="/images/home-care-campus.webp"
                 alt=""
                 aria-hidden="true"
                 loading={index === 0 ? "eager" : "lazy"}
@@ -683,9 +687,10 @@ export default function HomePageClient() {
               <article className="mosaic-card mosaic-personal" tabIndex={0}>
                 <span className="mosaic-feature-slider mosaic-personal-slider" aria-hidden="true">
                   {personalImages.map((image, index) => (
-                    <img
+                    <FallbackImage
                       key={`${image}-${index}`}
                       src={image}
+                      fallbackSrc="/images/nutritional-guidance.png"
                       alt=""
                       loading={index === 0 ? "eager" : "lazy"}
                       className={`mosaic-feature-slide${index === personalImageIndex ? " is-active" : ""}`}
@@ -703,9 +708,10 @@ export default function HomePageClient() {
               <article className="mosaic-card mosaic-feature" tabIndex={0}>
                 <span className="mosaic-feature-slider" aria-hidden="true">
                   {featureImages.map((image, index) => (
-                    <img
+                    <FallbackImage
                       key={`${image}-${index}`}
                       src={image}
+                      fallbackSrc="/images/personalized-care-1.webp"
                       alt=""
                       loading={index === 0 ? "eager" : "lazy"}
                       className={`mosaic-feature-slide${index === featureImageIndex ? " is-active" : ""}`}
@@ -736,9 +742,10 @@ export default function HomePageClient() {
               <article className="mosaic-card mosaic-timeline" tabIndex={0}>
                 <span className="mosaic-feature-slider mosaic-timeline-slider" aria-hidden="true">
                   {timelineImages.map((image, index) => (
-                    <img
+                    <FallbackImage
                       key={`${image}-${index}`}
                       src={image}
+                      fallbackSrc="/images/recovery-at-your-pace.webp"
                       alt=""
                       loading={index === 0 ? "eager" : "lazy"}
                       className={`mosaic-feature-slide${index === timelineImageIndex ? " is-active" : ""}`}
@@ -766,7 +773,7 @@ export default function HomePageClient() {
                 <span className="mosaic-plus" aria-hidden="true">+</span>
                 <span className="mosaic-avatar-stack" aria-hidden="true">
                   {(activeReviews.length ? activeReviews : defaultReviews).slice(0, 3).map(([name, , avatar]) => (
-                    <img key={name} src={avatar} alt="" />
+                    <FallbackImage key={name} src={avatar} fallbackSrc="/images/testimonial-avatar-male.webp" alt="" />
                   ))}
                 </span>
                 <span className="mosaic-card-copy">
@@ -810,7 +817,7 @@ export default function HomePageClient() {
                     <article key={`${title}-${index}`} className="facility-slide" aria-hidden={index >= activeFacilitySlides.length} aria-label={`${(index % activeFacilitySlides.length) + 1} of ${activeFacilitySlides.length}`}>
                       <div className="facility-image-wrap">
                         <button type="button" className="facility-image-button" data-gallery-index={index % activeFacilitySlides.length} aria-label={`View full image: ${title}`} tabIndex={index >= activeFacilitySlides.length ? -1 : 0}>
-                          <img src={image} alt={`${title} at Roar Wellness`} className="facility-image" />
+                          <FallbackImage src={image} fallbackSrc="/images/facility-open-space.webp" alt={`${title} at Roar Wellness`} className="facility-image" />
                         </button>
                       </div>
                       <div className="facility-card-copy">
@@ -860,7 +867,7 @@ export default function HomePageClient() {
                   role="listitem"
                 >
                   <span className="blog-showcase-image">
-                    <img src={post.imageUrl} alt="" loading="lazy" style={{ objectPosition: post.imagePosition }} />
+                    <FallbackImage src={post.imageUrl} fallbackSrc="/images/blog-sarah-recovery-community.png" alt="" loading="lazy" style={{ objectPosition: post.imagePosition }} />
                     <span className="blog-showcase-category">{post.category_slug === "blog" ? "Blog" : post.category_slug.replace(/-/g, " ")}</span>
                   </span>
                   <span className="blog-showcase-copy">

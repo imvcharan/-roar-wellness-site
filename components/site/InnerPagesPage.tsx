@@ -18,6 +18,7 @@ import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
 import { getYouTubeVideos } from "@/lib/youtube-videos";
+import { FallbackImage } from "@/components/site/FallbackImage";
 
 interface CmsItem {
   title: string;
@@ -363,7 +364,7 @@ function ServiceRecommendations({ items, currentSlug }: { items: CmsItem[]; curr
           .replace(/\s+/g, " ")
           .trim();
         return <Link className="service-recommendation-card" href={getCmsContentHref(item.slug, item.category_slug)} key={item.slug}>
-          <img src={item.featured_image_url || item.image_url || getServiceImageFallback(item)} alt={item.featured_image_alt || ""} />
+          <FallbackImage src={item.featured_image_url || item.image_url || getServiceImageFallback(item)} fallbackSrc={getServiceImageFallback(item)} alt={item.featured_image_alt || ""} />
           <span className="service-recommendation-copy">
             <span className="service-recommendation-category">{getCmsCategoryLabel(item.category_slug)}</span>
             <strong>{item.title}</strong>
@@ -632,6 +633,7 @@ function CmsPageContent({
   featuredImage,
   featuredImageAlt = "",
   featuredImagePosition = "50% 50%",
+  fallbackImage = "/images/rooted-recovery-campus.webp",
   centerMedia = false,
   inlineCta = false,
   blogHelpline = false,
@@ -642,6 +644,7 @@ function CmsPageContent({
   featuredImage?: string | null;
   featuredImageAlt?: string;
   featuredImagePosition?: string;
+  fallbackImage?: string;
   centerMedia?: boolean;
   inlineCta?: boolean;
   blogHelpline?: boolean;
@@ -978,6 +981,12 @@ function CmsPageContent({
     className={`cms-page-content${slug === "drug-alcohol-rehabilitation-experts" ? " cms-experts-page" : ""}${slug === "news" ? " cms-news-archive" : ""}${centerMedia ? " cms-centered-media" : ""}`}
     onClickCapture={onClickCapture}
     onKeyDownCapture={onKeyDownCapture}
+    onErrorCapture={(event) => {
+      const image = event.target;
+      if (!(image instanceof HTMLImageElement) || image.getAttribute("src") === fallbackImage) return;
+      image.onerror = null;
+      image.src = fallbackImage;
+    }}
     dangerouslySetInnerHTML={{ __html: headingSafeHtml }}
   />;
 }
@@ -1294,7 +1303,7 @@ export default function InnerPagesPage({
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "service" && <p className="detail-hero-note">Private, supportive, and without obligation</p>}
               </div>
-              {heroImage && !isTwelveStepPage && !isExpertsPage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial blog-hero-image-frame" : ""}`}><img src={heroImage} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
+              {heroImage && !isTwelveStepPage && !isExpertsPage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial blog-hero-image-frame" : ""}`}><FallbackImage src={heroImage} fallbackSrc={selectedKind === "blog" ? "/images/blog-sarah-recovery-community.png" : getServiceImageFallback(selectedItem)} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
           </section>
@@ -1374,6 +1383,7 @@ export default function InnerPagesPage({
                     featuredImage={selectedKind === "service" ? image : null}
                     featuredImageAlt={selectedItem.featured_image_alt || ""}
                     featuredImagePosition={selectedItem.featured_image_position || "50% 50%"}
+                    fallbackImage={selectedKind === "blog" ? "/images/blog-sarah-recovery-community.png" : getServiceImageFallback(selectedItem)}
                     centerMedia={selectedKind === "blog" || selectedKind === "service"}
                     inlineCta={selectedKind === "service"}
                     blogHelpline={selectedKind === "blog"}
@@ -1409,7 +1419,7 @@ export default function InnerPagesPage({
                           data-gallery-index={index}
                           aria-label={`Open facility photo: ${galleryImageAlts[index]}`}
                         >
-                          <img src={image} alt={galleryImageAlts[index]} loading="lazy" />
+                          <FallbackImage src={image} fallbackSrc="/images/rooted-recovery-campus.webp" alt={galleryImageAlts[index]} loading="lazy" />
                         </button>
                       ))}
                     </div>
@@ -1427,7 +1437,7 @@ export default function InnerPagesPage({
                         <Link className="blog-related-link" href={getCmsContentHref(item.slug, item.category_slug)}>
                           <span className={`blog-related-thumb${relatedImage ? "" : " blog-related-thumb-placeholder"}`}>
                             {relatedImage
-                              ? <img src={relatedImage} alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
+                              ? <FallbackImage src={relatedImage} fallbackSrc="/images/blog-sarah-recovery-community.png" alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
                               : <BookOpen size={20} aria-hidden="true" />}
                           </span>
                           <span className="blog-related-copy"><span className="blog-related-title">{item.title}</span><span className="blog-related-action">Read article</span></span>
@@ -1540,7 +1550,7 @@ export default function InnerPagesPage({
               return <li key={item.slug}>
                 <Link href={getCmsContentHref(item.slug, item.category_slug)} className="service-tile">
                   {image
-                    ? <img src={image} alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} className="service-tile-image" />
+                    ? <FallbackImage src={image} fallbackSrc={getServiceImageFallback(item)} alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} className="service-tile-image" />
                     : <span className="service-tile-placeholder" aria-hidden="true" />}
                   <span className="service-tile-overlay" aria-hidden="true" />
                   <span className="service-tile-plus" aria-hidden="true">+</span>
@@ -1580,7 +1590,7 @@ export default function InnerPagesPage({
                 <span className="archive-item-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                 <Link href={getCmsContentHref(item.slug, item.category_slug)} className={`archive-item-image ${item.featured_image_url ? "" : "archive-item-image-placeholder"}`} aria-label={`View ${item.title}`}>
                   {item.featured_image_url
-                    ? <img src={item.featured_image_url} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
+                    ? <FallbackImage src={item.featured_image_url} fallbackSrc={item.category_slug === "blog" ? "/images/blog-sarah-recovery-community.png" : getServiceImageFallback(item)} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
                     : <span aria-hidden="true">Roar Wellness</span>}
                 </Link>
                 <div className="archive-item-content">
