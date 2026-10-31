@@ -867,7 +867,8 @@ export default function HomePageClient() {
                   role="listitem"
                 >
                   <span className="blog-showcase-image">
-                    <FallbackImage src={post.imageUrl} fallbackSrc="/images/blog-sarah-recovery-community.png" alt="" loading="lazy" style={{ objectPosition: post.imagePosition }} />
+                    <FallbackImage src={post.imageUrl} fallbackSrc={null} alt="" loading="lazy" style={{ objectPosition: post.imagePosition }} />
+                    <span className="blog-showcase-image-unavailable-mark" aria-hidden="true">Image unavailable</span>
                     <span className="blog-showcase-category">{post.category_slug === "blog" ? "Blog" : post.category_slug.replace(/-/g, " ")}</span>
                   </span>
                   <span className="blog-showcase-copy">

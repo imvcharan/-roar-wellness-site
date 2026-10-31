@@ -644,7 +644,7 @@ function CmsPageContent({
   featuredImage?: string | null;
   featuredImageAlt?: string;
   featuredImagePosition?: string;
-  fallbackImage?: string;
+  fallbackImage?: string | null;
   centerMedia?: boolean;
   inlineCta?: boolean;
   blogHelpline?: boolean;
@@ -983,7 +983,14 @@ function CmsPageContent({
     onKeyDownCapture={onKeyDownCapture}
     onErrorCapture={(event) => {
       const image = event.target;
-      if (!(image instanceof HTMLImageElement) || image.getAttribute("src") === fallbackImage) return;
+      if (!(image instanceof HTMLImageElement)) return;
+      if (fallbackImage === null) {
+        image.hidden = true;
+        image.style.display = "none";
+        image.parentElement?.classList.add("image-unavailable");
+        return;
+      }
+      if (image.getAttribute("src") === fallbackImage) return;
       image.onerror = null;
       image.src = fallbackImage;
     }}
@@ -1303,7 +1310,7 @@ export default function InnerPagesPage({
                 {selectedKind === "blog" && <Link className="detail-hero-cta" href="/blog">Explore more articles <span aria-hidden="true">›</span></Link>}
                 {selectedKind === "service" && <p className="detail-hero-note">Private, supportive, and without obligation</p>}
               </div>
-              {heroImage && !isTwelveStepPage && !isExpertsPage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial blog-hero-image-frame" : ""}`}><FallbackImage src={heroImage} fallbackSrc={selectedKind === "blog" ? "/images/blog-sarah-recovery-community.png" : getServiceImageFallback(selectedItem)} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
+              {heroImage && !isTwelveStepPage && !isExpertsPage && <div className={`detail-hero-media${selectedKind === "blog" ? " detail-hero-media-editorial blog-hero-image-frame" : ""}`}><FallbackImage src={heroImage} fallbackSrc={selectedKind === "blog" ? null : getServiceImageFallback(selectedItem)} alt={selectedItem.featured_image_alt || ""} style={{ objectPosition: selectedItem.featured_image_position || "50% 50%" }} className="detail-hero-image" /></div>}
               </div>
             </div>
           </section>
@@ -1383,7 +1390,7 @@ export default function InnerPagesPage({
                     featuredImage={selectedKind === "service" ? image : null}
                     featuredImageAlt={selectedItem.featured_image_alt || ""}
                     featuredImagePosition={selectedItem.featured_image_position || "50% 50%"}
-                    fallbackImage={selectedKind === "blog" ? "/images/blog-sarah-recovery-community.png" : getServiceImageFallback(selectedItem)}
+                    fallbackImage={selectedKind === "blog" ? null : getServiceImageFallback(selectedItem)}
                     centerMedia={selectedKind === "blog" || selectedKind === "service"}
                     inlineCta={selectedKind === "service"}
                     blogHelpline={selectedKind === "blog"}
@@ -1437,7 +1444,7 @@ export default function InnerPagesPage({
                         <Link className="blog-related-link" href={getCmsContentHref(item.slug, item.category_slug)}>
                           <span className={`blog-related-thumb${relatedImage ? "" : " blog-related-thumb-placeholder"}`}>
                             {relatedImage
-                              ? <FallbackImage src={relatedImage} fallbackSrc="/images/blog-sarah-recovery-community.png" alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
+                              ? <FallbackImage src={relatedImage} fallbackSrc={null} alt="" loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
                               : <BookOpen size={20} aria-hidden="true" />}
                           </span>
                           <span className="blog-related-copy"><span className="blog-related-title">{item.title}</span><span className="blog-related-action">Read article</span></span>
@@ -1590,7 +1597,7 @@ export default function InnerPagesPage({
                 <span className="archive-item-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                 <Link href={getCmsContentHref(item.slug, item.category_slug)} className={`archive-item-image ${item.featured_image_url ? "" : "archive-item-image-placeholder"}`} aria-label={`View ${item.title}`}>
                   {item.featured_image_url
-                    ? <FallbackImage src={item.featured_image_url} fallbackSrc={item.category_slug === "blog" ? "/images/blog-sarah-recovery-community.png" : getServiceImageFallback(item)} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
+                    ? <FallbackImage src={item.featured_image_url} fallbackSrc={item.category_slug === "blog" ? null : getServiceImageFallback(item)} alt={item.featured_image_alt || ""} loading="lazy" style={{ objectPosition: item.featured_image_position || "50% 50%" }} />
                     : <span aria-hidden="true">Roar Wellness</span>}
                 </Link>
                 <div className="archive-item-content">

@@ -3,7 +3,7 @@
 import type { ImgHTMLAttributes } from "react";
 
 interface FallbackImageProps extends ImgHTMLAttributes<HTMLImageElement> {
-  fallbackSrc?: string;
+  fallbackSrc?: string | null;
 }
 
 export function FallbackImage({
@@ -15,6 +15,12 @@ export function FallbackImage({
       {...imageProps}
       onError={(event) => {
         const image = event.currentTarget;
+        if (fallbackSrc === null) {
+          image.hidden = true;
+          image.style.display = "none";
+          image.parentElement?.classList.add("image-unavailable");
+          return;
+        }
         if (image.getAttribute("src") === fallbackSrc) return;
         image.onerror = null;
         image.src = fallbackSrc;

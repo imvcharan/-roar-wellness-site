@@ -464,6 +464,18 @@
     object-fit: cover;
     transition: transform .65s cubic-bezier(.22, .68, 0, 1);
   }
+  .home-theme .blog-showcase-image-unavailable-mark {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    color: rgb(81 72 63 / .7);
+    font-family: var(--font-serif);
+    text-align: center;
+  }
+  .home-theme .blog-showcase-image.image-unavailable .blog-showcase-image-unavailable-mark { display: flex; }
   .home-theme .blog-showcase-card:hover .blog-showcase-image > img,
   .home-theme .blog-showcase-card:focus-visible .blog-showcase-image > img { transform: scale(1.035); }
   .home-theme .blog-showcase-category {
@@ -2721,6 +2733,9 @@
   .blog-story-card:hover .blog-story-image img { transform: scale(1.055); filter: saturate(1.05); }
   .blog-story-image-placeholder { display: grid; place-items: center; background: linear-gradient(145deg, #e8e0d3, #f6f1e8 55%, #c9b9a6); }
   .blog-story-image-mark { color: rgb(81 72 63 / .65); font-family: var(--font-serif); font-size: 1.3rem; font-style: italic; line-height: 1.15; text-align: center; }
+  .blog-story-image-unavailable-mark { display: none; }
+  .blog-story-image.image-unavailable { display: grid; place-items: center; background: linear-gradient(145deg, #e8e0d3, #f6f1e8 55%, #c9b9a6); }
+  .blog-story-image.image-unavailable .blog-story-image-unavailable-mark { display: block; }
   .blog-story-image-action { position: absolute; right: .8rem; bottom: .8rem; display: grid; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: 50%; background: rgb(255 252 245 / .92); color: #51483f; opacity: 0; transform: translate(-.25rem, .25rem); transition: opacity .25s ease, transform .25s ease; }
   .blog-story-card:hover .blog-story-image-action, .blog-story-card:focus-within .blog-story-image-action { opacity: 1; transform: translate(0); }
   .blog-story-copy { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; justify-content: center; padding: clamp(1rem, 2.4vw, 1.7rem); }

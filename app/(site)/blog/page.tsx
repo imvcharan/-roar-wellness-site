@@ -92,8 +92,9 @@ export default function BlogPage() {
       <article key={`${featured ? "featured-" : ""}${post.slug}`} className={`blog-story-card blog-reveal${featured ? " blog-story-card-featured" : ""}`}>
         <Link href={href} className={`blog-story-image${image ? "" : " blog-story-image-placeholder"}`} aria-label={`Read ${post.title}`}>
           {image
-            ? <FallbackImage src={image} fallbackSrc="/images/blog-sarah-recovery-community.png" alt={post.featured_image_alt || ""} loading={index < 2 ? "eager" : "lazy"} style={{ objectPosition: post.featured_image_position || "50% 50%" }} />
+            ? <FallbackImage src={image} fallbackSrc={null} alt={post.featured_image_alt || ""} loading={index < 2 ? "eager" : "lazy"} style={{ objectPosition: post.featured_image_position || "50% 50%" }} />
             : <span className="blog-story-image-mark" aria-hidden="true">Roar<br />Wellness</span>}
+          {image && <span className="blog-story-image-mark blog-story-image-unavailable-mark" aria-hidden="true">Image<br />unavailable</span>}
           <span className="blog-story-category">{category}</span>
           <span className="blog-story-image-action" aria-hidden="true"><ArrowUpRight size={19} /></span>
         </Link>
