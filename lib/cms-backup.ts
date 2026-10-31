@@ -30,6 +30,7 @@ interface BackupPayload {
   faqs: unknown[];
   settings: unknown[];
   homeSections: unknown[];
+  galleryImages: unknown[];
   urlRedirects: unknown[];
   media: BackupMedia[];
   mediaFiles: { filename: string; base64: string }[];
@@ -94,6 +95,7 @@ async function getBackupPayload(): Promise<BackupPayload> {
       faqs: rows("SELECT * FROM cms_faqs"),
       settings: rows("SELECT key, value, updated_at FROM cms_settings"),
       homeSections: rows("SELECT * FROM cms_home_sections"),
+      galleryImages: rows("SELECT * FROM cms_gallery_images"),
       urlRedirects: rows("SELECT source_path, content_id, created_at FROM cms_url_redirects"),
       media,
       mediaFiles,

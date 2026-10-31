@@ -12,6 +12,8 @@ const editableKeys = new Set([
   "homepageApproachTitle", "homepageApproachEyebrow", "homepageApproachDescription",
   "homepagePersonalizedCareTitle", "homepagePersonalizedCareDescription",
   "homepagePersonalizedCareImage1", "homepagePersonalizedCareImage2",
+  "homepageCareInterludeImage1", "homepageCareInterludeImage2", "homepageCareInterludeImage3",
+  "homepageRootedRecoveryImage1", "homepageRootedRecoveryImage2",
   "contactEmail", "contactPhone", "contactWhatsApp", "contactAddress", "postsPerPage",
 ]);
 
@@ -32,7 +34,7 @@ export async function PUT(request: Request) {
 
   for (const [key, value] of Object.entries(values)) {
     if (!editableKeys.has(key)) return NextResponse.json({ error: `Setting “${key}” cannot be edited.` }, { status: 400 });
-    const isImageSetting = key.startsWith("homepagePersonalizedCareImage");
+    const isImageSetting = /^(homepagePersonalizedCareImage|homepageCareInterludeImage|homepageRootedRecoveryImage)/.test(key);
     if (typeof value !== "string" || value.length > (key.endsWith("Description") ? 5000 : isImageSetting ? 2048 : 300)) {
       return NextResponse.json({ error: `Setting “${key}” has an invalid value or is too long.` }, { status: 400 });
     }

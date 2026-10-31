@@ -154,3 +154,19 @@ describe("CMS homepage team profiles", () => {
     });
   });
 });
+
+describe("CMS homepage visual groups", () => {
+  it("accepts images for homepage sliders and Care that connects cards", () => {
+    for (const group_name of ["care-interlude", "essence-rooted", "essence-personal", "essence-feature", "essence-timeline"]) {
+      assert.equal(parseHomepageSection({
+        group_name,
+        heading: "Homepage visual",
+        eyebrow: "Image description",
+        body: "",
+        image_url: "/images/recovery-at-your-pace.webp",
+        position: 0,
+        is_published: true,
+      }).group_name, group_name);
+    }
+  });
+});

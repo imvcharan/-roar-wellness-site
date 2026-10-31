@@ -38,6 +38,7 @@ interface CmsBlogPost {
 
 interface CmsHomeSection {
   section_key: string;
+  group_name: string;
   heading: string;
   eyebrow: string;
   body: string;
@@ -73,20 +74,20 @@ function servicePlaceholderImage(title: string, slug: string, category: string):
   return "/images/atlas-session.png";
 }
 
-const careInterludeImages = [
+const personalizedCareTitle = "Personalized care at Roar Wellness";
+const personalizedCareDescription = "Professional guidance and compassionate support through recovery.";
+const fallbackCareInterludeImages = [
   "/images/home-care-consultation.webp",
   "/images/home-care-facility.webp",
   "/images/home-care-campus.webp",
 ];
-
-const rootedRecoveryImages = [
+const fallbackRootedRecoveryImages = [
   { src: "/images/rooted-recovery-campus.webp", alt: "An aerial view of Roar Wellness surrounded by trees." },
   { src: "/images/rooted-recovery-terrace.webp", alt: "A quiet terrace surrounded by greenery at Roar Wellness." },
 ];
-const personalizedCareTitle = "Personalized care at Roar Wellness";
-const personalizedCareDescription = "Professional guidance and compassionate support through recovery.";
-const essenceGalleryImages = [...galleryImages, ...rootedRecoveryImages.map((image) => image.src)];
-const essenceGalleryAlts = [...galleryImageAlts, ...rootedRecoveryImages.map((image) => image.alt)];
+const fallbackPersonalImage = "/images/nutritional-guidance.png";
+const fallbackFeatureImage = "/images/personalized-care-1.webp";
+const fallbackTimelineImage = "/images/recovery-at-your-pace.webp";
 
 export default function HomePageClient() {
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -99,6 +100,10 @@ export default function HomePageClient() {
   const locationTrackRef = useRef<HTMLDivElement>(null);
   const careInterludeRef = useRef<HTMLElement>(null);
   const [facilityIndex, setFacilityIndex] = useState(0);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [personalImageIndex, setPersonalImageIndex] = useState(0);
+  const [featureImageIndex, setFeatureImageIndex] = useState(0);
+  const [timelineImageIndex, setTimelineImageIndex] = useState(0);
   const [cmsServices, setCmsServices] = useState<CmsService[]>([]);
   const [cmsServicesLoaded, setCmsServicesLoaded] = useState(false);
   const [cmsBlogPosts, setCmsBlogPosts] = useState<CmsBlogPost[]>([]);
@@ -113,6 +118,79 @@ export default function HomePageClient() {
   const contactWhatsApp = homeSettings.contactWhatsApp || "+919773890499";
   const contactAddress = homeSettings.contactAddress
     || "Akhil Farm, 1 Daisy Lane, Off Central Drive, DLF Chattarpur Farms, New Delhi 110074, India";
+  const homepageImages = (group: string, fallback: CmsHomeSection[]) => (
+    cmsHomeLoaded ? cmsHome[group] || [] : fallback
+  ).filter((item) => item.image_url.trim());
+  const careInterludeItems = homepageImages("care-interlude", fallbackCareInterludeImages.map((image_url, index) => ({
+    section_key: `fallback-care-${index}`,
+    group_name: "care-interlude",
+    heading: `Care section image ${index + 1}`,
+    eyebrow: "",
+    body: "",
+    image_url,
+    position: index,
+  })));
+  const rootedRecoveryItems = homepageImages("essence-rooted", fallbackRootedRecoveryImages.map((image, index) => ({
+    section_key: `fallback-rooted-${index}`,
+    group_name: "essence-rooted",
+    heading: image.alt,
+    eyebrow: image.alt,
+    body: "",
+    image_url: image.src,
+    position: index,
+  })));
+  const personalItems = homepageImages("essence-personal", [{
+    section_key: "fallback-personal",
+    group_name: "essence-personal",
+    heading: "Truly personal image",
+    eyebrow: "",
+    body: "",
+    image_url: fallbackPersonalImage,
+    position: 0,
+  }]);
+  const featureItems = homepageImages("essence-feature", [{
+    section_key: "fallback-feature",
+    group_name: "essence-feature",
+    heading: "Personalized care image",
+    eyebrow: "",
+    body: "",
+    image_url: fallbackFeatureImage,
+    position: 0,
+  }]);
+  const timelineItems = homepageImages("essence-timeline", [{
+    section_key: "fallback-timeline",
+    group_name: "essence-timeline",
+    heading: "Your path at your pace image",
+    eyebrow: "",
+    body: "",
+    image_url: fallbackTimelineImage,
+    position: 0,
+  }]);
+  const careInterludeImages = careInterludeItems.map((item) => item.image_url);
+  const rootedRecoveryImages = rootedRecoveryItems.map((item) => ({
+    src: item.image_url,
+    alt: item.eyebrow || item.heading || "Roar Wellness recovery space.",
+  }));
+  const personalImages = personalItems.map((item) => item.image_url);
+  const featureImages = featureItems.map((item) => item.image_url);
+  const timelineImages = timelineItems.map((item) => item.image_url);
+  const essenceGalleryImages = [
+    ...galleryImages,
+    ...rootedRecoveryImages.map((image) => image.src),
+    ...personalImages,
+    ...featureImages,
+    ...timelineImages,
+  ];
+  const essenceGalleryAlts = [
+    ...galleryImageAlts,
+    ...rootedRecoveryImages.map((image) => image.alt),
+    ...personalItems.map((item) => item.eyebrow || item.heading),
+    ...featureItems.map((item) => item.eyebrow || item.heading),
+    ...timelineItems.map((item) => item.eyebrow || item.heading),
+  ];
+  const personalGalleryOffset = galleryImages.length + rootedRecoveryImages.length;
+  const featureGalleryOffset = personalGalleryOffset + personalImages.length;
+  const timelineGalleryOffset = featureGalleryOffset + featureImages.length;
 
   useEffect(() => {
     let mounted = true;
@@ -181,7 +259,15 @@ export default function HomePageClient() {
       setCareInterludeImageIndex((current) => (current + 1) % careInterludeImages.length);
     }, 5200);
     return () => window.clearInterval(timer);
-  }, [isCareInterludeVisible, reducedMotion]);
+  }, [careInterludeImages.length, isCareInterludeVisible, reducedMotion]);
+
+  useEffect(() => {
+    setCareInterludeImageIndex((current) => careInterludeImages.length ? current % careInterludeImages.length : 0);
+    setGalleryIndex((current) => rootedRecoveryImages.length ? current % rootedRecoveryImages.length : 0);
+    setPersonalImageIndex((current) => personalImages.length ? current % personalImages.length : 0);
+    setFeatureImageIndex((current) => featureImages.length ? current % featureImages.length : 0);
+    setTimelineImageIndex((current) => timelineImages.length ? current % timelineImages.length : 0);
+  }, [careInterludeImages.length, featureImages.length, personalImages.length, rootedRecoveryImages.length, timelineImages.length]);
 
   const featuredServiceSlugs = [
     "alcohol-addiction",
@@ -238,7 +324,6 @@ export default function HomePageClient() {
     : defaultReviews;
 
   const activeFaqs: Faq[] = cmsFaqsLoaded ? cmsFaqs : defaultFaqs;
-  const [galleryIndex, setGalleryIndex] = useState(0);
 
   const facilitySlides = [
     ["Table Tennis", "A fun table setup for fast-paced ping pong matches that boost focus and energy.", "/images/facility-table-tennis.webp"],
@@ -265,12 +350,16 @@ export default function HomePageClient() {
   }, [cmsHome.facility?.length]);
 
   useEffect(() => {
+    if (reducedMotion) return;
     const timer = window.setInterval(() => {
-      setGalleryIndex((current) => (current + 1) % rootedRecoveryImages.length);
+      setGalleryIndex((current) => rootedRecoveryImages.length > 1 ? (current + 1) % rootedRecoveryImages.length : 0);
+      setPersonalImageIndex((current) => personalImages.length > 1 ? (current + 1) % personalImages.length : 0);
+      setFeatureImageIndex((current) => featureImages.length > 1 ? (current + 1) % featureImages.length : 0);
+      setTimelineImageIndex((current) => timelineImages.length > 1 ? (current + 1) % timelineImages.length : 0);
     }, 3600);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [featureImages.length, personalImages.length, reducedMotion, rootedRecoveryImages.length, timelineImages.length]);
 
   const renderRecoveryImages = () => (
     <div className="mosaic-gallery" aria-label="Roar Wellness gallery slideshow">
@@ -592,7 +681,18 @@ export default function HomePageClient() {
               </article>
 
               <article className="mosaic-card mosaic-personal" tabIndex={0}>
-                <img src="/images/nutritional-guidance.png" alt="" className="mosaic-personal-image" />
+                <span className="mosaic-feature-slider mosaic-personal-slider" aria-hidden="true">
+                  {personalImages.map((image, index) => (
+                    <img
+                      key={`${image}-${index}`}
+                      src={image}
+                      alt=""
+                      loading={index === 0 ? "eager" : "lazy"}
+                      className={`mosaic-feature-slide${index === personalImageIndex ? " is-active" : ""}`}
+                      data-gallery-index={personalGalleryOffset + index}
+                    />
+                  ))}
+                </span>
                 <span className="mosaic-plus" aria-hidden="true">+</span>
                 <span className="mosaic-card-copy">
                   <span className="mosaic-card-title">Truly personal</span>
@@ -602,12 +702,16 @@ export default function HomePageClient() {
 
               <article className="mosaic-card mosaic-feature" tabIndex={0}>
                 <span className="mosaic-feature-slider" aria-hidden="true">
-                  <img
-                    src={homeSettings.homepagePersonalizedCareImage1 || "/images/personalized-care-1.webp"}
-                    alt=""
-                    loading="eager"
-                    className="mosaic-feature-slide is-active"
-                  />
+                  {featureImages.map((image, index) => (
+                    <img
+                      key={`${image}-${index}`}
+                      src={image}
+                      alt=""
+                      loading={index === 0 ? "eager" : "lazy"}
+                      className={`mosaic-feature-slide${index === featureImageIndex ? " is-active" : ""}`}
+                      data-gallery-index={featureGalleryOffset + index}
+                    />
+                  ))}
                 </span>
                 <span className="mosaic-shade" aria-hidden="true" />
                 <span className="mosaic-plus" aria-hidden="true">+</span>
@@ -630,7 +734,18 @@ export default function HomePageClient() {
               </article>
 
               <article className="mosaic-card mosaic-timeline" tabIndex={0}>
-                <img src="/images/recovery-at-your-pace.webp" alt="" className="mosaic-timeline-image" />
+                <span className="mosaic-feature-slider mosaic-timeline-slider" aria-hidden="true">
+                  {timelineImages.map((image, index) => (
+                    <img
+                      key={`${image}-${index}`}
+                      src={image}
+                      alt=""
+                      loading={index === 0 ? "eager" : "lazy"}
+                      className={`mosaic-feature-slide${index === timelineImageIndex ? " is-active" : ""}`}
+                      data-gallery-index={timelineGalleryOffset + index}
+                    />
+                  ))}
+                </span>
                 <span className="mosaic-plus" aria-hidden="true">+</span>
                 <span className="mosaic-card-copy">
                   <span className="mosaic-card-title">Your path, at your pace</span>

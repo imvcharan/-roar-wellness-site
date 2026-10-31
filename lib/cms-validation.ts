@@ -1,6 +1,9 @@
 import sanitizeHtml from "sanitize-html";
 
-const homepageGroups = new Set(["team", "reviews", "facility", "approach"]);
+const homepageGroups = new Set([
+  "team", "reviews", "facility", "approach",
+  "care-interlude", "essence-rooted", "essence-personal", "essence-feature", "essence-timeline",
+]);
 const reservedRootSlugs = new Set([
   "admin", "admin-login", "api", "appointment", "blog", "faqs", "gallery",
   "inner-pages", "news", "services", "_next", "uploads",

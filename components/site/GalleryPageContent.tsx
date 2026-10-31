@@ -1,14 +1,35 @@
 "use client";
 
-import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import Link from "next/link";
 import { GalleryVideoGrid } from "@/components/layout/GalleryVideoGrid";
 import { GalleryLightbox } from "@/components/layout/GalleryLightbox";
 import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
 import { PageTitle } from "@/components/site/PageTitle";
+import { cmsRequest } from "@/services/cms-api";
+
+interface GalleryItem {
+  id: string;
+  image_url: string;
+  alt_text: string;
+  caption: string | null;
+  position: number;
+  is_published: number;
+}
 
 export default function GalleryPageContent() {
   const [activeTab, setActiveTab] = useState<"photos" | "videos">("photos");
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+
+  useEffect(() => {
+    cmsRequest<{ data: GalleryItem[] }>('/api/content/gallery')
+      .then(({ data }) => setGalleryItems(data))
+      .catch((error: unknown) => console.error('Unable to load gallery content.', error));
+  }, []);
+
+  const galleryUrls = galleryItems.length ? galleryItems.map((item) => item.image_url) : galleryImages;
+  const galleryAlts = galleryItems.length ? galleryItems.map((item) => item.alt_text || 'Roar Wellness gallery image') : galleryImageAlts;
+
   const handleTabKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
@@ -39,11 +60,11 @@ export default function GalleryPageContent() {
         <button type="button" role="tab" id="gallery-videos-tab" tabIndex={activeTab === "videos" ? 0 : -1} aria-selected={activeTab === "videos"} aria-controls="gallery-videos-panel" className={activeTab === "videos" ? "gallery-tab is-active" : "gallery-tab"} onClick={() => setActiveTab("videos")} onKeyDown={handleTabKeyDown}>Videos</button>
       </div>
       <section id="gallery-photos-panel" role="tabpanel" aria-labelledby="gallery-photos-tab" hidden={activeTab !== "photos"}>
-        <GalleryLightbox images={galleryImages}>
+        <GalleryLightbox images={galleryUrls} imageAlts={galleryAlts}>
           <div className="gallery-page-grid">
-            {galleryImages.map((image, index) => (
-              <button key={image} type="button" className="gallery-page-item" data-gallery-index={index} aria-label={`Open image: ${galleryImageAlts[index]}`}>
-                <img src={image} alt={galleryImageAlts[index]} loading="lazy" />
+            {galleryUrls.map((image, index) => (
+              <button key={`${image}-${index}`} type="button" className="gallery-page-item" data-gallery-index={index} aria-label={`Open image: ${galleryAlts[index]}`}>
+                <img src={image} alt={galleryAlts[index]} loading="lazy" />
                 <span className="gallery-page-zoom" aria-hidden="true">+</span>
               </button>
             ))}

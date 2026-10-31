@@ -7,6 +7,7 @@ import { homepageSeeds } from "@/lib/homepage-seed-data";
 import { getCmsContentImage } from "@/lib/cms-content-image";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
 import { getCmsContentHref } from "@/lib/cms-routes";
+import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { getImportedPublishedAt } from "@/lib/cms-date";
 
@@ -203,6 +204,16 @@ function openDatabase(): DatabaseSync {
       height INTEGER NOT NULL,
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
+    CREATE TABLE IF NOT EXISTS cms_gallery_images (
+      id TEXT PRIMARY KEY,
+      image_url TEXT NOT NULL,
+      alt_text TEXT NOT NULL DEFAULT '',
+      caption TEXT,
+      position INTEGER NOT NULL DEFAULT 0,
+      is_published INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+    );
     CREATE TABLE IF NOT EXISTS cms_faqs (
       id TEXT PRIMARY KEY,
       question TEXT NOT NULL,
@@ -318,6 +329,8 @@ function openDatabase(): DatabaseSync {
     ["homepageApproachTitle", "Our Approach"],
     ["homepageApproachEyebrow", "Approach"],
     ["homepageApproachDescription", "At Roar Wellness Rehab Centre, we believe that healing and transformation happen through experiences. Our Evidence Based Therapy is a unique and dynamic approach designed to support individuals struggling with addiction, mental health issues, and emotional distress."],
+    ["homepagePersonalizedCareTitle", "Personalized care at Roar Wellness"],
+    ["homepagePersonalizedCareDescription", "Professional guidance and compassionate support through recovery."],
     ["contactEmail", "help@roarwellness.org"],
     ["contactPhone", "+919319977207"],
     ["contactWhatsApp", "+919773890499"],
@@ -340,6 +353,21 @@ function openDatabase(): DatabaseSync {
   );
   const seedSetting = database.prepare("INSERT OR IGNORE INTO cms_settings (key, value) VALUES (?, ?)");
   settingDefaults.forEach(([key, value]) => seedSetting.run(key, value));
+  const seededGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-defaults-v1'").get();
+  if (!seededGallery) {
+    const galleryInsert = database.prepare("INSERT OR IGNORE INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published) VALUES (?, ?, ?, ?, ?, ?)");
+    galleryImages.forEach((imageUrl, index) => {
+      galleryInsert.run(
+        randomUUID(),
+        imageUrl,
+        galleryImageAlts[index] ?? "Roar Wellness gallery image",
+        "",
+        index,
+        1,
+      );
+    });
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-defaults-v1')").run();
+  }
   const seededHomepage = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-defaults'").get();
   if (!seededHomepage) {
     const homeDefaults: [string, string, string, string][] = [
@@ -356,6 +384,39 @@ function openDatabase(): DatabaseSync {
       positionByGroup.set(item.group, position + 1);
     });
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('homepage-defaults')").run();
+  }
+  const seededHomepageVisuals = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-visual-controls-v1'",
+  ).get();
+  if (!seededHomepageVisuals) {
+    const visualSeeds: Array<[string, string, string, string, string, number]> = [
+      ["home-care-interlude-1", "care-interlude", "Care section image 1", "Care that sees you", "/images/home-care-consultation.webp", 0],
+      ["home-care-interlude-2", "care-interlude", "Care section image 2", "Care and support", "/images/home-care-facility.webp", 1],
+      ["home-care-interlude-3", "care-interlude", "Recovery section image", "Recovery at your pace", "/images/home-care-campus.webp", 2],
+      ["home-essence-rooted-1", "essence-rooted", "Rooted in recovery image 1", "An aerial view of Roar Wellness surrounded by trees.", "/images/rooted-recovery-campus.webp", 0],
+      ["home-essence-rooted-2", "essence-rooted", "Rooted in recovery image 2", "A quiet terrace surrounded by greenery at Roar Wellness.", "/images/rooted-recovery-terrace.webp", 1],
+      ["home-essence-personal-1", "essence-personal", "Truly personal image", "Personalized guidance and care.", "/images/nutritional-guidance.png", 0],
+      ["home-essence-feature-1", "essence-feature", "Personalized care image", "Personalized care at Roar Wellness.", "/images/personalized-care-1.webp", 0],
+      ["home-essence-timeline-1", "essence-timeline", "Your path at your pace image", "A supportive space for recovery.", "/images/recovery-at-your-pace.webp", 0],
+    ];
+    const getSavedVisual = database.prepare("SELECT value FROM cms_settings WHERE key = ?");
+    const insertVisual = database.prepare(`
+      INSERT OR IGNORE INTO cms_home_sections
+        (section_key, group_name, heading, eyebrow, body, image_url, position, is_published)
+      VALUES (?, ?, ?, ?, '', ?, ?, 1)
+    `);
+    for (const [sectionKey, groupName, heading, altText, defaultImageUrl, position] of visualSeeds) {
+      const settingKey = groupName === "care-interlude"
+        ? `homepageCareInterludeImage${position + 1}`
+        : groupName === "essence-rooted"
+          ? `homepageRootedRecoveryImage${position + 1}`
+          : groupName === "essence-feature"
+            ? `homepagePersonalizedCareImage${position + 1}`
+            : null;
+      const savedVisual = settingKey ? getSavedVisual.get(settingKey) as { value: string } | undefined : undefined;
+      insertVisual.run(sectionKey, groupName, heading, altText, savedVisual?.value || defaultImageUrl, position);
+    }
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('homepage-visual-controls-v1')").run();
   }
   const madhavSinghPhotoMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-madhav-photo-v1'",

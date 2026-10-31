@@ -19,6 +19,7 @@ const navItems = [
   { href: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote, roles: ["admin", "editor"] },
   { href: "/admin/team", label: "Team", icon: Users, roles: ["admin", "editor"] },
   { href: "/admin/homepage", label: "Homepage sections", icon: LayoutPanelTop, roles: ["admin", "editor"] },
+  { href: "/admin/gallery", label: "Gallery", icon: Image, roles: ["admin", "editor"] },
   { href: "/admin/media", label: "Media library", icon: Image, roles: ["admin", "editor"] },
   { href: "/admin/enquiries", label: "Enquiries", icon: Mail, roles: ["admin"] },
   { href: "/admin/activity", label: "Activity log", icon: Activity, roles: ["admin"] },

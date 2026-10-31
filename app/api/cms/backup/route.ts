@@ -7,6 +7,7 @@ import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { getCmsMediaDirectory, getCmsMediaFilePath, isCmsMediaId } from "@/lib/cms-media-storage";
+import { isAllowedImageUrl } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
     faqs: database.prepare("SELECT * FROM cms_faqs").all(),
     settings: database.prepare("SELECT key, value FROM cms_settings").all(),
     homeSections: database.prepare("SELECT * FROM cms_home_sections").all(),
+    galleryImages: database.prepare("SELECT * FROM cms_gallery_images").all(),
     urlRedirects: database.prepare("SELECT source_path, content_id, created_at FROM cms_url_redirects").all(),
     media,
     mediaFiles,
@@ -77,6 +79,7 @@ export async function POST(request: Request) {
     || !Array.isArray(data.categories) || !Array.isArray(data.content)
     || !Array.isArray(data.faqs) || !Array.isArray(data.settings)
     || !Array.isArray(data.media) || !Array.isArray(data.mediaFiles)
+    || (data.galleryImages !== undefined && !Array.isArray(data.galleryImages))
     || (data.version === backupVersion && (!Array.isArray(data.enquiries)
       || !Array.isArray(data.auditLog) || !Array.isArray(data.analyticsEvents)))) {
     return NextResponse.json({ error: "Unsupported backup format or version." }, { status: 400 });
@@ -124,6 +127,7 @@ export async function POST(request: Request) {
   const faqs = data.faqs as Record<string, unknown>[];
   const settings = data.settings as Record<string, unknown>[];
   const homeSections = Array.isArray(data.homeSections) ? data.homeSections as Record<string, unknown>[] : [];
+  const galleryImages = Array.isArray(data.galleryImages) ? data.galleryImages as Record<string, unknown>[] : null;
   const revisions = Array.isArray(data.revisions) ? data.revisions as Record<string, unknown>[] : [];
   const urlRedirects = Array.isArray(data.urlRedirects) ? data.urlRedirects as Record<string, unknown>[] : [];
   const enquiries = Array.isArray(data.enquiries) ? data.enquiries as Record<string, unknown>[] : [];
@@ -142,6 +146,7 @@ export async function POST(request: Request) {
     faq: database.prepare("INSERT INTO cms_faqs (id, question, answer, position, status, updated_at) VALUES (?, ?, ?, ?, ?, ?)"),
     setting: database.prepare("INSERT INTO cms_settings (key, value, updated_at) VALUES (?, ?, ?)"),
     home: database.prepare("INSERT INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position, is_published, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"),
+    galleryImage: database.prepare("INSERT INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
     media: database.prepare("INSERT INTO cms_media (id, filename, url, mime_type, size, width, height, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
   };
 
@@ -158,6 +163,7 @@ export async function POST(request: Request) {
   }
   try {
     database.exec("DELETE FROM cms_faqs; DELETE FROM cms_settings; DELETE FROM cms_home_sections; DELETE FROM cms_media;");
+    if (galleryImages) database.exec("DELETE FROM cms_gallery_images;");
     const enquiryStatement = database.prepare(`INSERT INTO cms_enquiries
       (id, name, email, phone, source, status, assigned_user_id, follow_up_at, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -205,6 +211,26 @@ export async function POST(request: Request) {
     for (const row of homeSections) {
       if (typeof row.section_key !== "string" || typeof row.heading !== "string") throw new Error("Backup contains an invalid homepage section.");
       statements.home.run(row.section_key, text(row.group_name, "custom"), row.heading, text(row.eyebrow), text(row.body), text(row.image_url), number(row.position), Number(row.is_published) === 0 ? 0 : 1, text(row.updated_at, new Date().toISOString()));
+    }
+    for (const row of galleryImages || []) {
+      if (typeof row.id !== "string" || typeof row.image_url !== "string"
+        || !isAllowedImageUrl(row.image_url)
+        || typeof row.alt_text !== "string" || row.alt_text.length > 250
+        || (row.caption !== null && row.caption !== undefined && typeof row.caption !== "string")
+        || number(row.position, -1) < 0
+        || (row.is_published !== 0 && row.is_published !== 1)) {
+        throw new Error("Backup contains an invalid gallery image.");
+      }
+      statements.galleryImage.run(
+        row.id,
+        row.image_url,
+        row.alt_text,
+        text(row.caption),
+        number(row.position),
+        row.is_published,
+        text(row.created_at, new Date().toISOString()),
+        text(row.updated_at, new Date().toISOString()),
+      );
     }
     for (const row of media) {
       if (typeof row.id !== "string" || !isCmsMediaId(row.id) || typeof row.url !== "string" || typeof row.filename !== "string") throw new Error("Backup contains invalid media metadata.");

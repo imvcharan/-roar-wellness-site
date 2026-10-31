@@ -27,7 +27,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const homepageUsage = database.prepare(`
     SELECT COUNT(*) AS count FROM cms_home_sections WHERE image_url = ? OR image_url LIKE ?
   `).get(media.url, urlPattern) as { count: number };
-  if (contentUsage.count || homepageUsage.count) {
+  const galleryUsage = database.prepare(`
+    SELECT COUNT(*) AS count FROM cms_gallery_images WHERE image_url = ? OR image_url LIKE ?
+  `).get(media.url, urlPattern) as { count: number };
+  if (contentUsage.count || homepageUsage.count || galleryUsage.count) {
     return NextResponse.json({ error: "This image is used by website content. Replace those images before deleting it." }, { status: 409 });
   }
   const storagePath = getCmsMediaFilePath(id);

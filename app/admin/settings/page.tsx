@@ -3,7 +3,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { AdminAccordion } from "@/components/admin/AdminAccordion";
 import { AdminFeedback } from "@/components/admin/AdminFeedback";
-import { MediaImageField } from "@/components/admin/MediaImageField";
 import { Button } from "@/components/ui/Button";
 import { cmsRequest } from "@/services/cms-api";
 
@@ -17,9 +16,7 @@ const defaultSettings: Record<string, string> = {
   homepageHeroDescription: "", homepageApproachTitle: "", homepageApproachEyebrow: "",
   homepageApproachDescription: "", homepagePersonalizedCareTitle: "Personalized care at Roar Wellness",
   homepagePersonalizedCareDescription: "Professional guidance and compassionate support through recovery.",
-  homepagePersonalizedCareImage1: "/images/personalized-care-1.webp",
-  contactEmail: "", contactPhone: "",
-  contactWhatsApp: "", contactAddress: "",
+  contactEmail: "", contactPhone: "",  contactWhatsApp: "", contactAddress: "",
 };
 
 function requestError(error: unknown): string {
@@ -43,7 +40,6 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState("");
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   const runAction = async (progress: string, action: () => Promise<void>): Promise<boolean> => {
     setError("");
@@ -261,18 +257,11 @@ export default function SettingsPage() {
           {settingInput("homepageApproachEyebrow", "Eyebrow")}
           {settingInput("homepageApproachTitle", "Heading")}
           {settingInput("homepageApproachDescription", "Description", true, 5000)}
-          <div className="md:col-span-2"><h3 className="font-semibold text-cms-text">Personalized care card</h3></div>
+          <div className="md:col-span-2"><h3 className="font-semibold text-cms-text">Personalized care card copy</h3></div>
           {settingInput("homepagePersonalizedCareTitle", "Heading")}
           {settingInput("homepagePersonalizedCareDescription", "Description", true, 5000)}
-          <MediaImageField
-            label="Image"
-            name="homepagePersonalizedCareImage1"
-            value={settings.homepagePersonalizedCareImage1}
-            onChange={(value) => setSetting("homepagePersonalizedCareImage1", value)}
-            onUploadingChange={setUploadingImage}
-            previewMode="cover"
-          />
-          <div className="md:col-span-2"><Button type="submit" disabled={Boolean(pendingAction) || uploadingImage}>{uploadingImage ? "Uploading image…" : pendingAction ? "Working…" : "Save settings"}</Button></div>
+          <p className="text-sm text-cms-muted md:col-span-2">Manage these homepage images, sliders, and cards under Homepage sections.</p>
+          <div className="md:col-span-2"><Button type="submit" disabled={Boolean(pendingAction)}>{pendingAction ? "Working…" : "Save settings"}</Button></div>
         </form>
       </AdminAccordion>
 

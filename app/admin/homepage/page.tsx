@@ -23,6 +23,11 @@ const groups = [
   ["team", "Team"],
   ["facility", "Facilities"],
   ["approach", "Approach cards"],
+  ["care-interlude", "Recovery at your pace slider"],
+  ["essence-rooted", "Care that connects — Rooted in recovery"],
+  ["essence-personal", "Care that connects — Truly personal"],
+  ["essence-feature", "Care that connects — Personalized care"],
+  ["essence-timeline", "Care that connects — Your path at your pace"],
 ];
 
 export default function HomepagePage() {
@@ -140,7 +145,7 @@ export default function HomepagePage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-cms-text">Homepage sections</h1>
-        <p className="mt-2 text-sm text-cms-muted">Manage team profiles, facilities, and approach cards. Manage testimonials from their dedicated section.</p>
+        <p className="mt-2 text-sm text-cms-muted">Manage homepage cards, the Recovery at your pace slider, and every image group in Care that connects. Add, update, publish, or remove images here.</p>
       </header>
       <AdminFeedback
         error={error}
@@ -164,7 +169,7 @@ export default function HomepagePage() {
             </select>
           </label>
           <label className="text-sm font-medium text-cms-text">Heading<input name="heading" required maxLength={200} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
-          <label className="text-sm font-medium text-cms-text">Label / role<input name="eyebrow" maxLength={200} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
+          <label className="text-sm font-medium text-cms-text">Label / role / image alt text<input name="eyebrow" maxLength={200} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
           <MediaImageField key={newCardMediaKey} name="image_url" label="Image" onUploadingChange={setUploadingImage} className="md:col-span-2" />
           <label className="text-sm font-medium text-cms-text">Position<input name="position" type="number" min="0" max="1000" defaultValue={0} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
           <label className="flex items-center gap-2 text-sm font-medium text-cms-text"><input name="is_published" type="checkbox" defaultChecked /> Published</label>
@@ -199,7 +204,7 @@ export default function HomepagePage() {
                 <form onSubmit={(event) => void saveCard(event, card)} className="grid gap-3 md:grid-cols-2">
                   <label className="text-sm font-medium text-cms-text">Section<select name="group_name" defaultValue={card.group_name} className="mt-1 w-full rounded-lg border border-cms-border bg-white px-3 py-2">{groups.map(([value, name]) => <option key={value} value={value}>{name}</option>)}</select></label>
                   <label className="text-sm font-medium text-cms-text">Heading<input name="heading" required maxLength={200} defaultValue={card.heading} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
-                  <label className="text-sm font-medium text-cms-text">Label / role<input name="eyebrow" maxLength={200} defaultValue={card.eyebrow || ""} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
+                  <label className="text-sm font-medium text-cms-text">Label / role / image alt text<input name="eyebrow" maxLength={200} defaultValue={card.eyebrow || ""} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
                   <MediaImageField name="image_url" label="Image" defaultValue={card.image_url || ""} onUploadingChange={setUploadingImage} />
                   <label className="text-sm font-medium text-cms-text">Position<input name="position" type="number" min="0" max="1000" defaultValue={card.position} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
                   <label className="flex items-center gap-2 text-sm font-medium text-cms-text"><input name="is_published" type="checkbox" defaultChecked={card.is_published === 1} /> Published</label>
