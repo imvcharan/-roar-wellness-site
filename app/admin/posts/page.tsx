@@ -155,6 +155,7 @@ export default function PostsPage() {
   const [history, setHistory] = useState<{ id: string; title: string; status: string; created_at: string; created_by: string | null }[]>([]);
   const previewWindow = useRef<Window | null>(null);
   const previewAfterSave = useRef(false);
+  const deepLinkHandled = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -255,6 +256,20 @@ export default function PostsPage() {
       .catch((historyError: unknown) => setError(messageOf(historyError)));
     document.getElementById("cms-entry-editor")?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (loading || deepLinkHandled.current) return;
+    const entryId = new URLSearchParams(window.location.search).get("edit");
+    if (!entryId) {
+      deepLinkHandled.current = true;
+      return;
+    }
+    const entry = entries.find((item) => item.id === entryId);
+    if (!entry) return;
+    deepLinkHandled.current = true;
+    editEntry(entry);
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+  }, [entries, loading]);
 
   const saveEntry = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

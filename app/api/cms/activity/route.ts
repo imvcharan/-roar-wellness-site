@@ -17,6 +17,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const search = (url.searchParams.get("q") || "").trim().slice(0, 100);
   const action = (url.searchParams.get("action") || "").trim().slice(0, 80);
+  const resourceId = (url.searchParams.get("resourceId") || "").trim().slice(0, 160);
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
   if ((from && !isDate(from)) || (to && !isDate(to)) || (from && to && from > to)) {
@@ -30,6 +31,10 @@ export async function GET(request: Request) {
     parameters.push(term, term, term, term);
   }
   if (action) { clauses.push("action = ?"); parameters.push(action); }
+  if (resourceId) {
+    clauses.push("resource_type = 'enquiry' AND resource_id = ?");
+    parameters.push(resourceId);
+  }
   if (from) { clauses.push("substr(created_at, 1, 10) >= ?"); parameters.push(from); }
   if (to) { clauses.push("substr(created_at, 1, 10) <= ?"); parameters.push(to); }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";

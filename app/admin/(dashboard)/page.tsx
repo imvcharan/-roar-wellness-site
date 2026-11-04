@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Activity, ArrowRight, BookOpen, BriefcaseBusiness, Clock3, FileText, Mail, Plus } from "lucide-react";
+import { Activity, ArrowRight, BookOpen, BriefcaseBusiness, Clock3, FileText, Mail, Plus, Server } from "lucide-react";
 import { cmsRequest } from "@/services/cms-api";
 
 interface CmsEntry {
@@ -22,6 +22,13 @@ interface CmsOverviewActivity {
   created_at: string;
 }
 
+interface CmsOperations {
+  mediaAvailable: boolean;
+  notifications: { configured: boolean; pending: number; due: number; exhausted: number };
+  publishing: { scheduled: number; overdue: number; nextAt: string | null };
+  jobs: { job_key: string; status: "running" | "succeeded" | "failed"; started_at: string; finished_at: string | null; summary: string | null }[];
+}
+
 function formatDate(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -38,6 +45,10 @@ export default function AdminOverviewPage() {
   const [unassignedEnquiries, setUnassignedEnquiries] = useState(0);
   const [activities, setActivities] = useState<CmsOverviewActivity[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [operations, setOperations] = useState<CmsOperations | null>(null);
+  const [retryingNotifications, setRetryingNotifications] = useState(false);
+  const [operationsNotice, setOperationsNotice] = useState("");
+  const [operationsError, setOperationsError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,14 +62,16 @@ export default function AdminOverviewPage() {
       const admin = sessionResult.data.role === "admin";
       setIsAdmin(admin);
       if (admin) {
-        const [enquiriesResult, activityResult] = await Promise.all([
+        const [enquiriesResult, activityResult, operationsResult] = await Promise.all([
           cmsRequest<{ summary: { new: number; overdue: number; unassigned: number } }>("/api/cms/enquiries?summary=1"),
           cmsRequest<{ data: CmsOverviewActivity[] }>("/api/cms/activity?limit=5"),
+          cmsRequest<{ data: CmsOperations }>("/api/cms/operations"),
         ]);
         setNewEnquiries(enquiriesResult.summary.new);
         setOverdueFollowUps(enquiriesResult.summary.overdue);
         setUnassignedEnquiries(enquiriesResult.summary.unassigned);
         setActivities(activityResult.data);
+        setOperations(operationsResult.data);
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load the admin overview.");
@@ -68,6 +81,25 @@ export default function AdminOverviewPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const retryNotifications = async () => {
+    if (!window.confirm("Requeue all exhausted enquiry alerts? They will be retried by the next notification processor run.")) return;
+    setRetryingNotifications(true);
+    setOperationsNotice("");
+    setOperationsError("");
+    try {
+      const result = await cmsRequest<{ data: { retried: number } }>("/api/cms/operations", {
+        method: "POST",
+        body: JSON.stringify({ action: "retry-exhausted-notifications" }),
+      });
+      setOperationsNotice(`${result.data.retried} exhausted alert${result.data.retried === 1 ? "" : "s"} requeued.`);
+      await load();
+    } catch (retryError) {
+      setOperationsError(retryError instanceof Error ? retryError.message : "Unable to requeue enquiry alerts.");
+    } finally {
+      setRetryingNotifications(false);
+    }
+  };
 
   const published = entries.filter((entry) => entry.status === "published").length;
   const drafts = entries.filter((entry) => entry.status === "draft" && !entry.scheduled_publish_at).length;
@@ -107,6 +139,8 @@ export default function AdminOverviewPage() {
           <button type="button" onClick={() => void load()} className="font-semibold underline">Try again</button>
         </div>
       )}
+      {operationsNotice && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{operationsNotice}</p>}
+      {operationsError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{operationsError}</p>}
       {!loading && staleDraftCount > 0 && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <strong>{staleDraftCount} draft{staleDraftCount === 1 ? "" : "s"}</strong> {staleDraftCount === 1 ? "has" : "have"} not been updated for over 30 days. <Link href="/admin/posts" className="font-semibold underline">Review content</Link>
       </p>}
@@ -137,7 +171,8 @@ export default function AdminOverviewPage() {
           {loading ? <p role="status" className="p-5 text-sm text-cms-muted">Loading content…</p>
             : recentEntries.length ? <ul className="divide-y divide-cms-border">
               {recentEntries.map((entry) => (
-                <li key={entry.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                <li key={entry.id}>
+                  <Link href={`/admin/posts?edit=${encodeURIComponent(entry.id)}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-cms-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-cms-primary">
                   <div className="min-w-0">
                     <p className="truncate font-medium text-cms-text">{entry.title}</p>
                     <p className="mt-1 text-xs text-cms-muted">{entry.category_name} · Updated {formatDate(entry.updated_at)}</p>
@@ -149,6 +184,7 @@ export default function AdminOverviewPage() {
                   }`}>
                     {entry.scheduled_publish_at ? "Scheduled" : entry.status}
                   </span>
+                  </Link>
                 </li>
               ))}
             </ul> : <p className="p-5 text-sm text-cms-muted">No content yet. Create a page, service, or blog post to get started.</p>}
@@ -183,15 +219,24 @@ export default function AdminOverviewPage() {
             <Clock3 size={18} className="text-cms-primary" />
           </div>
           {nextScheduled.length ? <ul className="divide-y divide-cms-border">
-            {nextScheduled.map((entry) => <li key={entry.id} className="flex items-center justify-between gap-3 px-5 py-3">
+            {nextScheduled.map((entry) => <li key={entry.id}>
+              <Link href={`/admin/posts?edit=${encodeURIComponent(entry.id)}`} className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-cms-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-cms-primary">
               <div className="min-w-0"><p className="truncate text-sm font-medium text-cms-text">{entry.title}</p><p className="mt-1 text-xs text-cms-muted">{entry.category_name} · {formatDate(entry.scheduled_publish_at!)}</p></div>
               <span className="rounded-full bg-[#ede9dd] px-2.5 py-1 text-xs font-medium text-[#695f53]">Scheduled</span>
+              </Link>
             </li>)}
           </ul> : <p className="p-5 text-sm text-cms-muted">No content is scheduled for publication.</p>}
         </section>
         {isAdmin && <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
           <div className="flex items-center justify-between border-b border-cms-border px-5 py-4">
-            <div><h2 className="font-semibold text-cms-text">Enquiry follow-up</h2><p className="mt-1 text-sm text-cms-muted">{newEnquiries} new · {unassignedEnquiries} unassigned · {overdueFollowUps} overdue.</p></div>
+            <div>
+              <h2 className="font-semibold text-cms-text">Enquiry follow-up</h2>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                <Link href="/admin/enquiries?status=new" className="font-medium text-cms-primary hover:underline">{newEnquiries} new</Link>
+                <Link href="/admin/enquiries?queue=unassigned" className="font-medium text-cms-primary hover:underline">{unassignedEnquiries} unassigned</Link>
+                <Link href="/admin/enquiries?queue=overdue" className="font-medium text-cms-primary hover:underline">{overdueFollowUps} overdue</Link>
+              </div>
+            </div>
             <Mail size={18} className="text-cms-primary" />
           </div>
           <div className="p-5">
@@ -203,6 +248,69 @@ export default function AdminOverviewPage() {
           </div>
         </section>}
       </div>
+
+      {isAdmin && operations && <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
+        <div className="flex items-center gap-3 border-b border-cms-border px-5 py-4">
+          <Server size={18} className="text-cms-primary" />
+          <div>
+            <h2 className="font-semibold text-cms-text">Operations at a glance</h2>
+            <p className="mt-1 text-sm text-cms-muted">Live checks from this application instance.</p>
+          </div>
+        </div>
+        <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
+          <article>
+            <h3 className="text-sm font-semibold text-cms-text">Media storage</h3>
+            <p className={`mt-1 text-sm ${operations.mediaAvailable ? "text-emerald-700" : "text-red-700"}`}>
+              {operations.mediaAvailable ? "Available" : "Unavailable"}
+            </p>
+          </article>
+          <article>
+            <h3 className="text-sm font-semibold text-cms-text">Enquiry alerts</h3>
+            <p className="mt-1 text-sm text-cms-muted">
+              {!operations.notifications.configured && "SMTP is not configured · "}
+              {operations.notifications.pending} queued · {operations.notifications.due} due now · {operations.notifications.exhausted} exhausted
+            </p>
+            {operations.notifications.exhausted > 0 && <>
+              <p className="mt-1 text-sm font-medium text-red-700">Investigate failed deliveries and retry after resolving SMTP.</p>
+              <button type="button" disabled={retryingNotifications || !operations.notifications.configured} onClick={() => void retryNotifications()} className="mt-2 rounded-md border border-cms-border px-3 py-1.5 text-xs font-medium text-cms-text disabled:opacity-50">
+                {retryingNotifications ? "Requeuing…" : "Requeue exhausted alerts"}
+              </button>
+            </>}
+          </article>
+          <article>
+            <h3 className="text-sm font-semibold text-cms-text">Scheduled publishing</h3>
+            <p className="mt-1 text-sm text-cms-muted">
+              {operations.publishing.overdue > 0
+                ? `${operations.publishing.overdue} item${operations.publishing.overdue === 1 ? "" : "s"} are past their publish time`
+                : `${operations.publishing.scheduled} scheduled item${operations.publishing.scheduled === 1 ? "" : "s"}`}
+            </p>
+            {operations.publishing.nextAt && <p className="mt-1 text-xs text-cms-muted">Next: {formatDate(operations.publishing.nextAt)}</p>}
+          </article>
+        </div>
+        <div className="border-t border-cms-border px-5 py-4">
+          <h3 className="text-sm font-semibold text-cms-text">Scheduled job history</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {[
+              { key: "backup", label: "Daily backup" },
+              { key: "backup-check", label: "Backup verification" },
+              { key: "notifications", label: "Enquiry alerts" },
+            ].map((job) => {
+              const run = operations.jobs.find((item) => item.job_key === job.key);
+              return <article key={job.key} className="rounded-lg bg-cms-background p-3">
+                <h4 className="text-xs font-semibold text-cms-text">{job.label}</h4>
+                <p className={`mt-1 text-xs font-medium ${run?.status === "failed" ? "text-red-700" : run?.status === "succeeded" ? "text-emerald-700" : "text-cms-muted"}`}>
+                  {run ? run.status === "running" ? "Running" : run.status === "succeeded" ? "Last run succeeded" : "Last run failed" : "No recorded run"}
+                </p>
+                {run?.finished_at && <p className="mt-1 text-xs text-cms-muted">{formatDate(run.finished_at)}</p>}
+                {run?.summary && <p className="mt-1 text-xs text-cms-muted">{run.summary}</p>}
+              </article>;
+            })}
+          </div>
+        </div>
+        <p className="border-t border-cms-border px-5 py-3 text-xs text-cms-muted">
+          Job history reflects the latest run recorded by scripts using this app database. It cannot prove the hosting scheduler is configured or detect a job that never started.
+        </p>
+      </section>}
 
       <p className="text-xs text-cms-muted">Content counts include all categories. Scheduled items are drafts with a publication time set. Appointment enquiries are visible only to administrators.</p>
     </div>

@@ -17,6 +17,10 @@ export async function GET(request: Request) {
   if (requestedStatus !== "all" && !enquiryStatuses.includes(requestedStatus as typeof enquiryStatuses[number])) {
     return NextResponse.json({ error: "Choose a valid enquiry status filter." }, { status: 400 });
   }
+  const requestedQueue = url.searchParams.get("queue") || "all";
+  if (requestedQueue !== "all" && requestedQueue !== "unassigned" && requestedQueue !== "overdue") {
+    return NextResponse.json({ error: "Choose a valid enquiry attention filter." }, { status: 400 });
+  }
   const status = requestedStatus;
   const requestedPage = Number(url.searchParams.get("page") || 1);
   const pageSize = 25;
@@ -26,6 +30,11 @@ export async function GET(request: Request) {
   if (status !== "all") {
     clauses.push("e.status = ?");
     parameters.push(status);
+  }
+  if (requestedQueue === "unassigned") {
+    clauses.push("e.status != 'closed' AND e.assigned_user_id IS NULL");
+  } else if (requestedQueue === "overdue") {
+    clauses.push("e.status != 'closed' AND e.follow_up_at IS NOT NULL AND e.follow_up_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now')");
   }
   if (search) {
     clauses.push("(e.name LIKE ? OR e.email LIKE ? OR e.phone LIKE ? OR e.source LIKE ?)");

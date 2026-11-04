@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Mail, Phone, Search, Trash2 } from "lucide-react";
+import { History, Mail, Phone, Search, Trash2 } from "lucide-react";
 import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { cmsRequest } from "@/services/cms-api";
 
@@ -19,6 +19,12 @@ interface Enquiry {
   created_at: string;
 }
 interface StaffUser { id: string; name: string; role: "admin" | "editor" | "viewer" }
+interface EnquiryActivity {
+  id: string;
+  actor_name: string;
+  summary: string;
+  created_at: string;
+}
 interface EnquiryResponse {
   data: Enquiry[];
   pagination: { page: number; pageSize: number; total: number; pages: number };
@@ -54,17 +60,23 @@ export default function EnquiriesPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [queueFilter, setQueueFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [filtersReady, setFiltersReady] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [historyId, setHistoryId] = useState<string | null>(null);
+  const [historyById, setHistoryById] = useState<Record<string, EnquiryActivity[]>>({});
+  const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null);
+  const [historyErrors, setHistoryErrors] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), status: statusFilter });
+      const params = new URLSearchParams({ page: String(page), status: statusFilter, queue: queueFilter });
       if (search) params.set("q", search);
       const [enquiryResponse, usersResponse] = await Promise.all([
         cmsRequest<EnquiryResponse>(`/api/cms/enquiries?${params.toString()}`),
@@ -80,9 +92,20 @@ export default function EnquiriesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, queueFilter, search, statusFilter]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (filtersReady) void load();
+  }, [filtersReady, load]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    const queue = params.get("queue");
+    if (status && (status === "all" || statuses.some((item) => item.value === status))) setStatusFilter(status);
+    if (queue === "all" || queue === "unassigned" || queue === "overdue") setQueueFilter(queue);
+    setFiltersReady(true);
+  }, []);
 
   const update = async (enquiry: Enquiry, changes: { status?: EnquiryStatus; assignedUserId?: string | null; followUpAt?: string | null }) => {
     setSavingId(enquiry.id);
@@ -105,6 +128,28 @@ export default function EnquiriesPage() {
   const saveFollowUp = (enquiry: Enquiry) => {
     const draft = followUpDrafts[enquiry.id] || "";
     void update(enquiry, { followUpAt: draft ? new Date(draft).toISOString() : null });
+  };
+
+  const toggleHistory = async (enquiry: Enquiry) => {
+    if (historyId === enquiry.id) {
+      setHistoryId(null);
+      return;
+    }
+    setHistoryId(enquiry.id);
+    setHistoryErrors((current) => ({ ...current, [enquiry.id]: "" }));
+    setHistoryLoadingId(enquiry.id);
+    try {
+      const params = new URLSearchParams({ resourceId: enquiry.id, limit: "100" });
+      const response = await cmsRequest<{ data: EnquiryActivity[] }>(`/api/cms/activity?${params.toString()}`);
+      setHistoryById((current) => ({ ...current, [enquiry.id]: response.data }));
+    } catch (historyLoadError) {
+      setHistoryErrors((current) => ({
+        ...current,
+        [enquiry.id]: historyLoadError instanceof Error ? historyLoadError.message : "Unable to load enquiry history.",
+      }));
+    } finally {
+      setHistoryLoadingId((current) => current === enquiry.id ? null : current);
+    }
   };
 
   const remove = async (enquiry: Enquiry) => {
@@ -168,6 +213,14 @@ export default function EnquiriesPage() {
               {statuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
             </select>
           </label>
+          <label>
+            <span className="sr-only">Filter by follow-up attention</span>
+            <select value={queueFilter} onChange={(event) => { setQueueFilter(event.target.value); setPage(1); }} className="rounded-lg border border-cms-border bg-white px-3 py-2 text-sm text-cms-text">
+              <option value="all">All attention</option>
+              <option value="unassigned">Unassigned</option>
+              <option value="overdue">Overdue follow-ups</option>
+            </select>
+          </label>
           <button type="submit" className="rounded-lg bg-cms-primary px-4 py-2 text-sm font-medium text-white hover:bg-cms-primary-hover">Search</button>
         </form>
       </section>
@@ -190,6 +243,9 @@ export default function EnquiriesPage() {
                     <a className="inline-flex items-center gap-1.5 hover:text-cms-primary" href={`tel:${item.phone.replace(/[^\d+]/g, "")}`}><Phone size={14} />{item.phone}</a>
                   </div>
                   <p className="mt-2 text-xs text-cms-muted">Received {dateLabel(item.created_at)}{item.follow_up_at ? ` · Follow up ${dateLabel(item.follow_up_at)}` : ""}</p>
+                  <button type="button" onClick={() => void toggleHistory(item)} className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-cms-primary hover:underline">
+                    <History size={14} /> {historyId === item.id ? "Hide change history" : "Change history"}
+                  </button>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[auto_190px_230px_auto] xl:items-center">
                   <label>
@@ -212,6 +268,18 @@ export default function EnquiriesPage() {
                   </label>
                   <button type="button" aria-label={`Delete enquiry from ${item.name}`} disabled={savingId !== null || deletingId !== null} onClick={() => void remove(item)} className="justify-self-start rounded-lg p-2 text-cms-muted hover:bg-red-50 hover:text-red-700 disabled:opacity-50 xl:justify-self-center">{deletingId === item.id ? "Deleting…" : <Trash2 size={17} />}</button>
                 </div>
+                {historyId === item.id && <div className="rounded-lg bg-cms-background p-4 xl:col-span-2">
+                  <h3 className="text-sm font-semibold text-cms-text">Staff change history</h3>
+                  {historyLoadingId === item.id ? <p role="status" className="mt-2 text-sm text-cms-muted">Loading history…</p>
+                    : historyErrors[item.id] ? <p role="alert" className="mt-2 text-sm text-red-700">{historyErrors[item.id]}</p>
+                      : historyById[item.id]?.length ? <ul className="mt-2 divide-y divide-cms-border">
+                        {historyById[item.id].map((event) => <li key={event.id} className="py-2 text-sm">
+                          <span className="font-medium text-cms-text">{event.actor_name}</span>
+                          <span className="text-cms-muted"> · {event.summary} · {dateLabel(event.created_at)}</span>
+                        </li>)}
+                      </ul>
+                        : <p className="mt-2 text-sm text-cms-muted">No staff changes have been recorded for this enquiry.</p>}
+                </div>}
               </article>;
             })}
           </div> : <p className="p-10 text-center text-sm text-cms-muted">{result?.pagination.total ? "No enquiries match these filters." : "No enquiries yet. New appointment requests will appear here."}</p>}
