@@ -58,6 +58,38 @@ type CmsGlobal = typeof globalThis & {
 
 const globalCms = globalThis as CmsGlobal;
 
+const blogFeaturedImageSlugs = [
+  "10-warning-signs-someone-needs-alcohol-addiction-treatment",
+  "5-signs-which-proves-you-need-a-professional-assistance-for-drug-abuse",
+  "a-guide-on-how-to-stop-heroin-addiction-and-turn-your-life",
+  "alcohol-addiction-treatment-in-delhi-does-it-matters-to-choose-the-right-sort-of-rehab",
+  "borderline-personality-disorder-diagnosis-substance-addiction-and-recovery",
+  "can-alcohol-addiction-be-treated-without-relapse",
+  "detox-for-alcohol-addiction-aud-treatment-in-delhi",
+  "sarah-overcame-alcohol-addiction",
+  "explore-effective-drug-addiction-treatment-options",
+  "fighting-for-drug-de-addiction-this-nasha-mukti-kendra-in-delhi-will-not-let-you-feel-alone",
+  "how-to-deal-the-rising-drug-addiction-among-youngsters",
+  "how-to-get-a-healthy-life-with-drug-deaddiction-center",
+  "how-to-reduce-alcohol-addiction-control-of-your-life",
+  "impact-of-schizophrenia-on-relationships-and-social-life",
+  "instantly-busting-the-top-7-myths-about-drug-rehabilitation-centers",
+  "navigating-alcohol-detoxification-understanding-safe-methods",
+  "overcoming-drug-addiction-the-recovery-journey-of-rahul-mehra-at-roar-wellness-rehab-centre",
+  "psychological-support-for-dementia-patients",
+  "drug-awareness-week-in-delhi-how-a-rehab-centre-near-me-can-help-build-a-drug-free-society",
+  "roar-wellness-rehabilitation-centre-honoured-as-most-trusted-de-addiction-rehabilitation-centre-in-delhi-at-pride-bharat-awards-2026",
+  "understanding-the-alcohol-addiction-and-the-stages",
+  "the-science-of-rehabilitation-how-therapy-helps-you-heal-faster",
+  "three-amazing-advantages-of-heroin-detox-programs-in-delhi",
+  "understanding-addiction-effects-recovery-and-pitfalls",
+  "what-happens-on-day-one-in-rehab-centre",
+  "what-you-can-expect-during-cocaine-detox-treatment-in-delhi",
+  "why-a-personalized-alcohol-addiction-treatment-related-programs-matters-the-most",
+  "why-person-centered-care-is-the-future-of-dementia-treatment",
+  "why-young-adults-in-metro-cities-are-turning-to-cocaine-and-how-they-can-break-free",
+];
+
 function openDatabase(): DatabaseSync {
   const databasePath = resolve(
     process.env.CMS_DATABASE_PATH?.trim() || "data/cms.sqlite",
@@ -865,6 +897,28 @@ function openDatabase(): DatabaseSync {
         );
       }
       importTransaction.run();
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  const blogFeaturedImagesMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-featured-images-v1'",
+  ).get();
+  if (!blogFeaturedImagesMigration) {
+    const updateFeaturedImage = database.prepare(`
+      UPDATE content
+      SET image_url = ?, image_alt_text = title,
+        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE slug = ? AND category_id = (SELECT id FROM categories WHERE slug = 'blog')
+    `);
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      for (const slug of blogFeaturedImageSlugs) {
+        updateFeaturedImage.run(`/images/blog/${slug}.webp`, slug);
+      }
+      database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('blog-featured-images-v1')").run();
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
