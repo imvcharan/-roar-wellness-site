@@ -1,4 +1,7 @@
+"use client";
+
 import { MessageCircle, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const googleBusinessProfileUrl = "https://www.google.com/maps/place/Roar+Wellness+Rehabilitation+Center-+Luxury+Rahab+in+Delhi/@28.4852577,77.1733245,17z/data=!3m1!4b1!4m6!3m5!1s0x390d1e345da39231:0x6402237f593c9cf2!8m2!3d28.4852577!4d77.1733245!16s%2Fg%2F1z44zmtr4?entry=ttu&g_ep=EgoyMDI2MTAyMC4wIKXMDSoASAFQAw%3D%3D";
 
@@ -8,12 +11,24 @@ interface FloatingContactWidgetsProps {
 }
 
 export function FloatingContactWidgets({ phone, whatsapp }: FloatingContactWidgetsProps) {
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
   const phoneHref = phone.replace(/[^\d+]/g, "");
   const whatsappNumber = whatsapp.replace(/\D/g, "");
   const whatsappMessage = encodeURIComponent("Hello, I would like to know more about Roar Wellness.");
 
+  useEffect(() => {
+    const footer = document.querySelector(".site-footer");
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsFooterVisible(entry.isIntersecting);
+    });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <aside className="floating-contact-tools" aria-label="Quick contact links">
+    <aside className={`floating-contact-tools${isFooterVisible ? " is-footer-visible" : ""}`} aria-label="Quick contact links">
       <a
         className="floating-review-badge"
         href={googleBusinessProfileUrl}

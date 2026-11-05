@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Phone } from "lucide-react";
 
 export function AppointmentShowcase({ phone }: { phone: string }) {
   return (
@@ -10,7 +11,13 @@ export function AppointmentShowcase({ phone }: { phone: string }) {
           <Link href="/appointment/" className="home-appointment-link">
             <span>Make an Appointment</span><span aria-hidden="true">→</span>
           </Link>
-          <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="home-appointment-call">Prefer to call? {phone}</a>
+          <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="appointment-callout home-appointment-call">
+            <span className="appointment-callout-icon"><Phone size={17} aria-hidden="true" /></span>
+            <span className="appointment-callout-copy">
+              <span className="appointment-callout-label">Prefer to call?</span>
+              <span className="appointment-callout-number">{phone}</span>
+            </span>
+          </a>
         </div>
       </div>
     </section>

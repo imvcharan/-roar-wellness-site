@@ -71,11 +71,13 @@ const navigationLinks: NavigationLink[] = [
 function NavigationItem({
   link,
   onClick,
+  onOpenPrivacySettings,
   menuOwner,
   isMenuSuppressed = false,
 }: {
   link: NavigationLink;
   onClick?: () => void;
+  onOpenPrivacySettings?: () => void;
   menuOwner?: string;
   isMenuSuppressed?: boolean;
 }) {
@@ -159,8 +161,18 @@ function NavigationItem({
       {hasChildren && (
         <div className="nav-dropdown">
           {link.children?.map((child) => (
-            <NavigationItem key={child.label} link={child} onClick={onClick} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
+            <NavigationItem key={child.label} link={child} onClick={onClick} onOpenPrivacySettings={onOpenPrivacySettings} menuOwner={menuOwner} isMenuSuppressed={isMenuSuppressed} />
           ))}
+          {link.label === "Faqs" && <button
+            type="button"
+            className="nav-link privacy-settings-nav-link"
+            onClick={() => {
+              onOpenPrivacySettings?.();
+              handleNavigate();
+            }}
+          >
+            Cookie settings
+          </button>}
         </div>
       )}
     </div>
@@ -245,6 +257,7 @@ export function Navbar() {
       <span>Call Now</span>
     </a>
   );
+  const openPrivacySettings = () => window.dispatchEvent(new Event("roar:open-privacy-settings"));
 
   return (
     <nav className={`site-nav${isOpen ? " is-mobile-open" : ""}`} aria-label="Main navigation">
@@ -260,6 +273,7 @@ export function Navbar() {
           {desktopLinks.map((link) => <NavigationItem
             key={link.label}
             link={link}
+            onOpenPrivacySettings={openPrivacySettings}
             menuOwner={link.label}
             isMenuSuppressed={suppressedMenu === link.label}
           />)}
@@ -269,6 +283,7 @@ export function Navbar() {
           {rightLinks.map((link) => <NavigationItem
             key={link.label}
             link={link}
+            onOpenPrivacySettings={openPrivacySettings}
             menuOwner={link.label}
             isMenuSuppressed={suppressedMenu === link.label}
           />)}
@@ -291,7 +306,7 @@ export function Navbar() {
               if (event.target instanceof Element && event.target.closest("a")) closeMobileMenu();
             }}
           >
-            {navigationLinks.map((link) => <NavigationItem key={link.label} link={link} onClick={closeMobileMenu} />)}
+            {navigationLinks.map((link) => <NavigationItem key={link.label} link={link} onClick={closeMobileMenu} onOpenPrivacySettings={openPrivacySettings} />)}
           </div>
         )}
       </div>

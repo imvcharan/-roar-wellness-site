@@ -474,6 +474,22 @@ function openDatabase(): DatabaseSync {
     });
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-live-profiles-v1')").run();
   }
+  const teamProfileDetailsMigration = database.prepare(
+    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-profile-details-v2'",
+  ).get();
+  if (!teamProfileDetailsMigration) {
+    database.prepare(`
+      UPDATE cms_home_sections
+      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = 'team-manish' AND group_name = 'team'
+    `).run("/images/team-manish-sarkar.jpg");
+    database.prepare(`
+      UPDATE cms_home_sections
+      SET heading = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE section_key = 'team-jyotsna-gulati' AND group_name = 'team'
+    `).run("Dr. Jyotsna Gulati");
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-profile-details-v2')").run();
+  }
   const gameTherapyImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-game-therapy-image-v1'",
   ).get();

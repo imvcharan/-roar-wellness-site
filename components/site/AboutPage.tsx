@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUpRight, Play, X } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Phone, Play, X } from "lucide-react";
 import { DetailTestimonialsFaq } from "@/components/site/TestimonialsFaq";
 import { PageTitle } from "@/components/site/PageTitle";
 
@@ -180,7 +180,13 @@ export function AboutPage({ phone }: { phone: string }) {
             <a href="/appointment/" className="about-reference-appointment-link">
               Make an appointment <ArrowUpRight size={17} aria-hidden="true" />
             </a>
-            <a className="about-reference-call" href={`tel:${phone.replace(/[^\d+]/g, "")}`}>Or call us at {phone}</a>
+            <a className="appointment-callout about-reference-call" href={`tel:${phone.replace(/[^\d+]/g, "")}`}>
+              <span className="appointment-callout-icon"><Phone size={17} aria-hidden="true" /></span>
+              <span className="appointment-callout-copy">
+                <span className="appointment-callout-label">Prefer to call?</span>
+                <span className="appointment-callout-number">{phone}</span>
+              </span>
+            </a>
           </div>
         </div>
       </section>

@@ -93,7 +93,7 @@ export function Footer() {
         </div>
 
         <div className="footer-meta">
-          <p>© 2009–2025 Roar Wellness</p>
+          <p>© 2026 Roar Wellness Rehab Centre</p>
           <p>Care that moves people forward.</p>
         </div>
       </div>

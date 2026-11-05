@@ -64,6 +64,12 @@ export function AnalyticsConsent() {
     }
   }, [consent, pathname]);
 
+  useEffect(() => {
+    const openPrivacySettings = () => setShowPrompt(true);
+    window.addEventListener("roar:open-privacy-settings", openPrivacySettings);
+    return () => window.removeEventListener("roar:open-privacy-settings", openPrivacySettings);
+  }, []);
+
   const choose = async (value: "accepted" | "declined") => {
     try {
       localStorage.setItem(consentKey, value);
@@ -102,7 +108,6 @@ export function AnalyticsConsent() {
           <button type="button" onClick={() => void choose("accepted")} className="privacy-consent-primary">Accept optional analytics</button>
         </div>
       </aside>}
-      {!showPrompt && consent !== null && <button type="button" onClick={() => setShowPrompt(true)} className="privacy-choices-trigger">Cookie settings</button>}
     </>
   );
 }
