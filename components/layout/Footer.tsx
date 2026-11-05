@@ -23,7 +23,7 @@ function SocialIcon({ brand }: { brand: SocialBrand }) {
 }
 
 const quickLinks = [
-  ["Home", "/#top"],
+  ["Home", "/"],
   ["About us", "/about-roarwellness/"],
   ["Our approach", "/#about"],
   ["Services", "/services"],
@@ -55,7 +55,7 @@ export function Footer() {
       <div className="site-footer-inner">
         <div className="footer-columns">
           <div className="footer-brand-column">
-            <Link href="/#top" aria-label="Roar Wellness home" className="footer-logo-link">
+            <Link href="/" aria-label="Roar Wellness home" className="footer-logo-link">
               <img src="/images/logo.png" alt="Roar Wellness" className="footer-logo" />
             </Link>
             <p className="footer-tagline">A thoughtful path to lasting recovery, built around care, clarity, and connection.</p>
@@ -79,10 +79,22 @@ export function Footer() {
           <div className="footer-column footer-contact-column">
             <p className="footer-heading">Contact</p>
             <div className="footer-contact-list">
-              <a href={`tel:${phone.replace(/[^\d+]/g, "")}`}><Phone size={15} aria-hidden="true" />{phone}</a>
-              <a href={`mailto:${email}`}><Mail size={15} aria-hidden="true" />{email}</a>
-              <a href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"><MessageCircle size={15} aria-hidden="true" />WhatsApp {whatsapp}</a>
-              <span><MapPin size={15} aria-hidden="true" />{address}</span>
+              <a className="footer-contact-card" href={`tel:${phone.replace(/[^\d+]/g, "")}`}>
+                <span className="footer-contact-icon"><Phone size={17} aria-hidden="true" /></span>
+                <span className="footer-contact-copy"><span className="footer-contact-label">Call us</span><strong>{phone}</strong></span>
+              </a>
+              <a className="footer-contact-card" href={`mailto:${email}`}>
+                <span className="footer-contact-icon"><Mail size={17} aria-hidden="true" /></span>
+                <span className="footer-contact-copy"><span className="footer-contact-label">Email us</span><strong>{email}</strong></span>
+              </a>
+              <a className="footer-contact-card" href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+                <span className="footer-contact-icon"><MessageCircle size={17} aria-hidden="true" /></span>
+                <span className="footer-contact-copy"><span className="footer-contact-label">WhatsApp</span><strong>{whatsapp}</strong></span>
+              </a>
+              <div className="footer-contact-card footer-contact-address">
+                <span className="footer-contact-icon"><MapPin size={17} aria-hidden="true" /></span>
+                <span className="footer-contact-copy"><span className="footer-contact-label">Visit us</span><strong>{address}</strong></span>
+              </div>
             </div>
             <div className="footer-socials" aria-label="Social links">
               {socialLinks.map(([label, href]) => {

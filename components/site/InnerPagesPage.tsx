@@ -1317,7 +1317,7 @@ export default function InnerPagesPage({
           {breadcrumb}
 
           <div className="site-container px-5">
-            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" || isFacilityPage ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""}${isFacilityPage ? " detail-facility-layout" : ""} mt-10 md:mt-14`}>
+            <div className={`detail-layout ${selectedKind === "service" || selectedKind === "blog" || isFacilityPage ? "" : "detail-layout-full"}${selectedKind === "service" ? " detail-service-layout" : ""}${isFacilityPage ? " detail-facility-layout" : ""} mt-8 md:mt-10`}>
               {(selectedKind === "service" || isFacilityPage) && <aside className="service-detail-left" aria-label={isFacilityPage ? "Facility guide and stay" : "On this page and care approach"}>
                 {serviceHeadings.length > 0 && <nav className="service-toc-card" aria-label="On this page">
                   <p className="eyebrow">{isFacilityPage ? "Explore the facility" : "Explore this guide"}</p>
@@ -1612,7 +1612,7 @@ export default function InnerPagesPage({
             ))}
           </ul> : <p role="status" className="archive-empty">{allItems.length ? "No content matches your search. Try another title or category." : pagesMessage || "Loading published content..."}</p>}
         </section>
-        <p className="mt-10 text-center"><Link href="/#top" className="text-sm font-semibold text-terracotta hover:underline">Back to home</Link></p>
+        <p className="mt-10 text-center"><Link href="/" className="text-sm font-semibold text-terracotta hover:underline">Back to home</Link></p>
       </>}
     </main>
   );

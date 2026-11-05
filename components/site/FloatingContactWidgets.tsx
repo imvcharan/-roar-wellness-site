@@ -43,8 +43,8 @@ export function FloatingContactWidgets({ phone, whatsapp }: FloatingContactWidge
           <path fill="#EA4335" d="M24 12c3 0 5.7 1 7.8 3.1l5.8-5.8C34.1 6 29.4 4 24 4 16.2 4 9.4 8.6 6 15l6.8 5.2C14.4 15.5 18.8 12 24 12z" />
         </svg>
         <span className="floating-review-copy">
-          <span className="floating-review-title">Roarwellness Highest Rated</span>
-          <span className="floating-review-subtitle">Luxury Rehab Centre</span>
+          <span className="floating-review-title">Roar Wellness</span>
+          <span className="floating-review-subtitle">Google reviews</span>
           <span className="floating-review-rating">
             <span className="floating-review-count">142+</span>
             <span className="floating-review-stars" aria-hidden="true">★★★★★</span>
@@ -57,7 +57,7 @@ export function FloatingContactWidgets({ phone, whatsapp }: FloatingContactWidge
         href={`tel:${phoneHref}`}
         aria-label={`Call Roar Wellness at ${phone}`}
       >
-        <Phone size={21} fill="currentColor" aria-hidden="true" />
+        <Phone size={18} fill="currentColor" aria-hidden="true" />
         <span className="floating-call-label">Call our team</span>
       </a>
 

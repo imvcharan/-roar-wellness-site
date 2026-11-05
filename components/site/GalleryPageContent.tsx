@@ -75,7 +75,7 @@ export default function GalleryPageContent() {
       <section id="gallery-videos-panel" role="tabpanel" aria-labelledby="gallery-videos-tab" hidden={activeTab !== "videos"}>
         <GalleryVideoGrid />
       </section>
-      <Link href="/#top" className="gallery-back-link">Back to home <span aria-hidden="true">↗</span></Link>
+      <Link href="/" className="gallery-back-link">Back to home <span aria-hidden="true">↗</span></Link>
     </main>
   );
 }

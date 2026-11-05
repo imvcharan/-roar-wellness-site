@@ -489,7 +489,7 @@ export default function HomePageClient() {
     return () => observer.disconnect();
   }, [cmsHomeLoaded, reducedMotion]);
   return (
-    <main id="top" className="home-theme">
+    <main className="home-theme">
       <PageTitle>{homeSettings.homepageHeroTitle || "Roar Wellness"}</PageTitle>
       <section className="home-hero relative flex items-center justify-center bg-brand-plum px-6 py-32 text-cream md:px-12 md:py-36">
         <YouTubeHeroBackground />

@@ -13,7 +13,7 @@ interface NavigationLink {
 }
 
 const navigationLinks: NavigationLink[] = [
-  { label: "Home", href: "/#top" },
+  { label: "Home", href: "/" },
   {
     label: "About Us",
     href: "/about-roarwellness/",
@@ -290,7 +290,7 @@ export function Navbar() {
           {callButton}
         </div>
         <div className="header-mobile-row">
-          <Link href="/#top" aria-label="Roar Wellness home" className="header-brand">
+          <Link href="/" aria-label="Roar Wellness home" className="header-brand">
             <img src="/images/logo.png" alt="Roar Wellness" className="header-logo" />
           </Link>
           {callButton}
