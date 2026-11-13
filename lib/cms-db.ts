@@ -7,7 +7,12 @@ import { homepageSeeds } from "@/lib/homepage-seed-data";
 import { getCmsContentImage } from "@/lib/cms-content-image";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
 import { getCmsContentHref } from "@/lib/cms-routes";
-import { galleryImageAlts, galleryImages } from "@/lib/gallery-images";
+import {
+  galleryImageAlts,
+  galleryImages,
+  galleryRoomImageAlts,
+  galleryRoomImages,
+} from "@/lib/gallery-images";
 import { normalizeCmsPlainText } from "@/lib/cms-text";
 import { getImportedPublishedAt } from "@/lib/cms-date";
 
@@ -399,6 +404,22 @@ function openDatabase(): DatabaseSync {
       );
     });
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-defaults-v1')").run();
+  }
+  const seededRoomGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-room-images-v1'").get();
+  if (!seededRoomGallery) {
+    const galleryInsert = database.prepare("INSERT INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published) VALUES (?, ?, ?, ?, ?, ?)");
+    const roomImagePosition = galleryImages.length - galleryRoomImages.length;
+    galleryRoomImages.forEach((imageUrl, index) => {
+      galleryInsert.run(
+        randomUUID(),
+        imageUrl,
+        galleryRoomImageAlts[index],
+        "",
+        roomImagePosition + index,
+        1,
+      );
+    });
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-v1')").run();
   }
   const seededHomepage = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-defaults'").get();
   if (!seededHomepage) {

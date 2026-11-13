@@ -1,4 +1,4 @@
-export const galleryImages = [
+const defaultGalleryImages = [
   "/images/recovery-space-01.webp",
   "/images/recovery-space-02.webp",
   "/images/recovery-space-03.webp",
@@ -15,7 +15,7 @@ export const galleryImages = [
   "/images/facility-yoga-meditation.webp",
 ];
 
-export const galleryImageAlts = [
+const defaultGalleryImageAlts = [
   "A welcoming recovery space at Roar Wellness.",
   "A calm recovery space at Roar Wellness.",
   "A comfortable recovery space at Roar Wellness.",
@@ -31,3 +31,20 @@ export const galleryImageAlts = [
   "Therapy room at Roar Wellness.",
   "Yoga and meditation space at Roar Wellness.",
 ];
+
+export const galleryRoomImages = [
+  "/images/recovery-space-07.webp",
+  "/images/recovery-space-08.webp",
+  "/images/recovery-space-09.webp",
+  "/images/recovery-space-10.webp",
+];
+
+export const galleryRoomImageAlts = [
+  "A spacious guest room with a bed, sofa, and warm lighting at Roar Wellness.",
+  "A guest bedroom with curtains, a double bed, and comfortable seating at Roar Wellness.",
+  "A cozy sitting area with a television, armchair, and indoor plants at Roar Wellness.",
+  "A lounge area with a sofa and coffee tables at Roar Wellness.",
+];
+
+export const galleryImages = [...defaultGalleryImages, ...galleryRoomImages];
+export const galleryImageAlts = [...defaultGalleryImageAlts, ...galleryRoomImageAlts];
