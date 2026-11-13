@@ -8,8 +8,8 @@ import { getCmsContentImage } from "@/lib/cms-content-image";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
 import { getCmsContentHref } from "@/lib/cms-routes";
 import {
-  galleryImageAlts,
-  galleryImages,
+  defaultGalleryImageAlts,
+  defaultGalleryImages,
   galleryRoomImageAlts,
   galleryRoomImages,
 } from "@/lib/gallery-images";
@@ -393,11 +393,11 @@ function openDatabase(): DatabaseSync {
   const seededGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-defaults-v1'").get();
   if (!seededGallery) {
     const galleryInsert = database.prepare("INSERT OR IGNORE INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published) VALUES (?, ?, ?, ?, ?, ?)");
-    galleryImages.forEach((imageUrl, index) => {
+    defaultGalleryImages.forEach((imageUrl, index) => {
       galleryInsert.run(
         randomUUID(),
         imageUrl,
-        galleryImageAlts[index] ?? "Roar Wellness gallery image",
+        defaultGalleryImageAlts[index] ?? "Roar Wellness gallery image",
         "",
         index,
         1,
@@ -408,8 +408,10 @@ function openDatabase(): DatabaseSync {
   const seededRoomGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-room-images-v1'").get();
   if (!seededRoomGallery) {
     const galleryInsert = database.prepare("INSERT INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published) VALUES (?, ?, ?, ?, ?, ?)");
-    const roomImagePosition = galleryImages.length - galleryRoomImages.length;
+    const existingRoomImage = database.prepare("SELECT 1 FROM cms_gallery_images WHERE image_url = ? LIMIT 1");
+    const roomImagePosition = defaultGalleryImages.length;
     galleryRoomImages.forEach((imageUrl, index) => {
+      if (existingRoomImage.get(imageUrl)) return;
       galleryInsert.run(
         randomUUID(),
         imageUrl,
@@ -420,6 +422,18 @@ function openDatabase(): DatabaseSync {
       );
     });
     database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-v1')").run();
+  }
+  const deduplicatedRoomGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-room-images-deduplicated-v1'").get();
+  if (!deduplicatedRoomGallery) {
+    const roomImageRows = database.prepare(
+      "SELECT id FROM cms_gallery_images WHERE image_url = ? ORDER BY updated_at DESC, position ASC, created_at ASC, id ASC",
+    );
+    const deleteRoomImage = database.prepare("DELETE FROM cms_gallery_images WHERE id = ?");
+    galleryRoomImages.forEach((imageUrl) => {
+      const rows = roomImageRows.all(imageUrl) as Array<{ id: string }>;
+      rows.slice(1).forEach(({ id }) => deleteRoomImage.run(id));
+    });
+    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-deduplicated-v1')").run();
   }
   const seededHomepage = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-defaults'").get();
   if (!seededHomepage) {

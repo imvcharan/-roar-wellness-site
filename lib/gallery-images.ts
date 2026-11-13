@@ -1,4 +1,4 @@
-const defaultGalleryImages = [
+export const defaultGalleryImages = [
   "/images/recovery-space-01.webp",
   "/images/recovery-space-02.webp",
   "/images/recovery-space-03.webp",
@@ -15,7 +15,7 @@ const defaultGalleryImages = [
   "/images/facility-yoga-meditation.webp",
 ];
 
-const defaultGalleryImageAlts = [
+export const defaultGalleryImageAlts = [
   "A welcoming recovery space at Roar Wellness.",
   "A calm recovery space at Roar Wellness.",
   "A comfortable recovery space at Roar Wellness.",
