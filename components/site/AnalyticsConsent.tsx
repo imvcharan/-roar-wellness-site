@@ -4,6 +4,14 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const consentKey = "roar-analytics-consent";
+const googleAnalyticsId = "G-8WX5X4XKGG";
+
+declare global {
+  interface Window {
+    dataLayer: unknown[];
+    gtag: (...args: [string, ...unknown[]]) => void;
+  }
+}
 
 export function recordOptedInAnalytics(eventType: "page_view" | "appointment_submit", pagePath: string): void {
   try {
@@ -58,9 +66,33 @@ export function AnalyticsConsent() {
   }, []);
 
   useEffect(() => {
+    if (consent === "accepted" && !pathname?.startsWith("/admin")) {
+      window.dataLayer = window.dataLayer || [];
+      if (!window.gtag) {
+        window.gtag = (...args) => window.dataLayer.push(args);
+        window.gtag("js", new Date());
+        window.gtag("config", googleAnalyticsId, { send_page_view: false });
+      } else {
+        window.gtag("consent", "update", { analytics_storage: "granted" });
+      }
+
+      if (!document.getElementById("google-analytics-script")) {
+        const script = document.createElement("script");
+        script.id = "google-analytics-script";
+        script.async = true;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`;
+        document.head.appendChild(script);
+      }
+    } else if (consent === "declined" && window.gtag) {
+      window.gtag("consent", "update", { analytics_storage: "denied" });
+    }
+  }, [consent, pathname]);
+
+  useEffect(() => {
     if (consent === "accepted" && pathname && pathname !== lastTrackedPath.current && !pathname.startsWith("/admin")) {
       lastTrackedPath.current = pathname;
       recordOptedInAnalytics("page_view", pathname);
+      window.gtag?.("event", "page_view", { page_path: pathname });
     }
   }, [consent, pathname]);
 
@@ -101,7 +133,7 @@ export function AnalyticsConsent() {
         <div className="privacy-consent-copy">
           <p className="privacy-consent-eyebrow">Your privacy</p>
           <h2>Cookie preferences</h2>
-          <p>We use essential storage to remember your choice. If you agree, we’ll also collect anonymous visit and appointment totals to improve the site. No advertising cookies, IP addresses, or precise location tracking.</p>
+          <p>We use essential storage to remember your choice. If you agree, we’ll also collect visit and appointment totals and use Google Analytics to measure page usage. Google may use cookies and process device and usage data. Advertising features are not enabled.</p>
         </div>
         <div className="privacy-consent-actions">
           <button type="button" onClick={() => void choose("declined")} className="privacy-consent-secondary">Reject optional</button>

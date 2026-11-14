@@ -8,6 +8,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Luxury Rehabilitation Centre | Drug & Alcohol Rehab Centre Delhi NCR, India",
   description: "Roar Wellness is the best rehabilitation Centre in Delhi NCR, India. Leading alcohol addiction treatment and luxury rehab facilities. Contact Roar Wellness Center Delhi.",
+  verification: {
+    google: "jP4Sl4hjlaTk31jiL6VWDEnqjhFTQzZF9wc0GyytV1I",
+  },
   robots: {
     index: true,
     follow: true,
