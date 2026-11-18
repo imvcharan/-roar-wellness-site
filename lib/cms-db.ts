@@ -283,9 +283,18 @@ function openDatabase(): DatabaseSync {
       ON content(status, category_id, updated_at DESC);
   `);
   const addColumn = (table: string, column: string, definition: string) => {
-    const columns = database.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-    if (!columns.some((item) => item.name === column)) {
-      database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    const hasColumn = () => {
+      const columns = database.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+      return columns.some((item) => item.name === column);
+    };
+    if (!hasColumn()) {
+      try {
+        database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      } catch (error) {
+        if (!(error instanceof Error) || !/duplicate column name/i.test(error.message) || !hasColumn()) {
+          throw error;
+        }
+      }
     }
   };
   addColumn("content", "seo_title", "TEXT");
