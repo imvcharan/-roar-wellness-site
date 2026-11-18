@@ -7,9 +7,11 @@ import Image from "@tiptap/extension-image";
 import { cmsRequest } from "@/services/cms-api";
 
 interface RichTextEditorProps {
+  id?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
+  validationError?: string;
   maxLength: number;
   rows?: number;
 }
@@ -22,7 +24,7 @@ function containsUnsupportedLayout(html: string): boolean {
   return /<(?:div|iframe|table|video|audio|script|style|figure|section|svg)\b|\[(?:\/?[a-z][^\]]*)\]/i.test(html);
 }
 
-export function RichTextEditor({ label, value, onChange, maxLength, rows = 10 }: RichTextEditorProps) {
+export function RichTextEditor({ id, label, value, onChange, validationError, maxLength, rows = 10 }: RichTextEditorProps) {
   const [mode, setMode] = useState<"visual" | "html">(() => containsUnsupportedLayout(value) ? "html" : "visual");
   const [error, setError] = useState("");
   const [imageSelected, setImageSelected] = useState(false);
@@ -120,7 +122,14 @@ export function RichTextEditor({ label, value, onChange, maxLength, rows = 10 }:
   const isComplexContent = containsUnsupportedLayout(value);
 
   return (
-    <section className="cms-rich-editor md:col-span-2" aria-label={label}>
+    <section
+      id={id}
+      tabIndex={-1}
+      className="cms-rich-editor md:col-span-2"
+      aria-label={label}
+      aria-invalid={Boolean(validationError) || undefined}
+      aria-describedby={validationError && id ? `${id}-error` : undefined}
+    >
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-medium text-cms-text">{label}</span>
         <div className="flex items-center gap-1 rounded-lg border border-cms-border bg-white p-1" role="group" aria-label={`${label} editing mode`}>
@@ -171,6 +180,8 @@ export function RichTextEditor({ label, value, onChange, maxLength, rows = 10 }:
       ) : (
         <textarea
           aria-label={`${label} HTML source`}
+          aria-invalid={Boolean(validationError) || undefined}
+          aria-describedby={validationError && id ? `${id}-error` : undefined}
           rows={rows}
           maxLength={maxLength}
           value={value}
@@ -180,6 +191,7 @@ export function RichTextEditor({ label, value, onChange, maxLength, rows = 10 }:
         />
       )}
       {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
+      {validationError && <p id={id ? `${id}-error` : undefined} role="alert" className="mt-2 text-sm text-red-700">{validationError}</p>}
     </section>
   );
 }

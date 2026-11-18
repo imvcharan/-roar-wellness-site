@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
 import { findCategory, findContentById, getCmsDatabase, recordContentRevision } from "@/lib/cms-db";
+import { getCmsRestoredSchedule } from "@/lib/cms-date";
 import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
 import { isReservedCmsRootSlug } from "@/lib/cms-validation";
 
@@ -39,9 +40,16 @@ export async function POST(
   const text = (value: unknown): string | null => typeof value === "string" ? value : null;
   const previousPath = getCmsContentHref(previous.slug, previous.category_slug);
   const restoredPath = getCmsContentHref(snapshot.slug, category.slug);
+  let scheduledPublishAt: string | null = null;
+  let clearedSchedule = false;
   try {
     database.exec("BEGIN IMMEDIATE");
-    recordContentRevision(id, null);
+    const restoredSchedule = getCmsRestoredSchedule(
+      status,
+      text(snapshot.scheduled_publish_at),
+    );
+    scheduledPublishAt = restoredSchedule.scheduledPublishAt;
+    clearedSchedule = restoredSchedule.cleared;
     database.prepare(`
       UPDATE content SET title = ?, slug = ?, category_id = ?, excerpt = ?, summary = ?,
         description = ?, content = ?, image_url = ?, image_alt_text = ?, image_position = ?, status = ?, seo_title = ?,
@@ -58,7 +66,7 @@ export async function POST(
       text(snapshot.seo_description), text(snapshot.seo_keywords), text(snapshot.seo_robots),
       text(snapshot.seo_canonical_url), text(snapshot.seo_og_title), text(snapshot.seo_og_description),
       text(snapshot.seo_og_image), text(snapshot.seo_twitter_title), text(snapshot.seo_twitter_description),
-      text(snapshot.seo_twitter_image), text(snapshot.scheduled_publish_at),
+      text(snapshot.seo_twitter_image), scheduledPublishAt,
       text(snapshot.published_at), id,
     );
     if (previousPath !== restoredPath) {
@@ -70,7 +78,7 @@ export async function POST(
     } else {
       database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(restoredPath);
     }
-    recordContentRevision(id, null);
+    recordContentRevision(id, restoringUser);
     database.exec("COMMIT");
   } catch (error) {
     if (database.isTransaction) database.exec("ROLLBACK");
@@ -80,5 +88,5 @@ export async function POST(
     throw error;
   }
   recordCmsAudit(restoringUser, request, "content.restore", "content", id, `Restored a previous version of “${snapshot.title}”.`);
-  return NextResponse.json({ data: findContentById(id) });
+  return NextResponse.json({ data: findContentById(id), clearedSchedule });
 }

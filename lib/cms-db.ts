@@ -403,7 +403,7 @@ function openDatabase(): DatabaseSync {
         1,
       );
     });
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-defaults-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('gallery-defaults-v1')").run();
   }
   const seededRoomGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-room-images-v1'").get();
   if (!seededRoomGallery) {
@@ -421,7 +421,7 @@ function openDatabase(): DatabaseSync {
         1,
       );
     });
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-v1')").run();
   }
   const deduplicatedRoomGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-room-images-deduplicated-v1'").get();
   if (!deduplicatedRoomGallery) {
@@ -433,7 +433,7 @@ function openDatabase(): DatabaseSync {
       const rows = roomImageRows.all(imageUrl) as Array<{ id: string }>;
       rows.slice(1).forEach(({ id }) => deleteRoomImage.run(id));
     });
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-deduplicated-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-deduplicated-v1')").run();
   }
   const seededHomepage = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-defaults'").get();
   if (!seededHomepage) {
@@ -450,7 +450,7 @@ function openDatabase(): DatabaseSync {
       seedHomeCard.run(item.key, item.group, item.heading, item.eyebrow, item.body, item.imageUrl, position);
       positionByGroup.set(item.group, position + 1);
     });
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('homepage-defaults')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('homepage-defaults')").run();
   }
   const seededHomepageVisuals = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-visual-controls-v1'",
@@ -483,7 +483,7 @@ function openDatabase(): DatabaseSync {
       const savedVisual = settingKey ? getSavedVisual.get(settingKey) as { value: string } | undefined : undefined;
       insertVisual.run(sectionKey, groupName, heading, altText, savedVisual?.value || defaultImageUrl, position);
     }
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('homepage-visual-controls-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('homepage-visual-controls-v1')").run();
   }
   const madhavSinghPhotoMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-madhav-photo-v1'",
@@ -498,7 +498,7 @@ function openDatabase(): DatabaseSync {
       "/images/team-madhav-singh.webp",
       "https://www.roarwellness.org/wp-content/uploads/2025/05/111383828753madhav-1.jpg",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-madhav-photo-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-madhav-photo-v1')").run();
   }
   const dhruvTanwarPhotoMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-dhruv-photo-v1'",
@@ -513,7 +513,7 @@ function openDatabase(): DatabaseSync {
       "/images/team-dhruv-tanwar.webp",
       "https://www.roarwellness.org/wp-content/uploads/2025/05/880816739116Dhruv-Singh-Tanwa-1.jpg",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-dhruv-photo-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-dhruv-photo-v1')").run();
   }
   const missingTeamProfilesMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-live-profiles-v1'",
@@ -539,7 +539,7 @@ function openDatabase(): DatabaseSync {
       );
       if (Number(result.changes) > 0) position += 1;
     });
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-live-profiles-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-live-profiles-v1')").run();
   }
   const teamProfileDetailsMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-profile-details-v2'",
@@ -555,7 +555,7 @@ function openDatabase(): DatabaseSync {
       SET heading = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE section_key = 'team-jyotsna-gulati' AND group_name = 'team'
     `).run("Dr. Jyotsna Gulati");
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('team-profile-details-v2')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-profile-details-v2')").run();
   }
   const gameTherapyImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-game-therapy-image-v1'",
@@ -565,7 +565,7 @@ function openDatabase(): DatabaseSync {
       UPDATE cms_home_sections SET image_url = ?
       WHERE section_key = 'facility-game-therapy' AND group_name = 'facility'
     `).run("/images/game-therapy.webp");
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-game-therapy-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-game-therapy-image-v1')").run();
   }
   const openSpaceImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-image-v1'",
@@ -580,7 +580,7 @@ function openDatabase(): DatabaseSync {
       "/images/facility-open-space.png",
       "https://www.roarwellness.org/wp-content/uploads/2025/04/544658068149SS_05316.jpg",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v1')").run();
   }
   const openSpacePhotoMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-image-v2'",
@@ -595,7 +595,7 @@ function openDatabase(): DatabaseSync {
       "/images/facility-open-space.webp",
       "/images/facility-open-space.png",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v2')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v2')").run();
   }
   const swimmingPoolImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-swimming-pool-image-v1'",
@@ -610,7 +610,7 @@ function openDatabase(): DatabaseSync {
       "/images/facility-swimming-pool.png",
       "https://www.roarwellness.org/wp-content/uploads/2025/04/452908267532SS_05330.jpg",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v1')").run();
   }
   const swimmingPoolPhotoMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-swimming-pool-image-v2'",
@@ -625,7 +625,7 @@ function openDatabase(): DatabaseSync {
       "/images/facility-swimming-pool.webp",
       "/images/facility-swimming-pool.png",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v2')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v2')").run();
   }
   const yogaMeditationImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-yoga-meditation-image-v1'",
@@ -640,7 +640,7 @@ function openDatabase(): DatabaseSync {
       "/images/facility-yoga-meditation.webp",
       "https://www.roarwellness.org/wp-content/uploads/2025/04/157245510430SS_05239-1.jpg",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-yoga-meditation-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-yoga-meditation-image-v1')").run();
   }
   const therapyRoomImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-therapy-room-image-v1'",
@@ -655,7 +655,7 @@ function openDatabase(): DatabaseSync {
       "/images/facility-therapy-room.webp",
       "https://www.roarwellness.org/wp-content/uploads/2025/04/285728832438SS_05308.jpg",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-therapy-room-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-therapy-room-image-v1')").run();
   }
   const facilityContentMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-live-content-v1'",
@@ -682,7 +682,7 @@ function openDatabase(): DatabaseSync {
     facilities.forEach((item, position) => {
       upsertFacility.run(item.key, item.group, item.heading, item.eyebrow, item.body, item.imageUrl, position);
     });
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-live-content-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-live-content-v1')").run();
   }
   const facilityImageAlignmentMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-image-alignment-v1'",
@@ -696,7 +696,7 @@ function openDatabase(): DatabaseSync {
     homepageSeeds
       .filter((item) => item.group === "facility")
       .forEach((item) => updateFacilityImage.run(item.imageUrl, item.key));
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-image-alignment-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-image-alignment-v1')").run();
   }
   const facilityCustomImagesMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-custom-images-v1'",
@@ -712,7 +712,7 @@ function openDatabase(): DatabaseSync {
         updateFacilityImage.run(item.imageUrl, item.key);
       }
     }
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-custom-images-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-custom-images-v1')").run();
   }
   const facilityGymImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-gym-image-v1'",
@@ -723,7 +723,7 @@ function openDatabase(): DatabaseSync {
       SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE section_key = 'facility-gym' AND group_name = 'facility'
     `).run("/images/facility-gym.webp");
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-gym-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-gym-image-v1')").run();
   }
   const facilityPoolImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-pool-local-image-v1'",
@@ -734,7 +734,7 @@ function openDatabase(): DatabaseSync {
       SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE section_key = 'facility-pool' AND group_name = 'facility'
     `).run("/images/facility-swimming-pool.webp");
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-pool-local-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-pool-local-image-v1')").run();
   }
   const facilityOpenSpaceLocalImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-local-image-v1'",
@@ -745,7 +745,7 @@ function openDatabase(): DatabaseSync {
       SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE section_key = 'facility-open-space' AND group_name = 'facility'
     `).run("/images/facility-open-space.webp");
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-open-space-local-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-open-space-local-image-v1')").run();
   }
   const facilityLibraryImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-library-local-image-v1'",
@@ -756,7 +756,7 @@ function openDatabase(): DatabaseSync {
       SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE section_key = 'facility-library' AND group_name = 'facility'
     `).run("/images/facility-library.webp");
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('facility-library-local-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-library-local-image-v1')").run();
   }
   const recoveryCommunityBlogImageMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-sarah-recovery-community-image-v1'",
@@ -772,7 +772,7 @@ function openDatabase(): DatabaseSync {
       "/images/blog-sarah-recovery-community.png",
       "A woman speaking with a counselor alongside a recovery support group.",
     );
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('blog-sarah-recovery-community-image-v1')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('blog-sarah-recovery-community-image-v1')").run();
   }
   const seededFaqs = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'faq-defaults'").get();
   if (!seededFaqs) {
@@ -787,7 +787,7 @@ function openDatabase(): DatabaseSync {
     ];
     const seedFaq = database.prepare("INSERT OR IGNORE INTO cms_faqs (id, question, answer, position, status) VALUES (?, ?, ?, ?, 'published')");
     faqDefaults.forEach(([question, answer], index) => seedFaq.run(`seed-faq-${index + 1}`, question, answer, index));
-    database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('faq-defaults')").run();
+    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('faq-defaults')").run();
   }
   const liveFaqsMigration = database.prepare(
     "SELECT 1 FROM cms_bootstrap_state WHERE key = 'live-homepage-faq-content-v1'",
@@ -839,7 +839,7 @@ function openDatabase(): DatabaseSync {
       replacements.forEach(([oldQuestion, oldAnswer, question, answer], index) => {
         updateFaq.run(question, answer, `seed-faq-${index + 1}`, oldQuestion, oldAnswer);
       });
-      database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('live-homepage-faq-content-v1')").run();
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('live-homepage-faq-content-v1')").run();
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
@@ -874,7 +874,7 @@ function openDatabase(): DatabaseSync {
       replacements.forEach(([id, oldQuestion, oldAnswer, question, answer]) => {
         updateFaq.run(question, answer, id, oldQuestion, oldAnswer);
       });
-      database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('live-homepage-faq-content-v2')").run();
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('live-homepage-faq-content-v2')").run();
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
@@ -917,7 +917,7 @@ function openDatabase(): DatabaseSync {
         published_at = COALESCE(content.published_at, excluded.published_at)
       WHERE content.content IS NULL OR content.content = ''
     `);
-    const importTransaction = database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('wordpress-content-v1')");
+    const importTransaction = database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-content-v1')");
     database.exec("BEGIN IMMEDIATE");
     try {
       for (const row of snapshot.items) {
@@ -953,7 +953,7 @@ function openDatabase(): DatabaseSync {
       for (const slug of blogFeaturedImageSlugs) {
         updateFeaturedImage.run(`/images/blog/${slug}.webp`, slug);
       }
-      database.prepare("INSERT INTO cms_bootstrap_state (key) VALUES ('blog-featured-images-v1')").run();
+      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('blog-featured-images-v1')").run();
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");

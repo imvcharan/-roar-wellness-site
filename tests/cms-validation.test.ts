@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isReservedCmsRootSlug, parseCmsContentInput, parseHomepageSection } from "../lib/cms-validation.ts";
+import { CmsContentValidationError, isReservedCmsRootSlug, parseCmsContentInput, parseHomepageSection } from "../lib/cms-validation.ts";
 
 const baseContent = {
   title: "Recovery services",
@@ -45,6 +45,19 @@ describe("CMS content SEO metadata", () => {
       seoTwitterDescription: "Learn about recovery support.",
       seoTwitterImage: "https://cdn.example.org/recovery.webp",
       scheduledPublishAt: null,
+    });
+
+    it("identifies which post form field rejected a scheduled time", () => {
+      assert.throws(
+        () => parseCmsContentInput({
+          ...baseContent,
+          status: "draft",
+          scheduledPublishAt: new Date(Date.now() - 60_000).toISOString(),
+        }),
+        (error) => error instanceof CmsContentValidationError
+          && error.field === "scheduledPublishAt"
+          && error.message === "Scheduled publish time must be in the future.",
+      );
     });
   });
 

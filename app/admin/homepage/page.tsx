@@ -141,6 +141,8 @@ export default function HomepagePage() {
     }
   };
 
+  const canWrite = role === "admin" || role === "editor";
+
   return (
     <div className="space-y-6">
       <header>
@@ -152,7 +154,7 @@ export default function HomepagePage() {
         notice={notice}
         progress={saving ? "Saving homepage card…" : deletingCard ? "Deleting homepage card…" : undefined}
       />
-      <AdminAccordion
+      {canWrite && <AdminAccordion
         id="homepage-new-card"
         title="Add homepage card"
         summary="Create a team profile, facility, or approach card."
@@ -177,7 +179,7 @@ export default function HomepagePage() {
           <div className="md:col-span-2"><Button type="submit" disabled={uploadingImage || saving}>{saving ? "Saving…" : "Add card"}</Button></div>
         </form>
         <p className="mt-3 text-xs text-cms-muted">Published cards are shown on the homepage in their configured order. Unpublished cards remain saved in this editor.</p>
-      </AdminAccordion>
+      </AdminAccordion>}
       {groups.map(([key, label]) => {
         const items = cards.filter((card) => card.group_name === key);
         return <AdminAccordion
@@ -201,7 +203,7 @@ export default function HomepagePage() {
                 open={activeCard === card.section_key}
                 onToggle={() => setActiveCard(activeCard === card.section_key ? null : card.section_key)}
               >
-                <form onSubmit={(event) => void saveCard(event, card)} className="grid gap-3 md:grid-cols-2">
+                {canWrite ? <form onSubmit={(event) => void saveCard(event, card)} className="grid gap-3 md:grid-cols-2">
                   <label className="text-sm font-medium text-cms-text">Section<select name="group_name" defaultValue={card.group_name} className="mt-1 w-full rounded-lg border border-cms-border bg-white px-3 py-2">{groups.map(([value, name]) => <option key={value} value={value}>{name}</option>)}</select></label>
                   <label className="text-sm font-medium text-cms-text">Heading<input name="heading" required maxLength={200} defaultValue={card.heading} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
                   <label className="text-sm font-medium text-cms-text">Label / role / image alt text<input name="eyebrow" maxLength={200} defaultValue={card.eyebrow || ""} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
@@ -210,7 +212,13 @@ export default function HomepagePage() {
                   <label className="flex items-center gap-2 text-sm font-medium text-cms-text"><input name="is_published" type="checkbox" defaultChecked={card.is_published === 1} /> Published</label>
                   <label className="text-sm font-medium text-cms-text md:col-span-2">Description<textarea name="body" rows={3} maxLength={5000} defaultValue={card.body || ""} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
                   <div className="flex gap-2 md:col-span-2"><Button type="submit" size="sm" disabled={uploadingImage || saving || deletingCard !== null}>{saving ? "Saving…" : "Save card"}</Button>{role === "admin" && <Button type="button" size="sm" variant="danger" disabled={saving || deletingCard !== null} onClick={() => void deleteCard(card)}>{deletingCard === card.section_key ? "Deleting…" : "Delete"}</Button>}</div>
-                </form>
+                </form> : (
+                  <div className="space-y-3 text-sm text-cms-muted">
+                    {card.image_url && <img src={card.image_url} alt={card.eyebrow || ""} className="max-h-48 rounded-lg object-contain" />}
+                    {card.eyebrow && <p>{card.eyebrow}</p>}
+                    {card.body && <p className="whitespace-pre-wrap">{card.body}</p>}
+                  </div>
+                )}
               </AdminAccordion>
             ))}
             {!items.length && <p className="text-sm text-cms-muted">No cards in this section yet.</p>}

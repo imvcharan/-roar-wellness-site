@@ -8,7 +8,7 @@ import {
   toPublicContent,
 } from "@/lib/cms-db";
 import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
-import { isReservedCmsRootSlug, parseCmsContentInput } from "@/lib/cms-validation";
+import { CmsContentValidationError, isReservedCmsRootSlug, parseCmsContentInput } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
@@ -27,22 +27,28 @@ export async function PUT(
   try {
     input = parseCmsContentInput(body);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid content." }, { status: 400 });
+    const message = error instanceof Error ? error.message : "Invalid content.";
+    const field = error instanceof CmsContentValidationError ? error.field : undefined;
+    return NextResponse.json({ error: message, ...(field ? { field } : {}) }, { status: 400 });
   }
   const category = findCategory(input.categoryId);
   if (!category) {
-    return NextResponse.json({ error: "The selected category does not exist." }, { status: 400 });
+    return NextResponse.json({ error: "The selected category does not exist.", field: "categoryId" }, { status: 400 });
   }
   if ((isPageCategory(category.slug) || isServiceCategory(category.slug)) && isReservedCmsRootSlug(input.slug)) {
-    return NextResponse.json({ error: "This slug is reserved for a built-in website route. Choose another slug." }, { status: 400 });
+    return NextResponse.json({ error: "This slug is reserved for a built-in website route. Choose another slug.", field: "slug" }, { status: 400 });
   }
 
   const database = getCmsDatabase();
   const previousPath = getCmsContentHref(previous.slug, previous.category_slug);
   const nextPath = getCmsContentHref(input.slug, category.slug);
   const updatedBy = await getCmsUserId();
+  const previousSnapshot = JSON.stringify(previous);
   try {
     database.exec("BEGIN IMMEDIATE");
+    const hasPreviousSnapshot = database.prepare(
+      "SELECT 1 FROM cms_revisions WHERE content_id = ? AND snapshot = ? LIMIT 1",
+    ).get(id, previousSnapshot);
     database.prepare(`
       UPDATE content SET title = ?, slug = ?, category_id = ?, excerpt = ?, summary = ?,
         description = ?, content = ?, image_url = ?, image_alt_text = ?, image_position = ?, status = ?, seo_title = ?,
@@ -70,8 +76,12 @@ export async function PUT(
         ON CONFLICT(source_path) DO UPDATE SET content_id = excluded.content_id
       `).run(previousPath, id);
     }
-    database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
-      .run(crypto.randomUUID(), id, JSON.stringify(previous), updatedBy);
+    if (!hasPreviousSnapshot) {
+      database.prepare(`
+        INSERT INTO cms_revisions (id, content_id, snapshot, created_by, created_at)
+        VALUES (?, ?, ?, NULL, ?)
+      `).run(crypto.randomUUID(), id, previousSnapshot, previous.updated_at);
+    }
     database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
       .run(crypto.randomUUID(), id, JSON.stringify(findContentById(id)), updatedBy);
     database.exec("COMMIT");
@@ -80,7 +90,7 @@ export async function PUT(
   } catch (error) {
     if (database.isTransaction) database.exec("ROLLBACK");
     if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
-      return NextResponse.json({ error: "A content item with that slug already exists." }, { status: 409 });
+      return NextResponse.json({ error: "A content item with that slug already exists.", field: "slug" }, { status: 409 });
     }
     throw error;
   }

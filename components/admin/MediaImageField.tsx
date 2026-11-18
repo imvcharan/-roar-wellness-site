@@ -6,8 +6,10 @@ import { cmsRequest } from "@/services/cms-api";
 interface MediaImageFieldProps {
   label: string;
   name: string;
+  id?: string;
   value?: string;
   defaultValue?: string;
+  validationError?: string;
   onChange?: (value: string) => void;
   onUploadingChange?: (uploading: boolean) => void;
   previewMode?: "contain" | "cover";
@@ -25,8 +27,10 @@ interface UploadedMedia {
 export function MediaImageField({
   label,
   name,
+  id = name,
   value,
   defaultValue,
+  validationError,
   onChange,
   onUploadingChange,
   previewMode = "contain",
@@ -81,13 +85,16 @@ export function MediaImageField({
       <label className="block text-sm font-medium text-cms-text">
         {label}
         <input
+          id={id}
           name={name}
           type="text"
           inputMode="url"
           value={url}
           onChange={(event) => updateUrl(event.target.value)}
+          aria-invalid={Boolean(validationError) || undefined}
+          aria-describedby={validationError ? `${id}-error` : undefined}
           placeholder="Paste an image URL or upload an image"
-          className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2"
+          className={`mt-1 w-full rounded-lg border px-3 py-2 ${validationError ? "border-red-500" : "border-cms-border"}`}
         />
       </label>
       <div className="flex flex-wrap items-center gap-3">
@@ -105,6 +112,7 @@ export function MediaImageField({
         {url && <button type="button" onClick={() => updateUrl("")} className="text-sm text-cms-muted underline">Remove image</button>}
         <p className="text-xs text-cms-muted">JPEG, PNG, WebP, GIF, TIFF, or AVIF · maximum 50 MB</p>
       </div>
+      {validationError && <p id={`${id}-error`} role="alert" className="text-sm text-red-700">{validationError}</p>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {notice && <p role="status" className="text-sm text-cms-muted">{notice}</p>}
       {url && !imageFailed && (

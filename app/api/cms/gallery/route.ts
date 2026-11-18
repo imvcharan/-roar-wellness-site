@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
+import { canEditCms, getCmsRole, getCmsUserId } from "@/lib/cms-auth";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { isAllowedImageUrl } from "@/lib/cms-validation";
@@ -8,7 +8,7 @@ import { isAllowedImageUrl } from "@/lib/cms-validation";
 export const runtime = "nodejs";
 
 export async function GET() {
-  if (!await canEditCms()) return NextResponse.json({ error: "Editor access is required." }, { status: 403 });
+  if (!await getCmsRole()) return NextResponse.json({ error: "CMS access is required." }, { status: 403 });
   const data = getCmsDatabase().prepare(
     "SELECT id, image_url, alt_text, caption, position, is_published, updated_at FROM cms_gallery_images ORDER BY position, created_at DESC",
   ).all();

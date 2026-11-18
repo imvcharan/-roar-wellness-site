@@ -28,6 +28,26 @@ export function formatCmsPublishedDate(value: string | null | undefined): string
   }).format(date);
 }
 
+export function toLocalDateTimeInputValue(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function getCmsRestoredSchedule(
+  status: "draft" | "published" | "archived" | null,
+  value: string | null | undefined,
+): { scheduledPublishAt: string | null; cleared: boolean } {
+  if (!value) return { scheduledPublishAt: null, cleared: false };
+  const timestamp = Date.parse(value);
+  if (status === "draft" && Number.isFinite(timestamp) && timestamp > Date.now()) {
+    return { scheduledPublishAt: new Date(timestamp).toISOString(), cleared: false };
+  }
+  return { scheduledPublishAt: null, cleared: true };
+}
+
 export function compareCmsPublicationDates(
   first: string | null | undefined,
   second: string | null | undefined,

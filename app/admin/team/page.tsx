@@ -136,6 +136,8 @@ export default function TeamManagementPage() {
     }
   };
 
+  const canWrite = role === "admin" || role === "editor";
+
   return (
     <div className="space-y-6">
       <header>
@@ -147,7 +149,7 @@ export default function TeamManagementPage() {
         notice={notice}
         progress={saving ? "Saving team profile…" : deletingMember ? "Deleting team profile…" : undefined}
       />
-      <AdminAccordion
+      {canWrite && <AdminAccordion
         id="team-new-member"
         title="Add team member"
         summary="Add a profile, role badge, photo, and biography."
@@ -166,7 +168,7 @@ export default function TeamManagementPage() {
           <label className="text-sm font-medium text-cms-text md:col-span-2">Biography<textarea name="body" rows={4} maxLength={5000} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
           <div className="md:col-span-2"><Button type="submit" disabled={uploadingImage || saving}>{saving ? "Saving…" : "Add team member"}</Button></div>
         </form>
-      </AdminAccordion>
+      </AdminAccordion>}
       <section aria-label="Team profiles" className="space-y-3">
         {loading && <p className="text-sm text-cms-muted">Loading team profiles...</p>}
         {!loading && members.map((member, index) => (
@@ -181,7 +183,7 @@ export default function TeamManagementPage() {
               setNewMemberOpen(false);
             }}
           >
-            <form onSubmit={(event) => void saveMember(event, member)} className="grid gap-3 md:grid-cols-2">
+            {canWrite ? <form onSubmit={(event) => void saveMember(event, member)} className="grid gap-3 md:grid-cols-2">
               <label className="text-sm font-medium text-cms-text">Name<input name="heading" required maxLength={200} defaultValue={member.heading} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
               <label className="text-sm font-medium text-cms-text">Role badge<input name="eyebrow" maxLength={200} defaultValue={member.eyebrow || ""} className="mt-1 w-full rounded-lg border border-cms-border px-3 py-2" /></label>
               <MediaImageField name="image_url" label="Profile image" defaultValue={member.image_url || ""} onUploadingChange={setUploadingImage} className="md:col-span-2" />
@@ -192,10 +194,15 @@ export default function TeamManagementPage() {
                 <Button type="submit" size="sm" disabled={uploadingImage || saving || deletingMember !== null}>{saving ? "Saving…" : "Save profile"}</Button>
                 {role === "admin" && <Button type="button" size="sm" variant="danger" disabled={saving || deletingMember !== null} onClick={() => void deleteMember(member)}>{deletingMember === member.section_key ? "Deleting…" : "Delete"}</Button>}
               </div>
-            </form>
+            </form> : (
+              <div className="space-y-3 text-sm text-cms-muted">
+                {member.image_url && <img src={member.image_url} alt="" className="max-h-48 rounded-lg object-contain" />}
+                {member.body && <p className="whitespace-pre-wrap">{member.body}</p>}
+              </div>
+            )}
           </AdminAccordion>
         ))}
-        {!loading && members.length === 0 && <p className="text-sm text-cms-muted">No team profiles yet. Add a team member to get started.</p>}
+        {!loading && members.length === 0 && <p className="text-sm text-cms-muted">{canWrite ? "No team profiles yet. Add a team member to get started." : "No team profiles yet."}</p>}
       </section>
       {role !== "admin" && <p className="text-xs text-cms-muted">Only administrators can delete team profiles.</p>}
     </div>

@@ -37,6 +37,20 @@ export interface CmsContentInput {
   scheduledPublishAt: string | null;
 }
 
+export class CmsContentValidationError extends Error {
+  readonly field: keyof CmsContentInput;
+
+  constructor(message: string, field: keyof CmsContentInput) {
+    super(message);
+    this.name = "CmsContentValidationError";
+    this.field = field;
+  }
+}
+
+function invalidContentField(field: keyof CmsContentInput, message: string): never {
+  throw new CmsContentValidationError(message, field);
+}
+
 export function makeSlug(value: string): string {
   return value
     .normalize("NFKD")
@@ -55,15 +69,15 @@ export function isReservedCmsRootSlug(slug: string): boolean {
   return reservedRootSlugs.has(slug);
 }
 
-function optionalText(value: unknown, label: string, maxLength: number): string | null {
+function optionalText(value: unknown, label: string, maxLength: number, field: keyof CmsContentInput): string | null {
   if (value === undefined || value === null || value === "") return null;
   if (typeof value !== "string" || value.length > maxLength) {
-    throw new Error(`${label} must be text no longer than ${maxLength} characters.`);
+    invalidContentField(field, `${label} must be text no longer than ${maxLength} characters.`);
   }
   return value.trim() || null;
 }
 
-function sanitizeRichText(value: string | null, requireImageAlt: boolean): string | null {
+function sanitizeRichText(value: string | null, requireImageAlt: boolean, field: "description" | "content"): string | null {
   if (!value) return null;
   const sanitized = sanitizeHtml(value, {
     allowedTags: [
@@ -84,11 +98,11 @@ function sanitizeRichText(value: string | null, requireImageAlt: boolean): strin
   if (requireImageAlt) {
     for (const match of sanitized.matchAll(/<img\b[^>]*>/gi)) {
       if (!/\balt\s*=/i.test(match[0])) {
-        throw new Error('Every content image needs an alt attribute. Use alt="" only for a decorative image.');
+        invalidContentField(field, 'Every content image needs an alt attribute. Use alt="" only for a decorative image.');
       }
       const altText = match[0].match(/\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
       const alt = altText?.[1] ?? altText?.[2] ?? altText?.[3] ?? "";
-      if (alt.length > 250) throw new Error("Content image alt text must be 250 characters or fewer.");
+      if (alt.length > 250) invalidContentField(field, "Content image alt text must be 250 characters or fewer.");
     }
   }
   return sanitized;
@@ -123,58 +137,58 @@ export function parseCmsContentInput(value: unknown): CmsContentInput {
   }
   const data = value as Record<string, unknown>;
   if (typeof data.title !== "string" || !data.title.trim() || data.title.length > 200) {
-    throw new Error("Title is required and must be 200 characters or fewer.");
+    invalidContentField("title", "Title is required and must be 200 characters or fewer.");
   }
   const slugInput = typeof data.slug === "string" && data.slug.trim()
     ? data.slug
     : data.title;
   const slug = makeSlug(slugInput);
-  if (!slug) throw new Error("Slug must contain at least one letter or number.");
+  if (!slug) invalidContentField("slug", "Slug must contain at least one letter or number.");
   if (typeof data.categoryId !== "string" || !data.categoryId.trim()) {
-    throw new Error("Choose a category.");
+    invalidContentField("categoryId", "Choose a category.");
   }
   const status = data.status ?? "draft";
   if (status !== "draft" && status !== "published" && status !== "archived") {
-    throw new Error("Status must be draft, published, or archived.");
+    invalidContentField("status", "Status must be draft, published, or archived.");
   }
   let scheduledPublishAt: string | null = null;
   if (data.scheduledPublishAt !== undefined && data.scheduledPublishAt !== null && data.scheduledPublishAt !== "") {
     if (typeof data.scheduledPublishAt !== "string" || !Number.isFinite(Date.parse(data.scheduledPublishAt))) {
-      throw new Error("Scheduled publish time must be a valid date and time.");
+      invalidContentField("scheduledPublishAt", "Scheduled publish time must be a valid date and time.");
     }
     if (Date.parse(data.scheduledPublishAt) <= Date.now()) {
-      throw new Error("Scheduled publish time must be in the future.");
+      invalidContentField("scheduledPublishAt", "Scheduled publish time must be in the future.");
     }
     if (status !== "draft") {
-      throw new Error("Scheduled content must have draft status until its publish time.");
+      invalidContentField("status", "Scheduled content must have draft status until its publish time.");
     }
     scheduledPublishAt = new Date(data.scheduledPublishAt).toISOString();
   }
-  const imageUrl = optionalText(data.imageUrl, "Image URL", 2048);
+  const imageUrl = optionalText(data.imageUrl, "Image URL", 2048, "imageUrl");
   if (imageUrl && !isAllowedImageUrl(imageUrl)) {
-    throw new Error("Image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
+    invalidContentField("imageUrl", "Image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
   }
-  const imageAltText = optionalText(data.imageAltText, "Image alt text", 250);
+  const imageAltText = optionalText(data.imageAltText, "Image alt text", 250, "imageAltText");
   if (status === "published" && imageUrl && !imageAltText) {
-    throw new Error("Add descriptive alt text for the featured image before publishing.");
+    invalidContentField("imageAltText", "Add descriptive alt text for the featured image before publishing.");
   }
   if (imageAltText && !imageUrl) {
-    throw new Error("Add a featured image before entering its alt text.");
+    invalidContentField("imageUrl", "Add a featured image before entering its alt text.");
   }
-  const imagePosition = optionalText(data.imagePosition, "Image focal position", 20) ?? "50% 50%";
+  const imagePosition = optionalText(data.imagePosition, "Image focal position", 20, "imagePosition") ?? "50% 50%";
   const imagePositions = new Set([
     "0% 0%", "50% 0%", "100% 0%",
     "0% 50%", "50% 50%", "100% 50%",
     "0% 100%", "50% 100%", "100% 100%",
   ]);
-  if (!imagePositions.has(imagePosition)) throw new Error("Choose a valid image focal position.");
-  const seoRobots = optionalText(data.seoRobots, "Robots directive", 40)
+  if (!imagePositions.has(imagePosition)) invalidContentField("imagePosition", "Choose a valid image focal position.");
+  const seoRobots = optionalText(data.seoRobots, "Robots directive", 40, "seoRobots")
     ?.toLowerCase()
     .replace(/\s+/g, "") ?? null;
   if (seoRobots && !["index,follow", "index,nofollow", "noindex,follow", "noindex,nofollow"].includes(seoRobots)) {
-    throw new Error("Choose a valid robots directive.");
+    invalidContentField("seoRobots", "Choose a valid robots directive.");
   }
-  const seoCanonicalUrl = optionalText(data.seoCanonicalUrl, "Canonical URL", 2048);
+  const seoCanonicalUrl = optionalText(data.seoCanonicalUrl, "Canonical URL", 2048, "seoCanonicalUrl");
   if (seoCanonicalUrl) {
     try {
       const canonical = new URL(seoCanonicalUrl);
@@ -182,40 +196,40 @@ export function parseCmsContentInput(value: unknown): CmsContentInput {
         throw new Error();
       }
     } catch {
-      throw new Error("Canonical URL must be a valid HTTP or HTTPS URL.");
+      invalidContentField("seoCanonicalUrl", "Canonical URL must be a valid HTTP or HTTPS URL.");
     }
   }
-  const seoOgImage = optionalText(data.seoOgImage, "Open Graph image URL", 2048);
+  const seoOgImage = optionalText(data.seoOgImage, "Open Graph image URL", 2048, "seoOgImage");
   if (seoOgImage && !isAllowedImageUrl(seoOgImage)) {
-    throw new Error("Open Graph image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
+    invalidContentField("seoOgImage", "Open Graph image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
   }
-  const seoTwitterImage = optionalText(data.seoTwitterImage, "Twitter image URL", 2048);
+  const seoTwitterImage = optionalText(data.seoTwitterImage, "Twitter image URL", 2048, "seoTwitterImage");
   if (seoTwitterImage && !isAllowedImageUrl(seoTwitterImage)) {
-    throw new Error("Twitter image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
+    invalidContentField("seoTwitterImage", "Twitter image URL must be an HTTP or HTTPS URL or a valid uploaded media path.");
   }
 
   return {
     title: data.title.trim(),
     slug,
     categoryId: data.categoryId.trim(),
-    excerpt: optionalText(data.excerpt, "Excerpt", 500),
-    summary: optionalText(data.summary, "Summary", 2000),
-    description: sanitizeRichText(optionalText(data.description, "Description", 20000), status === "published"),
-    content: sanitizeRichText(optionalText(data.content, "Content", 200000), status === "published"),
+    excerpt: optionalText(data.excerpt, "Excerpt", 500, "excerpt"),
+    summary: optionalText(data.summary, "Summary", 2000, "summary"),
+    description: sanitizeRichText(optionalText(data.description, "Description", 20000, "description"), status === "published", "description"),
+    content: sanitizeRichText(optionalText(data.content, "Content", 200000, "content"), status === "published", "content"),
     imageUrl,
     imageAltText,
     imagePosition,
     status,
-    seoTitle: optionalText(data.seoTitle, "SEO title", 200),
-    seoDescription: optionalText(data.seoDescription, "SEO description", 500),
-    seoKeywords: optionalText(data.seoKeywords, "SEO keywords", 500),
+    seoTitle: optionalText(data.seoTitle, "SEO title", 200, "seoTitle"),
+    seoDescription: optionalText(data.seoDescription, "SEO description", 500, "seoDescription"),
+    seoKeywords: optionalText(data.seoKeywords, "SEO keywords", 500, "seoKeywords"),
     seoRobots,
     seoCanonicalUrl,
-    seoOgTitle: optionalText(data.seoOgTitle, "Open Graph title", 200),
-    seoOgDescription: optionalText(data.seoOgDescription, "Open Graph description", 500),
+    seoOgTitle: optionalText(data.seoOgTitle, "Open Graph title", 200, "seoOgTitle"),
+    seoOgDescription: optionalText(data.seoOgDescription, "Open Graph description", 500, "seoOgDescription"),
     seoOgImage,
-    seoTwitterTitle: optionalText(data.seoTwitterTitle, "Twitter title", 200),
-    seoTwitterDescription: optionalText(data.seoTwitterDescription, "Twitter description", 500),
+    seoTwitterTitle: optionalText(data.seoTwitterTitle, "Twitter title", 200, "seoTwitterTitle"),
+    seoTwitterDescription: optionalText(data.seoTwitterDescription, "Twitter description", 500, "seoTwitterDescription"),
     seoTwitterImage,
     scheduledPublishAt,
   };

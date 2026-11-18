@@ -16,6 +16,8 @@ interface GalleryItem {
   updated_at?: string;
 }
 
+type CmsRole = "admin" | "editor" | "viewer";
+
 const emptyDraft = {
   image_url: "",
   alt_text: "",
@@ -33,6 +35,7 @@ export default function GalleryAdminPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [role, setRole] = useState<CmsRole | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +52,9 @@ export default function GalleryAdminPage() {
 
   useEffect(() => {
     void load();
+    cmsRequest<{ data: { role: CmsRole } }>("/api/cms/session")
+      .then(({ data }) => setRole(data.role))
+      .catch((sessionError: unknown) => console.error("Unable to load CMS permissions.", sessionError));
   }, [load]);
 
   const saveNew = async (event: FormEvent<HTMLFormElement>) => {
@@ -119,6 +125,8 @@ export default function GalleryAdminPage() {
     }
   };
 
+  const canWrite = role === "admin" || role === "editor";
+
   return (
     <div className="space-y-6">
       <header>
@@ -127,7 +135,7 @@ export default function GalleryAdminPage() {
       </header>
       <AdminFeedback error={error} notice={notice} progress={busy ? 'Saving gallery changes…' : uploadingImage ? 'Uploading image…' : undefined} />
 
-      <div className="rounded-xl border border-cms-border bg-cms-surface p-4">
+      {canWrite && <div className="rounded-xl border border-cms-border bg-cms-surface p-4">
         <form onSubmit={(event) => { void saveNew(event); }} className="grid gap-4 md:grid-cols-2">
           <MediaImageField
             label="Image"
@@ -157,7 +165,7 @@ export default function GalleryAdminPage() {
             <Button type="submit" disabled={busy || uploadingImage}>{busy ? 'Saving…' : 'Add image'}</Button>
           </div>
         </form>
-      </div>
+      </div>}
 
       {loading ? <p className="rounded-xl border border-dashed border-cms-border p-8 text-center text-cms-muted">Loading gallery…</p> : items.length === 0 ? <p className="rounded-xl border border-dashed border-cms-border p-8 text-center text-cms-muted">No gallery images yet.</p> : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -165,8 +173,7 @@ export default function GalleryAdminPage() {
             const draftItem = { ...item, ...(editing[item.id] ?? {}) } as GalleryItem;
             return (
               <article key={item.id} className="overflow-hidden rounded-xl border border-cms-border bg-cms-surface">
-                <img src={item.image_url} alt={item.alt_text || item.caption || 'Gallery image'} className="aspect-[4/3] w-full object-cover" />
-                <div className="space-y-3 p-3">
+                {canWrite ? <div className="space-y-3 p-3">
                   <MediaImageField
                     label="Image URL"
                     name={`image_url_${item.id}`}
@@ -195,7 +202,13 @@ export default function GalleryAdminPage() {
                     <Button type="button" variant="secondary" onClick={() => void saveExisting(item)} disabled={busy || uploadingImage}>Save</Button>
                     <Button type="button" variant="secondary" onClick={() => void remove(item)} disabled={busy || uploadingImage}>Remove</Button>
                   </div>
-                </div>
+                </div> : (
+                  <div className="space-y-3 p-3">
+                    <img src={item.image_url} alt={item.alt_text || item.caption || "Gallery image"} className="aspect-[4/3] w-full rounded-lg object-cover" />
+                    {item.alt_text && <p className="text-sm text-cms-muted">Alt text: {item.alt_text}</p>}
+                    {item.caption && <p className="text-sm text-cms-text">{item.caption}</p>}
+                  </div>
+                )}
               </article>
             );
           })}

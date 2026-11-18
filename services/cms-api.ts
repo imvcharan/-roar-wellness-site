@@ -1,5 +1,16 @@
 interface ApiError {
   error?: string;
+  field?: string;
+}
+
+export class CmsRequestError extends Error {
+  readonly field?: string;
+
+  constructor(message: string, field?: string) {
+    super(message);
+    this.name = "CmsRequestError";
+    this.field = field;
+  }
 }
 
 export async function cmsRequest<T>(
@@ -29,7 +40,7 @@ export async function cmsRequest<T>(
     throw new Error("The CMS API returned an invalid response.");
   }
   if (!response.ok) {
-    throw new Error(payload.error ?? `The API returned HTTP ${response.status}.`);
+    throw new CmsRequestError(payload.error ?? `The API returned HTTP ${response.status}.`, payload.field);
   }
 
   return payload;

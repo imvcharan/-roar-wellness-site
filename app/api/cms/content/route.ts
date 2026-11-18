@@ -9,7 +9,7 @@ import {
   toPublicContent,
 } from "@/lib/cms-db";
 import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
-import { isReservedCmsRootSlug, parseCmsContentInput } from "@/lib/cms-validation";
+import { CmsContentValidationError, isReservedCmsRootSlug, parseCmsContentInput } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
@@ -35,14 +35,16 @@ export async function POST(request: Request) {
   try {
     input = parseCmsContentInput(body);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid content." }, { status: 400 });
+    const message = error instanceof Error ? error.message : "Invalid content.";
+    const field = error instanceof CmsContentValidationError ? error.field : undefined;
+    return NextResponse.json({ error: message, ...(field ? { field } : {}) }, { status: 400 });
   }
   const category = findCategory(input.categoryId);
   if (!category) {
-    return NextResponse.json({ error: "The selected category does not exist." }, { status: 400 });
+    return NextResponse.json({ error: "The selected category does not exist.", field: "categoryId" }, { status: 400 });
   }
   if ((isPageCategory(category.slug) || isServiceCategory(category.slug)) && isReservedCmsRootSlug(input.slug)) {
-    return NextResponse.json({ error: "This slug is reserved for a built-in website route. Choose another slug." }, { status: 400 });
+    return NextResponse.json({ error: "This slug is reserved for a built-in website route. Choose another slug.", field: "slug" }, { status: 400 });
   }
 
   const database = getCmsDatabase();
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (database.isTransaction) database.exec("ROLLBACK");
     if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
-      return NextResponse.json({ error: "A content item with that slug already exists." }, { status: 409 });
+      return NextResponse.json({ error: "A content item with that slug already exists.", field: "slug" }, { status: 409 });
     }
     throw error;
   }

@@ -6,8 +6,9 @@ import { AdminFeedback } from "@/components/admin/AdminFeedback";
 import { AdminAccordion } from "@/components/admin/AdminAccordion";
 import { MediaImageField } from "@/components/admin/MediaImageField";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { toLocalDateTimeInputValue } from "@/lib/cms-date";
 import { getCmsContentHref } from "@/lib/cms-routes";
-import { cmsRequest } from "@/services/cms-api";
+import { CmsRequestError, cmsRequest } from "@/services/cms-api";
 import { Button } from "@/components/ui/Button";
 
 interface Category {
@@ -73,6 +74,12 @@ interface EntryForm {
   scheduledPublishAt: string;
 }
 
+type EntryFormField = keyof EntryForm;
+interface EntryFieldError {
+  field: EntryFormField;
+  message: string;
+}
+
 const emptyForm: EntryForm = {
   title: "",
   slug: "",
@@ -130,6 +137,19 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "The CMS request failed.";
 }
 
+function isEntryFormField(field: string | undefined): field is EntryFormField {
+  return field !== undefined && Object.hasOwn(emptyForm, field);
+}
+
+function entryFieldId(field: EntryFormField): string {
+  return `cms-entry-${field}`;
+}
+
+function EntryFieldErrorMessage({ field, error }: { field: EntryFormField; error: EntryFieldError | null }) {
+  if (error?.field !== field) return null;
+  return <p id={`${entryFieldId(field)}-error`} role="alert" className="mt-1 text-sm font-normal text-red-700">{error.message}</p>;
+}
+
 export default function PostsPage() {
   const pathname = usePathname();
   const section = pathname === "/admin/pages" ? "pages"
@@ -145,6 +165,7 @@ export default function PostsPage() {
   const [search, setSearch] = useState("");
   const [activePanel, setActivePanel] = useState<"library" | "editor" | null>(null);
   const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState<EntryFieldError | null>(null);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -188,6 +209,10 @@ export default function PostsPage() {
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
+    if (fieldError) document.getElementById(entryFieldId(fieldError.field))?.focus();
+  }, [fieldError]);
+
+  useEffect(() => {
     setFilter("all");
     setStatusFilter("all");
     setSearch("");
@@ -218,12 +243,14 @@ export default function PostsPage() {
 
   const resetForm = () => {
     setEditingId(null);
+    setFieldError(null);
     setForm({ ...emptyForm, categoryId: sectionCategories[0]?.id || "" });
   };
 
   const editEntry = (entry: CmsEntry) => {
     setActivePanel("editor");
     setEditingId(entry.id);
+    setFieldError(null);
     setForm({
       title: entry.title,
       slug: entry.slug,
@@ -247,7 +274,7 @@ export default function PostsPage() {
       seoTwitterTitle: entry.seo_twitter_title || "",
       seoTwitterDescription: entry.seo_twitter_description || "",
       seoTwitterImage: entry.seo_twitter_image || "",
-      scheduledPublishAt: entry.scheduled_publish_at ? new Date(entry.scheduled_publish_at).toISOString().slice(0, 16) : "",
+      scheduledPublishAt: toLocalDateTimeInputValue(entry.scheduled_publish_at),
     });
     setNotice("");
     setHistory([]);
@@ -276,6 +303,7 @@ export default function PostsPage() {
     if (uploadingImages.size) return;
     setSaving(true);
     setError("");
+    setFieldError(null);
     setNotice("");
     try {
       const url = editingId ? `/api/cms/content/${encodeURIComponent(editingId)}` : "/api/cms/content";
@@ -323,7 +351,11 @@ export default function PostsPage() {
       if (previewAfterSave.current) previewWindow.current?.close();
       previewWindow.current = null;
       previewAfterSave.current = false;
-      setError(messageOf(saveError));
+      if (saveError instanceof CmsRequestError && isEntryFormField(saveError.field)) {
+        setFieldError({ field: saveError.field, message: saveError.message });
+      } else {
+        setError(messageOf(saveError));
+      }
     } finally {
       setSaving(false);
     }
@@ -352,8 +384,10 @@ export default function PostsPage() {
     setNotice("");
     setRestoringRevision(revisionId);
     try {
-      const { data } = await cmsRequest<{ data: CmsEntry }>(`/api/cms/content/${encodeURIComponent(editingId)}/revisions/${encodeURIComponent(revisionId)}`, { method: "POST" });
-      setNotice(`An earlier version of “${data.title}” was restored and saved to history.`);
+      const { data, clearedSchedule } = await cmsRequest<{ data: CmsEntry; clearedSchedule: boolean }>(`/api/cms/content/${encodeURIComponent(editingId)}/revisions/${encodeURIComponent(revisionId)}`, { method: "POST" });
+      setNotice(clearedSchedule
+        ? `An earlier version of “${data.title}” was restored. Its old scheduled publish time was cleared to prevent unexpected publication.`
+        : `An earlier version of “${data.title}” was restored and saved to history.`);
       await load();
       editEntry(data);
     } catch (restoreError) {
@@ -380,6 +414,7 @@ export default function PostsPage() {
 
   const setField = <K extends keyof EntryForm>(key: K, value: EntryForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
+    setFieldError((current) => current?.field === key ? null : current);
   };
   const setImageUploading = (field: string, uploading: boolean) => {
     setUploadingImages((current) => {
@@ -396,6 +431,11 @@ export default function PostsPage() {
   const imageAltReviewCount = sectionEntries.filter((entry) =>
     entry.image_url && entry.image_alt_text === entry.title,
   ).length;
+  const fieldControlProps = (field: EntryFormField) => ({
+    id: entryFieldId(field),
+    "aria-invalid": fieldError?.field === field || undefined,
+    "aria-describedby": fieldError?.field === field ? `${entryFieldId(field)}-error` : undefined,
+  });
 
   return (
     <div className="space-y-8">
@@ -482,43 +522,52 @@ export default function PostsPage() {
         <form id="cms-entry-editor-form" onSubmit={saveEntry} className="grid gap-4 md:grid-cols-2">
           <label className="text-sm font-medium text-cms-text">
             Title
-            <input className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" required maxLength={200} value={form.title} onChange={(event) => {
+            <input {...fieldControlProps("title")} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "title" ? "border-red-500" : "border-cms-border"}`} required maxLength={200} value={form.title} onChange={(event) => {
               const title = event.target.value;
               setForm((current) => ({ ...current, title, slug: !editingId && (current.slug === "" || current.slug === makeSlug(current.title)) ? makeSlug(title) : current.slug }));
+              setFieldError((current) => current?.field === "title" || (!editingId && current?.field === "slug") ? null : current);
             }} />
+            <EntryFieldErrorMessage field="title" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             URL slug
-            <input className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" required maxLength={200} value={form.slug} onChange={(event) => setField("slug", event.target.value)} onBlur={() => setField("slug", makeSlug(form.slug))} />
+            <input {...fieldControlProps("slug")} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "slug" ? "border-red-500" : "border-cms-border"}`} required maxLength={200} value={form.slug} onChange={(event) => setField("slug", event.target.value)} onBlur={() => setField("slug", makeSlug(form.slug))} />
             <span className="mt-1 block text-xs font-normal text-cms-muted">Editable URL slug. Saving a changed slug redirects the previous URL to this page.</span>
+            <EntryFieldErrorMessage field="slug" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             Category
-            <select className="mt-1.5 w-full rounded-lg border border-cms-border bg-white px-3 py-2" required value={form.categoryId} onChange={(event) => setField("categoryId", event.target.value)}>
+            <select {...fieldControlProps("categoryId")} className={`mt-1.5 w-full rounded-lg border bg-white px-3 py-2 ${fieldError?.field === "categoryId" ? "border-red-500" : "border-cms-border"}`} required value={form.categoryId} onChange={(event) => setField("categoryId", event.target.value)}>
               <option value="" disabled>Select a category</option>
               {sectionCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
+            <EntryFieldErrorMessage field="categoryId" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             Status
-            <select className="mt-1.5 w-full rounded-lg border border-cms-border bg-white px-3 py-2" value={form.status} onChange={(event) => setField("status", event.target.value as CmsEntry["status"])}>
+            <select {...fieldControlProps("status")} className={`mt-1.5 w-full rounded-lg border bg-white px-3 py-2 ${fieldError?.field === "status" ? "border-red-500" : "border-cms-border"}`} value={form.status} onChange={(event) => setField("status", event.target.value as CmsEntry["status"])}>
               <option value="draft">Draft</option>
               <option value="published">Published</option>
               <option value="archived">Archived</option>
             </select>
+            <EntryFieldErrorMessage field="status" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text md:col-span-2">
             Short excerpt
-            <textarea className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" rows={2} maxLength={500} value={form.excerpt} onChange={(event) => setField("excerpt", event.target.value)} />
+            <textarea {...fieldControlProps("excerpt")} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "excerpt" ? "border-red-500" : "border-cms-border"}`} rows={2} maxLength={500} value={form.excerpt} onChange={(event) => setField("excerpt", event.target.value)} />
+            <EntryFieldErrorMessage field="excerpt" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text md:col-span-2">
             Summary
-            <textarea className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" rows={3} maxLength={2000} value={form.summary} onChange={(event) => setField("summary", event.target.value)} />
+            <textarea {...fieldControlProps("summary")} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "summary" ? "border-red-500" : "border-cms-border"}`} rows={3} maxLength={2000} value={form.summary} onChange={(event) => setField("summary", event.target.value)} />
+            <EntryFieldErrorMessage field="summary" error={fieldError} />
           </label>
           <MediaImageField
             name="featured_image_url"
+            id={entryFieldId("imageUrl")}
             label="Featured image"
             value={form.imageUrl}
+            validationError={fieldError?.field === "imageUrl" ? fieldError.message : undefined}
             onChange={(imageUrl) => {
               setField("imageUrl", imageUrl);
               if (!imageUrl) setField("imageAltText", "");
@@ -536,68 +585,81 @@ export default function PostsPage() {
               required={Boolean(form.imageUrl && form.status === "published")}
               maxLength={250}
               value={form.imageAltText}
+              {...fieldControlProps("imageAltText")}
               onChange={(event) => setField("imageAltText", event.target.value)}
               placeholder={form.imageUrl && form.status === "published" ? "Describe what is visible in the image" : "Add an image description"}
-              className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2"
+              className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "imageAltText" ? "border-red-500" : "border-cms-border"}`}
             />
+            <EntryFieldErrorMessage field="imageAltText" error={fieldError} />
             <span className="mt-1 block text-xs font-normal text-cms-muted">Required for a published featured image. Describe visible details, not keywords. If the image is purely decorative, omit it as the featured image and add it in the content editor with alt="" instead.</span>
             {form.imageUrl && form.imageAltText === form.title && <span className="mt-1 block text-xs font-medium text-amber-800">This is a fallback based on the page title. Review the image and replace it with an accurate description before publishing.</span>}
           </label>
           <label className="text-sm font-medium text-cms-text">
             Image focal point
             <select
+              {...fieldControlProps("imagePosition")}
               value={form.imagePosition}
               onChange={(event) => setField("imagePosition", event.target.value)}
-              className="mt-1.5 block w-full rounded-lg border border-cms-border bg-white px-3 py-2"
+              className={`mt-1.5 block w-full rounded-lg border bg-white px-3 py-2 ${fieldError?.field === "imagePosition" ? "border-red-500" : "border-cms-border"}`}
             >
               <option value="0% 0%">Top left</option><option value="50% 0%">Top center</option><option value="100% 0%">Top right</option>
               <option value="0% 50%">Center left</option><option value="50% 50%">Center</option><option value="100% 50%">Center right</option>
               <option value="0% 100%">Bottom left</option><option value="50% 100%">Bottom center</option><option value="100% 100%">Bottom right</option>
             </select>
+            <EntryFieldErrorMessage field="imagePosition" error={fieldError} />
           </label>
           <RichTextEditor
             key={`description-${editingId ?? "new"}`}
+            id={entryFieldId("description")}
             label="Detail description"
             value={form.description}
             onChange={(value) => setField("description", value)}
+            validationError={fieldError?.field === "description" ? fieldError.message : undefined}
             maxLength={20000}
             rows={5}
           />
           <RichTextEditor
             key={`content-${editingId ?? "new"}`}
+            id={entryFieldId("content")}
             label="Page content"
             value={form.content}
             onChange={(value) => setField("content", value)}
+            validationError={fieldError?.field === "content" ? fieldError.message : undefined}
             maxLength={200000}
             rows={12}
           />
           <div className="md:col-span-2"><h3 className="font-semibold text-cms-text">SEO metadata and publishing</h3><p className="mt-1 text-sm text-cms-muted">These tags apply to the selected post, page, or service. Empty title/description fields use the content title and summary.</p></div>
           <label className="text-sm font-medium text-cms-text">
             SEO title
-            <input maxLength={200} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoTitle} onChange={(event) => setField("seoTitle", event.target.value)} />
+            <input {...fieldControlProps("seoTitle")} maxLength={200} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoTitle" ? "border-red-500" : "border-cms-border"}`} value={form.seoTitle} onChange={(event) => setField("seoTitle", event.target.value)} />
+            <EntryFieldErrorMessage field="seoTitle" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             SEO description
-            <textarea maxLength={500} rows={2} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoDescription} onChange={(event) => setField("seoDescription", event.target.value)} />
+            <textarea {...fieldControlProps("seoDescription")} maxLength={500} rows={2} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoDescription" ? "border-red-500" : "border-cms-border"}`} value={form.seoDescription} onChange={(event) => setField("seoDescription", event.target.value)} />
+            <EntryFieldErrorMessage field="seoDescription" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             SEO keywords
-            <input maxLength={500} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoKeywords} onChange={(event) => setField("seoKeywords", event.target.value)} placeholder="rehabilitation, recovery, Delhi" />
+            <input {...fieldControlProps("seoKeywords")} maxLength={500} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoKeywords" ? "border-red-500" : "border-cms-border"}`} value={form.seoKeywords} onChange={(event) => setField("seoKeywords", event.target.value)} placeholder="rehabilitation, recovery, Delhi" />
             <span className="mt-1 block text-xs font-normal text-cms-muted">Separate keywords with commas. Search engines may choose whether to use them.</span>
+            <EntryFieldErrorMessage field="seoKeywords" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             Search engine indexing
-            <select className="mt-1.5 w-full rounded-lg border border-cms-border bg-white px-3 py-2" value={form.seoRobots} onChange={(event) => setField("seoRobots", event.target.value)}>
+            <select {...fieldControlProps("seoRobots")} className={`mt-1.5 w-full rounded-lg border bg-white px-3 py-2 ${fieldError?.field === "seoRobots" ? "border-red-500" : "border-cms-border"}`} value={form.seoRobots} onChange={(event) => setField("seoRobots", event.target.value)}>
               <option value="index,follow">Index this page and follow links</option>
               <option value="noindex,follow">Do not index; follow links</option>
               <option value="index,nofollow">Index this page; do not follow links</option>
               <option value="noindex,nofollow">Do not index or follow links</option>
             </select>
+            <EntryFieldErrorMessage field="seoRobots" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text md:col-span-2">
             Canonical URL override (optional)
-            <input type="url" maxLength={2048} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoCanonicalUrl} onChange={(event) => setField("seoCanonicalUrl", event.target.value)} placeholder={typeof window !== "undefined" ? `${window.location.origin}${previewPath}` : previewPath} />
+            <input {...fieldControlProps("seoCanonicalUrl")} type="url" maxLength={2048} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoCanonicalUrl" ? "border-red-500" : "border-cms-border"}`} value={form.seoCanonicalUrl} onChange={(event) => setField("seoCanonicalUrl", event.target.value)} placeholder={typeof window !== "undefined" ? `${window.location.origin}${previewPath}` : previewPath} />
             <span className="mt-1 block text-xs font-normal text-cms-muted">Leave blank to use this content’s public URL. Use an absolute HTTP(S) URL only when this page should canonicalize elsewhere.</span>
+            <EntryFieldErrorMessage field="seoCanonicalUrl" error={fieldError} />
           </label>
           <div className="md:col-span-2">
             <h4 className="font-semibold text-cms-text">Social sharing overrides</h4>
@@ -605,32 +667,40 @@ export default function PostsPage() {
           </div>
           <label className="text-sm font-medium text-cms-text">
             Open Graph title
-            <input maxLength={200} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoOgTitle} onChange={(event) => setField("seoOgTitle", event.target.value)} placeholder={form.seoTitle || form.title} />
+            <input {...fieldControlProps("seoOgTitle")} maxLength={200} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoOgTitle" ? "border-red-500" : "border-cms-border"}`} value={form.seoOgTitle} onChange={(event) => setField("seoOgTitle", event.target.value)} placeholder={form.seoTitle || form.title} />
+            <EntryFieldErrorMessage field="seoOgTitle" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             Open Graph description
-            <textarea maxLength={500} rows={2} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoOgDescription} onChange={(event) => setField("seoOgDescription", event.target.value)} placeholder={form.seoDescription || form.summary || form.excerpt} />
+            <textarea {...fieldControlProps("seoOgDescription")} maxLength={500} rows={2} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoOgDescription" ? "border-red-500" : "border-cms-border"}`} value={form.seoOgDescription} onChange={(event) => setField("seoOgDescription", event.target.value)} placeholder={form.seoDescription || form.summary || form.excerpt} />
+            <EntryFieldErrorMessage field="seoOgDescription" error={fieldError} />
           </label>
           <MediaImageField
             name="seo_og_image"
+            id={entryFieldId("seoOgImage")}
             label="Open Graph image"
             value={form.seoOgImage}
+            validationError={fieldError?.field === "seoOgImage" ? fieldError.message : undefined}
             onChange={(value) => setField("seoOgImage", value)}
             onUploadingChange={(uploading) => setImageUploading("og", uploading)}
             previewMode="cover"
           />
           <label className="text-sm font-medium text-cms-text">
             Twitter title
-            <input maxLength={200} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoTwitterTitle} onChange={(event) => setField("seoTwitterTitle", event.target.value)} placeholder={form.seoOgTitle || form.seoTitle || form.title} />
+            <input {...fieldControlProps("seoTwitterTitle")} maxLength={200} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoTwitterTitle" ? "border-red-500" : "border-cms-border"}`} value={form.seoTwitterTitle} onChange={(event) => setField("seoTwitterTitle", event.target.value)} placeholder={form.seoOgTitle || form.seoTitle || form.title} />
+            <EntryFieldErrorMessage field="seoTwitterTitle" error={fieldError} />
           </label>
           <label className="text-sm font-medium text-cms-text">
             Twitter description
-            <textarea maxLength={500} rows={2} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.seoTwitterDescription} onChange={(event) => setField("seoTwitterDescription", event.target.value)} placeholder={form.seoOgDescription || form.seoDescription || form.summary || form.excerpt} />
+            <textarea {...fieldControlProps("seoTwitterDescription")} maxLength={500} rows={2} className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "seoTwitterDescription" ? "border-red-500" : "border-cms-border"}`} value={form.seoTwitterDescription} onChange={(event) => setField("seoTwitterDescription", event.target.value)} placeholder={form.seoOgDescription || form.seoDescription || form.summary || form.excerpt} />
+            <EntryFieldErrorMessage field="seoTwitterDescription" error={fieldError} />
           </label>
           <MediaImageField
             name="seo_twitter_image"
+            id={entryFieldId("seoTwitterImage")}
             label="Twitter image"
             value={form.seoTwitterImage}
+            validationError={fieldError?.field === "seoTwitterImage" ? fieldError.message : undefined}
             onChange={(value) => setField("seoTwitterImage", value)}
             onUploadingChange={(uploading) => setImageUploading("twitter", uploading)}
             previewMode="cover"
@@ -649,10 +719,12 @@ export default function PostsPage() {
           </div>
           <label className="text-sm font-medium text-cms-text">
             Schedule publication (optional, local time)
-            <input type="datetime-local" className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" value={form.scheduledPublishAt} onChange={(event) => {
+            <input {...fieldControlProps("scheduledPublishAt")} type="datetime-local" className={`mt-1.5 w-full rounded-lg border px-3 py-2 ${fieldError?.field === "scheduledPublishAt" ? "border-red-500" : "border-cms-border"}`} value={form.scheduledPublishAt} onChange={(event) => {
               const value = event.target.value;
               setForm((current) => ({ ...current, scheduledPublishAt: value, status: value ? "draft" : current.status }));
+              setFieldError((current) => current?.field === "scheduledPublishAt" || current?.field === "status" ? null : current);
             }} />
+            <EntryFieldErrorMessage field="scheduledPublishAt" error={fieldError} />
           </label>
           <div className="flex gap-2 md:col-span-2">
             <Button type="submit" loading={saving} disabled={uploadingImages.size > 0}>{editingId ? "Save changes" : "Create content"}</Button>
@@ -664,7 +736,7 @@ export default function PostsPage() {
           <h3 className="font-semibold text-cms-text">Version history</h3>
           <div className="mt-2 divide-y divide-cms-border">
             {history.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-              <span className="text-cms-muted">{new Date(revision.created_at).toLocaleString()} · {revision.created_by || "System"} · {revision.status} · {revision.title}</span>
+              <span className="text-cms-muted">{new Date(revision.created_at).toLocaleString()} · {revision.created_by || "Unknown user"} · {revision.status} · {revision.title}</span>
               <Button type="button" size="sm" variant="secondary" disabled={saving || restoringRevision !== null} onClick={() => void restoreRevision(revision.id)}>{restoringRevision === revision.id ? "Restoring…" : "Restore"}</Button>
             </div>)}
             {!history.length && <p className="py-2 text-sm text-cms-muted">No earlier versions recorded.</p>}
