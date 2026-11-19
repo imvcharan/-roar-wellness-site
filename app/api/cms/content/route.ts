@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { canEditCms, getCmsRole, getCmsUserId } from "@/lib/cms-auth";
 import { insertCmsContent } from "@/lib/cms-content-create";
+import { ensureCmsEngagementTables } from "@/lib/cms-engagement";
 import {
   findCategory,
   getCmsDatabase,
@@ -24,8 +25,20 @@ export async function GET(request: Request) {
   const categoryId = url.searchParams.get("categoryId") || undefined;
   const categorySlug = url.searchParams.get("category") || undefined;
   const content = await listContent({ includeUnpublished, categoryId, categorySlug });
+  const database = getCmsDatabase();
+  await ensureCmsEngagementTables(database);
+  const engagementRows = await database.prepare(`
+    SELECT content_id, views, likes, shares
+    FROM cms_content_engagement
+  `).all() as Array<{ content_id: string; views: number; likes: number; shares: number }>;
+  const engagementByContentId = new Map(engagementRows.map((row) => [row.content_id, row]));
   return NextResponse.json({
-    data: content.map(toPublicContent),
+    data: content.map((item) => ({
+      ...toPublicContent(item),
+      views: engagementByContentId.get(item.id)?.views ?? 0,
+      likes: engagementByContentId.get(item.id)?.likes ?? 0,
+      shares: engagementByContentId.get(item.id)?.shares ?? 0,
+    })),
   }, { headers: { "Cache-Control": "no-store, max-age=0" } });
 }
 

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
@@ -6,53 +6,18 @@ import sharp from "sharp";
 import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase, withCmsTransaction } from "@/lib/cms-db";
+import { ensureCmsEngagementTables } from "@/lib/cms-engagement";
+import { getCmsBackupPayload } from "@/lib/cms-backup-data";
 import { getCmsMediaDirectory, getCmsMediaFilePath, isCmsMediaId } from "@/lib/cms-media-storage";
 import { isAllowedImageUrl } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
-const backupVersion = 2;
+const backupVersion = 3;
 
 export async function GET(request: Request) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
-  const database = getCmsDatabase();
-  const media = await database.prepare("SELECT id, filename, url, mime_type, size, width, height, created_at FROM cms_media").all() as {
-    id: string; filename: string; url: string; mime_type: string; size: number;
-    width: number; height: number; created_at: string;
-  }[];
-  const mediaFiles: { filename: string; base64: string }[] = [];
-  for (const item of media) {
-    if (!isCmsMediaId(item.id)) throw new Error(`Invalid media identifier for ${item.filename}.`);
-    const filename = `${item.id}.webp`;
-    const isLegacyUrl = item.url === `/uploads/${filename}`;
-    if (!isLegacyUrl && item.url !== `/api/media/${item.id}`) throw new Error(`Invalid media storage path for ${item.id}.`);
-    let bytes: Buffer;
-    try {
-      bytes = await readFile(isLegacyUrl ? join(process.cwd(), "public", "uploads", filename) : getCmsMediaFilePath(item.id));
-    } catch (error) {
-      if (!isLegacyUrl || (error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      bytes = await readFile(getCmsMediaFilePath(item.id));
-    }
-    mediaFiles.push({ filename, base64: bytes.toString("base64") });
-  }
-  const payload = {
-    format: "roar-cms-backup",
-    version: backupVersion,
-    createdAt: new Date().toISOString(),
-    categories: await database.prepare("SELECT id, name, slug, is_default, created_at FROM categories").all(),
-    content: await database.prepare("SELECT * FROM content").all(),
-    revisions: await database.prepare("SELECT id, content_id, snapshot, created_by, created_at FROM cms_revisions").all(),
-    faqs: await database.prepare("SELECT * FROM cms_faqs").all(),
-    settings: await database.prepare("SELECT key, value FROM cms_settings").all(),
-    homeSections: await database.prepare("SELECT * FROM cms_home_sections").all(),
-    galleryImages: await database.prepare("SELECT * FROM cms_gallery_images").all(),
-    urlRedirects: await database.prepare("SELECT source_path, content_id, created_at FROM cms_url_redirects").all(),
-    media,
-    mediaFiles,
-    enquiries: await database.prepare("SELECT id, name, email, phone, source, status, assigned_user_id, follow_up_at, created_at, updated_at FROM cms_enquiries").all(),
-    auditLog: await database.prepare("SELECT id, actor_name, action, resource_type, resource_id, summary, location, created_at FROM cms_audit_log").all(),
-    analyticsEvents: await database.prepare("SELECT id, event_type, page_path, created_at FROM cms_analytics_events").all(),
-  };
+  const payload = await getCmsBackupPayload();
   await recordCmsAudit(await getCmsUserId(), request, "backup.export", "backup", null, "Downloaded a CMS content backup.");
   return new NextResponse(JSON.stringify(payload, null, 2), {
     headers: {
@@ -75,13 +40,14 @@ export async function POST(request: Request) {
   }
   if (!backup || typeof backup !== "object" || Array.isArray(backup)) return NextResponse.json({ error: "Backup must be a JSON object." }, { status: 400 });
   const data = backup as Record<string, unknown>;
-  if (data.format !== "roar-cms-backup" || (data.version !== 1 && data.version !== backupVersion)
+  if (data.format !== "roar-cms-backup" || ![1, 2, backupVersion].includes(data.version as number)
     || !Array.isArray(data.categories) || !Array.isArray(data.content)
     || !Array.isArray(data.faqs) || !Array.isArray(data.settings)
     || !Array.isArray(data.media) || !Array.isArray(data.mediaFiles)
     || (data.galleryImages !== undefined && !Array.isArray(data.galleryImages))
-    || (data.version === backupVersion && (!Array.isArray(data.enquiries)
-      || !Array.isArray(data.auditLog) || !Array.isArray(data.analyticsEvents)))) {
+    || ((data.version === 2 || data.version === backupVersion) && (!Array.isArray(data.enquiries)
+      || !Array.isArray(data.auditLog) || !Array.isArray(data.analyticsEvents)))
+    || (data.version === backupVersion && (!Array.isArray(data.engagement) || !Array.isArray(data.likes)))) {
     return NextResponse.json({ error: "Unsupported backup format or version." }, { status: 400 });
   }
 
@@ -133,14 +99,17 @@ export async function POST(request: Request) {
   const enquiries = Array.isArray(data.enquiries) ? data.enquiries as Record<string, unknown>[] : [];
   const auditLog = Array.isArray(data.auditLog) ? data.auditLog as Record<string, unknown>[] : [];
   const analyticsEvents = Array.isArray(data.analyticsEvents) ? data.analyticsEvents as Record<string, unknown>[] : [];
+  const engagement = Array.isArray(data.engagement) ? data.engagement as Record<string, unknown>[] : [];
+  const likes = Array.isArray(data.likes) ? data.likes as Record<string, unknown>[] : [];
   const media = data.media as Record<string, unknown>[];
   const text = (value: unknown, fallback: string | null = null): string | null =>
     typeof value === "string" ? value : fallback;
   const number = (value: unknown, fallback = 0): number =>
     typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  await ensureCmsEngagementTables(database);
   const statements = {
     category: database.prepare("INSERT INTO categories (id, name, slug, is_default, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, slug = excluded.slug, is_default = excluded.is_default"),
-    content: database.prepare(`INSERT INTO content (id, title, slug, category_id, excerpt, summary, description, content, image_url, image_alt_text, image_position, status, seo_title, seo_description, seo_keywords, seo_robots, scheduled_publish_at, created_at, updated_at, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+    content: database.prepare(`INSERT INTO content (id, title, slug, category_id, excerpt, summary, description, content, image_url, image_alt_text, image_position, status, seo_title, seo_description, seo_keywords, seo_robots, seo_canonical_url, seo_og_title, seo_og_description, seo_og_image, seo_twitter_title, seo_twitter_description, seo_twitter_image, scheduled_publish_at, created_at, updated_at, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
     revision: database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by, created_at) VALUES (?, ?, ?, ?, ?)"),
     urlRedirect: database.prepare("INSERT INTO cms_url_redirects (source_path, content_id, created_at) VALUES (?, ?, ?)"),
     faq: database.prepare("INSERT INTO cms_faqs (id, question, answer, position, status, updated_at) VALUES (?, ?, ?, ?, ?, ?)"),
@@ -148,13 +117,19 @@ export async function POST(request: Request) {
     home: database.prepare("INSERT INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position, is_published, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"),
     galleryImage: database.prepare("INSERT INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
     media: database.prepare("INSERT INTO cms_media (id, filename, url, mime_type, size, width, height, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"),
+    engagement: database.prepare("INSERT INTO cms_content_engagement (content_id, views, likes, shares, updated_at) VALUES (?, ?, ?, ?, ?)"),
+    like: database.prepare("INSERT INTO cms_content_likes (content_id, visitor_id) VALUES (?, ?)"),
   };
 
   try {
     await withCmsTransaction(async () => {
     await database.exec("DELETE FROM cms_revisions; DELETE FROM cms_url_redirects; DELETE FROM content; DELETE FROM categories WHERE is_default = 0;");
-    if (data.version === backupVersion) {
+    if (data.version === 2 || data.version === backupVersion) {
+      await database.exec("DELETE FROM cms_notification_outbox;");
       await database.exec("DELETE FROM cms_enquiries; DELETE FROM cms_audit_log; DELETE FROM cms_analytics_events;");
+    }
+    if (data.version === backupVersion) {
+      await database.exec("DELETE FROM cms_content_likes; DELETE FROM cms_content_engagement;");
     }
     await database.exec("DELETE FROM cms_faqs; DELETE FROM cms_settings; DELETE FROM cms_home_sections; DELETE FROM cms_media;");
     if (galleryImages) await database.exec("DELETE FROM cms_gallery_images;");
@@ -177,7 +152,7 @@ export async function POST(request: Request) {
       if (typeof row.id !== "string" || typeof row.title !== "string" || typeof row.slug !== "string"
         || typeof row.category_id !== "string" || !restoredCategories.has(row.category_id)
         || typeof row.status !== "string" || !["draft", "published", "archived"].includes(row.status)) throw new Error("Backup contains invalid or miscategorized content.");
-      await statements.content.run(row.id, row.title, row.slug, row.category_id, text(row.excerpt), text(row.summary), text(row.description), text(row.content), text(row.image_url), text(row.image_alt_text), text(row.image_position, "50% 50%"), row.status, text(row.seo_title), text(row.seo_description), text(row.seo_keywords), text(row.seo_robots), text(row.scheduled_publish_at), text(row.created_at, new Date().toISOString()), text(row.updated_at, new Date().toISOString()), text(row.published_at));
+      await statements.content.run(row.id, row.title, row.slug, row.category_id, text(row.excerpt), text(row.summary), text(row.description), text(row.content), text(row.image_url), text(row.image_alt_text), text(row.image_position, "50% 50%"), row.status, text(row.seo_title), text(row.seo_description), text(row.seo_keywords), text(row.seo_robots), text(row.seo_canonical_url), text(row.seo_og_title), text(row.seo_og_description), text(row.seo_og_image), text(row.seo_twitter_title), text(row.seo_twitter_description), text(row.seo_twitter_image), text(row.scheduled_publish_at), text(row.created_at, new Date().toISOString()), text(row.updated_at, new Date().toISOString()), text(row.published_at));
       restoredContent.add(row.id);
     }
     for (const row of urlRedirects) {
@@ -267,6 +242,28 @@ export async function POST(request: Request) {
       }
       await analyticsStatement.run(row.id, row.event_type, text(row.page_path), text(row.created_at, new Date().toISOString()));
     }
+    if (data.version === backupVersion) {
+      for (const row of engagement) {
+        if (typeof row.content_id !== "string" || !restoredContent.has(row.content_id)
+          || !Number.isSafeInteger(row.views) || Number(row.views) < 0
+          || !Number.isSafeInteger(row.likes) || Number(row.likes) < 0
+          || !Number.isSafeInteger(row.shares) || Number(row.shares) < 0) {
+          throw new Error("Backup contains invalid engagement totals.");
+        }
+        await statements.engagement.run(
+          row.content_id, row.views, row.likes, row.shares,
+          text(row.updated_at, new Date().toISOString()),
+        );
+      }
+      for (const row of likes) {
+        if (typeof row.content_id !== "string" || !restoredContent.has(row.content_id)
+          || typeof row.visitor_id !== "string"
+          || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(row.visitor_id)) {
+          throw new Error("Backup contains an invalid article like.");
+        }
+        await statements.like.run(row.content_id, row.visitor_id);
+      }
+    }
     });
   } catch (error) {
     await Promise.all(written.map(async (path) => { const { unlink } = await import("node:fs/promises"); await unlink(path); }));
@@ -282,5 +279,7 @@ export async function POST(request: Request) {
     enquiries: enquiries.length,
     auditEvents: auditLog.length,
     analyticsEvents: analyticsEvents.length,
+    engagement: engagement.length,
+    likes: likes.length,
   } });
 }

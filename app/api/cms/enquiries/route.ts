@@ -10,7 +10,6 @@ const enquiryStatuses = ["new", "contacted", "scheduled", "closed"] as const;
 export async function GET(request: Request) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
   const database = getCmsDatabase();
-  await database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
   const url = new URL(request.url);
   const search = (url.searchParams.get("q") || "").trim().slice(0, 100);
   const requestedStatus = url.searchParams.get("status") || "all";
@@ -37,7 +36,7 @@ export async function GET(request: Request) {
     clauses.push("e.status != 'closed' AND e.follow_up_at IS NOT NULL AND e.follow_up_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now')");
   }
   if (search) {
-    clauses.push("(e.name LIKE ? OR e.email LIKE ? OR e.phone LIKE ? OR e.source LIKE ?)");
+    clauses.push("(LOWER(e.name) LIKE LOWER(?) OR LOWER(e.email) LIKE LOWER(?) OR LOWER(e.phone) LIKE LOWER(?) OR LOWER(e.source) LIKE LOWER(?))");
     const term = `%${search}%`;
     parameters.push(term, term, term, term);
   }

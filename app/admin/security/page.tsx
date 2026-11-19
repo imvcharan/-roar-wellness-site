@@ -21,6 +21,7 @@ export default function SecurityPage() {
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [setupSecret, setSetupSecret] = useState("");
   const [setupCode, setSetupCode] = useState("");
+  const [setupPassword, setSetupPassword] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [disablePassword, setDisablePassword] = useState("");
   const [disableCode, setDisableCode] = useState("");
@@ -71,7 +72,8 @@ export default function SecurityPage() {
     }
   };
 
-  const startMfa = async () => {
+  const startMfa = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setBusy(true);
     setError("");
     setNotice("");
@@ -79,10 +81,11 @@ export default function SecurityPage() {
     try {
       const result = await cmsRequest<{ data: { secret: string } }>("/api/cms/profile/mfa", {
         method: "POST",
-        body: JSON.stringify({ action: "start" }),
+        body: JSON.stringify({ action: "start", password: setupPassword }),
       });
       setSetupSecret(result.data.secret);
       setSetupCode("");
+      setSetupPassword("");
       setRecoveryCodes([]);
       setNotice("Authenticator setup is ready. Verify a code to enable MFA.");
     } catch (startError) {
@@ -102,12 +105,13 @@ export default function SecurityPage() {
     try {
       const result = await cmsRequest<{ data: { recoveryCodes: string[] } }>("/api/cms/profile/mfa", {
         method: "POST",
-        body: JSON.stringify({ action: "verify", code: setupCode }),
+        body: JSON.stringify({ action: "verify", password: setupPassword, code: setupCode }),
       });
       setRecoveryCodes(result.data.recoveryCodes);
       setMfaEnabled(true);
       setSetupSecret("");
       setSetupCode("");
+      setSetupPassword("");
       setNotice("Multi-factor authentication is enabled. Save your recovery codes now.");
     } catch (verifyError) {
       setError(verifyError instanceof Error ? verifyError.message : "Unable to verify authenticator code.");
@@ -167,11 +171,21 @@ export default function SecurityPage() {
             <h2 className="font-semibold text-cms-text">Authenticator app</h2>
             <p className="mt-1 text-sm text-cms-muted">{mfaEnabled ? "An authenticator app is required at sign-in." : "Add a time-based one-time password for stronger sign-in protection."}</p>
           </div>
-          {!mfaEnabled && !setupSecret && <button type="button" disabled={busy} onClick={() => void startMfa()} className="rounded-lg bg-cms-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60">Set up MFA</button>}
+          {!mfaEnabled && !setupSecret && <form onSubmit={(event) => void startMfa(event)} className="flex flex-wrap items-end gap-3">
+            <label className="text-sm font-medium text-cms-text">
+              Current password
+              <input required type="password" autoComplete="current-password" value={setupPassword} onChange={(event) => setSetupPassword(event.target.value)} className="mt-1.5 block rounded-lg border border-cms-border px-3 py-2" />
+            </label>
+            <button type="submit" disabled={busy} className="rounded-lg bg-cms-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60">Set up MFA</button>
+          </form>}
         </div>
         {setupSecret && <form onSubmit={(event) => void verifyMfa(event)} className="mt-5 space-y-4 border-t border-cms-border pt-4">
-          <p className="text-sm text-cms-muted">In your authenticator app, add an account manually with this key. Setup expires in 10 minutes.</p>
+          <p className="text-sm text-cms-muted">In your authenticator app, add an account manually with this key. Setup expires in 10 minutes. Re-enter your current password to enable it.</p>
           <code className="block break-all rounded-lg bg-cms-background p-3 font-mono text-sm font-semibold tracking-wider text-cms-text">{setupSecret}</code>
+          <label className="block max-w-sm text-sm font-medium text-cms-text">
+            Current password
+            <input required type="password" autoComplete="current-password" value={setupPassword} onChange={(event) => setSetupPassword(event.target.value)} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" />
+          </label>
           <label className="block max-w-sm text-sm font-medium text-cms-text">
             Enter the 6-digit code from the app
             <input required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={setupCode} onChange={(event) => setSetupCode(event.target.value)} className="mt-1.5 w-full rounded-lg border border-cms-border px-3 py-2" />

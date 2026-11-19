@@ -175,6 +175,12 @@ export function getCmsDatabase(): CmsDatabase {
   return globalCms.roarCmsDatabase;
 }
 
+export async function closeCmsDatabase(): Promise<void> {
+  await globalCms.roarCmsPool?.end();
+  globalCms.roarCmsPool = undefined;
+  globalCms.roarCmsDatabase = undefined;
+}
+
 export function isCmsUniqueViolation(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error
     && error.code === "23505";
@@ -247,22 +253,8 @@ export async function listContent(options: {
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const database = getCmsDatabase();
-  if (!options.includeUnpublished) await publishDueContent(database);
   return await database.prepare(`${contentSelect} ${where} ORDER BY c.updated_at DESC, lower(c.title)`)
     .all<CmsContent>(...values);
-}
-
-async function publishDueContent(database: CmsDatabase): Promise<void> {
-  await Promise.all([
-    await database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run(),
-    await database.prepare("DELETE FROM cms_analytics_events WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run(),
-    await database.prepare("DELETE FROM cms_audit_log WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run(),
-    await database.prepare(`
-      UPDATE content SET status = 'published', published_at = COALESCE(published_at, scheduled_publish_at),
-        scheduled_publish_at = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE status = 'draft' AND scheduled_publish_at IS NOT NULL AND scheduled_publish_at <= ?
-    `).run(new Date().toISOString()),
-  ]);
 }
 
 export async function getCmsSettings(): Promise<Record<string, string>> {
@@ -292,7 +284,6 @@ export async function findContentById(id: string): Promise<CmsContent | undefine
 }
 
 export async function findPublishedContentRedirect(sourcePath: string): Promise<CmsContent | undefined> {
-  await listContent();
   return await getCmsDatabase().prepare(`${contentSelect}
     JOIN cms_url_redirects redirect ON redirect.content_id = c.id
     WHERE redirect.source_path = ? AND c.status = 'published'`)

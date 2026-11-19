@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/appointment-validation.test.ts tests/cms-validation.test.ts tests/cms-date.test.ts tests/cms-routes.test.ts tests/cms-backup-crypto.test.ts tests/cms-content-create.test.ts tests/cms-media-health.test.ts tests/cms-notifications.test.ts",
+    "test": "tsx --test tests/appointment-validation.test.ts tests/cms-validation.test.ts tests/cms-date.test.ts tests/cms-routes.test.ts tests/cms-backup-crypto.test.ts tests/cms-content-create.test.ts tests/cms-engagement.test.ts tests/cms-media-health.test.ts tests/cms-notifications.test.ts tests/cms-settings.test.ts tests/cms-client-ip.test.ts tests/cms-totp-encryption.test.ts tests/cms-postgres.test.ts",
     "cms:backup": "tsx scripts/cms-backup.ts",
     "cms:backup:check": "tsx scripts/check-cms-backup.ts",
     "cms:backup:decrypt": "tsx scripts/decrypt-cms-backup.ts",
@@ -17,6 +17,9 @@
     "cms:assets:postgres": "tsx scripts/import-media-assets-to-postgres.ts",
     "cms:notifications:process": "tsx scripts/process-enquiry-notifications.ts",
     "cms:notifications:retry-exhausted": "tsx scripts/retry-exhausted-enquiry-notifications.ts",
+    "cms:publish-due": "tsx scripts/publish-due-content.ts",
+    "cms:maintenance": "tsx scripts/cms-maintenance.ts",
+    "cms:totp:rotate-key": "tsx scripts/rotate-cms-totp-key.ts",
     "cms:sync-wordpress": "node scripts/sync-wordpress-content.mjs"
   },
   "dependencies": {

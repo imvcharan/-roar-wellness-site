@@ -4,7 +4,12 @@ import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsDatabase } from "@/lib/cms-db";
 import { getCmsJobRuns } from "@/lib/cms-job-status";
 import { isCmsMediaStorageAvailable } from "@/lib/cms-media-health";
-import { getEnquiryNotificationTransport, retryExhaustedEnquiryNotifications } from "@/lib/cms-notifications";
+import { consumeCmsRateLimit } from "@/lib/cms-rate-limit";
+import {
+  getEnquiryNotificationTransport,
+  retryExhaustedEnquiryNotifications,
+  verifyEnquiryNotificationTransport,
+} from "@/lib/cms-notifications";
 
 export const runtime = "nodejs";
 
@@ -62,8 +67,34 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Choose an operations action." }, { status: 400 });
   }
-  if (!body || typeof body !== "object" || Array.isArray(body)
-    || (body as Record<string, unknown>).action !== "retry-exhausted-notifications") {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Choose a valid operations action." }, { status: 400 });
+  }
+  const data = body as Record<string, unknown>;
+  if (data.action === "test-smtp-connection") {
+    if (!getEnquiryNotificationTransport()) {
+      return NextResponse.json({ error: "Configure SMTP settings before testing the connection." }, { status: 503 });
+    }
+    const userId = await getCmsUserId();
+    if (!userId) return NextResponse.json({ error: "Sign in to test SMTP settings." }, { status: 401 });
+    const rateLimit = await consumeCmsRateLimit("smtp-connection-test", userId, 3, 15 * 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many SMTP connection tests. Please wait before trying again." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
+    }
+    try {
+      await verifyEnquiryNotificationTransport();
+    } catch (error) {
+      console.error("SMTP connection verification failed.", error);
+      await recordCmsAudit(userId, request, "notification.smtp_verify_failed", "notification", null, "SMTP connection verification failed.");
+      return NextResponse.json({ error: "SMTP connection verification failed. Check the server logs and mail settings." }, { status: 502 });
+    }
+    await recordCmsAudit(userId, request, "notification.smtp_verify", "notification", null, "Verified the SMTP connection.");
+    return NextResponse.json({ data: { verified: true } }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+  }
+  if (data.action !== "retry-exhausted-notifications") {
     return NextResponse.json({ error: "Choose a valid operations action." }, { status: 400 });
   }
   if (!getEnquiryNotificationTransport()) {

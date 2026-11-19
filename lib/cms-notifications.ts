@@ -5,6 +5,7 @@ import { buildEnquiryNotification } from "@/lib/cms-notification-message";
 
 export interface NotificationTransport {
   sendMail(message: { from: string; to: string; subject: string; text: string }): Promise<unknown>;
+  verify(): Promise<boolean>;
 }
 
 let cachedTransport: Transporter | undefined;
@@ -32,6 +33,12 @@ export function getEnquiryNotificationTransport(): NotificationTransport | null 
     socketTimeout: 15_000,
   });
   return cachedTransport;
+}
+
+export async function verifyEnquiryNotificationTransport(): Promise<void> {
+  const transport = getEnquiryNotificationTransport();
+  if (!transport) throw new Error("SMTP notification settings are incomplete.");
+  if (!await transport.verify()) throw new Error("SMTP connection verification failed.");
 }
 
 export async function enqueueEnquiryNotification(enquiryId: string): Promise<boolean> {

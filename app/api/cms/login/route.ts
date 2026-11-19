@@ -59,7 +59,6 @@ export async function POST(request: Request) {
   if (user.totp_secret_enc) {
     if (typeof challengeToken !== "string") {
       const challenge = randomBytes(32).toString("base64url");
-      await database.prepare("DELETE FROM cms_login_challenges WHERE expires_at <= ?").run(Math.floor(Date.now() / 1000));
       await database.prepare("DELETE FROM cms_login_challenges WHERE user_id = ?").run(user.id);
       await database.prepare("INSERT INTO cms_login_challenges (challenge_hash, user_id, expires_at) VALUES (?, ?, ?)")
         .run(createHash("sha256").update(challenge).digest("hex"), user.id, Math.floor(Date.now() / 1000) + 5 * 60);

@@ -16,7 +16,6 @@ export async function consumeCmsRateLimit(
   const key = getCmsRateLimitKey(bucket, identifier);
   const now = Math.floor(Date.now() / 1000);
   const database = getCmsDatabase();
-  await database.prepare("DELETE FROM cms_rate_limits WHERE window_started_at <= ?").run(now - 86400);
   const result = await database.prepare(`
     INSERT INTO cms_rate_limits (key, hits, window_started_at) VALUES (?, 1, ?)
     ON CONFLICT(key) DO UPDATE SET

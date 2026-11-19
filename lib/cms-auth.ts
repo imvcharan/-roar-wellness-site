@@ -82,7 +82,6 @@ export async function createCmsSession(userId: string): Promise<{ token: string;
   const expiresAt = String(Math.floor(Date.now() / 1000) + maxAge);
   const sessionId = randomUUID();
   const database = getCmsDatabase();
-  await database.prepare("DELETE FROM cms_sessions WHERE expires_at <= ?").run(Math.floor(Date.now() / 1000));
   await database.prepare("INSERT INTO cms_sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)")
     .run(sessionId, userId, Number(expiresAt));
   return { token: `${sessionId}.${expiresAt}.${signature(sessionId, expiresAt, secret)}`, maxAge };

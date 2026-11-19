@@ -18,6 +18,7 @@ const editableKeys = new Set([
 ]);
 
 export async function GET() {
+  if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
   return NextResponse.json({ data: await getCmsSettings() }, {
     headers: { "Cache-Control": "no-store, max-age=0" },
   });

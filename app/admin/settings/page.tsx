@@ -188,7 +188,7 @@ export default function SettingsPage() {
     }
     const isBackup = typeof payload === "object" && payload !== null && "format" in payload && payload.format === "roar-cms-backup";
     const confirmMessage = isBackup
-      ? "Restore this full backup? It replaces current CMS content, enquiries, analytics events, staff activity, settings, and media records. CMS accounts and active sessions are excluded. Export a backup first."
+      ? "Restore this CMS backup? It replaces current CMS content, engagement data, enquiries, analytics events, staff activity, settings, and media records. Pending email alerts are cleared; CMS accounts, MFA, and active sessions are excluded. Export a backup first."
       : "Import this legacy CMS export? Legacy content imports are merged. Export a backup first.";
     if (!window.confirm(confirmMessage)) return;
     let completionMessage = "";
@@ -350,7 +350,7 @@ export default function SettingsPage() {
         open={activePanel === "backup"}
         onToggle={() => setActivePanel(activePanel === "backup" ? null : "backup")}
       >
-        <p className="mt-1 text-sm text-cms-muted">Full backups include content, revision history, media, enquiry contact details, staff activity, and anonymous analytics events. CMS accounts and active sessions are excluded. Import WordPress or legacy CMS JSON exports containing `pages`, `posts`, `services`, `content`, or `items` arrays.</p>
+        <p className="mt-1 text-sm text-cms-muted">CMS backups include content, revision history, media, engagement totals, enquiry contact details, staff activity, and anonymous analytics events. CMS accounts, MFA secrets, active sessions, rate limits, and pending email alerts are excluded; use a PostgreSQL provider backup for complete system recovery. Import WordPress or legacy CMS JSON exports containing `pages`, `posts`, `services`, `content`, or `items` arrays.</p>
         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Backups are downloaded manually; they are not encrypted or stored off-site automatically. Protect each file in encrypted, access-controlled storage and keep the CMS secrets separately.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button type="button" disabled={Boolean(pendingAction)} onClick={() => void downloadBackup()}>{pendingAction ? "Working…" : "Download full backup"}</Button>

@@ -4,7 +4,8 @@ import { consumeAppointmentCaptcha } from "@/lib/appointment-captcha";
 import { parseAppointmentRequest } from "@/lib/appointment-validation";
 import { getCmsDatabase, withCmsTransaction } from "@/lib/cms-db";
 import { consumeCmsRateLimit } from "@/lib/cms-rate-limit";
-import { enqueueEnquiryNotification, processPendingEnquiryNotifications } from "@/lib/cms-notifications";
+import { getCmsClientIp } from "@/lib/cms-client-ip";
+import { enqueueEnquiryNotification } from "@/lib/cms-notifications";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,16 @@ const noStore = { "Cache-Control": "no-store, max-age=0" };
 export async function POST(request: Request) {
   if (Number(request.headers.get("content-length") || 0) > 8192) {
     return NextResponse.json({ error: "The request is too large." }, { status: 413, headers: noStore });
+  }
+  const clientIp = getCmsClientIp(request);
+  if (clientIp) {
+    const ipRateLimit = await consumeCmsRateLimit("appointment-ip", clientIp, 5, 15 * 60);
+    if (!ipRateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests were submitted from this connection. Please wait before trying again." },
+        { status: 429, headers: { ...noStore, "Retry-After": String(ipRateLimit.retryAfterSeconds) } },
+      );
+    }
   }
   let body: unknown;
   try {
@@ -39,20 +50,10 @@ export async function POST(request: Request) {
   const id = randomUUID();
   let notificationConfigured = false;
   await withCmsTransaction(async () => {
-    await database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
     await database.prepare("INSERT INTO cms_enquiries (id, name, email, phone, source) VALUES (?, ?, ?, ?, ?)")
       .run(id, data.name, data.email, data.phone, data.source);
     notificationConfigured = await enqueueEnquiryNotification(id);
   });
-  if (notificationConfigured) {
-    try {
-      await processPendingEnquiryNotifications(1);
-    } catch (error) {
-      console.error("Enquiry was saved, but notification delivery could not start; it remains queued for retry.", error);
-    }
-  } else {
-    console.warn("Enquiry was saved and its notification queued, but SMTP is not configured; administrators must configure SMTP and run the notification processor.");
-  }
   return NextResponse.json({
     data: { received: true, emailAlertQueued: true, emailAlertConfigured: notificationConfigured },
   }, { status: 201, headers: noStore });

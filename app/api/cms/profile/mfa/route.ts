@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsUserId, verifyPassword } from "@/lib/cms-auth";
 import { getCmsDatabase, withCmsTransaction } from "@/lib/cms-db";
+import { consumeCmsRateLimit } from "@/lib/cms-rate-limit";
 import {
   consumeTotpRecoveryCode,
   createTotpRecoveryCodes,
@@ -48,6 +49,16 @@ export async function POST(request: Request) {
 
   if (data.action === "start") {
     if (user.totp_secret_enc) return NextResponse.json({ error: "Authenticator app verification is already enabled." }, { status: 409 });
+    if (typeof data.password !== "string" || !verifyPassword(data.password, user.password_hash)) {
+      return NextResponse.json({ error: "Enter your current password to start authenticator setup." }, { status: 401 });
+    }
+    const rateLimit = await consumeCmsRateLimit("mfa-enrollment", userId, 10, 15 * 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many authenticator setup attempts. Please wait before trying again." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
+    }
     const secret = createTotpSecret();
     await database.prepare(`
       UPDATE cms_users SET totp_pending_secret_enc = ?, totp_pending_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
@@ -61,6 +72,16 @@ export async function POST(request: Request) {
   if (data.action === "verify") {
     if (user.totp_secret_enc || !user.totp_pending_secret_enc || !user.totp_pending_at) {
       return NextResponse.json({ error: "Start authenticator setup before verifying its code." }, { status: 409 });
+    }
+    if (typeof data.password !== "string" || !verifyPassword(data.password, user.password_hash)) {
+      return NextResponse.json({ error: "Enter your current password to enable authenticator verification." }, { status: 401 });
+    }
+    const rateLimit = await consumeCmsRateLimit("mfa-enrollment", userId, 10, 15 * 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many authenticator setup attempts. Please wait before trying again." },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+      );
     }
     const pendingAt = Date.parse(user.totp_pending_at);
     if (!Number.isFinite(pendingAt) || Date.now() - pendingAt > 10 * 60 * 1000) {
@@ -92,16 +113,17 @@ export async function POST(request: Request) {
     const secret = decryptTotpSecret(user.totp_secret_enc);
     const counter = matchTotpCounter(secret, data.code);
     const validTotp = counter !== null && Number(counter) > user.totp_last_counter;
-    const validCode = validTotp || await consumeTotpRecoveryCode(userId, data.code);
+    let validCode = validTotp;
+    await withCmsTransaction(async () => {
+      if (!validTotp) validCode = await consumeTotpRecoveryCode(userId, data.code);
+      if (!validCode) return;
+      await database.prepare(`
+        UPDATE cms_users SET totp_secret_enc = NULL, totp_pending_secret_enc = NULL,
+          totp_pending_at = NULL, totp_last_counter = -1 WHERE id = ?
+      `).run(userId);
+      await database.prepare("DELETE FROM cms_totp_recovery_codes WHERE user_id = ?").run(userId);
+    });
     if (!validCode) return NextResponse.json({ error: "Enter a valid authenticator or unused recovery code." }, { status: 400 });
-    await database.prepare(`
-      UPDATE cms_users SET totp_secret_enc = NULL, totp_pending_secret_enc = NULL,
-        totp_pending_at = NULL, totp_last_counter = -1 WHERE id = ?
-    `).run(userId);
-    if (validTotp && counter !== null) {
-      await database.prepare("UPDATE cms_users SET totp_last_counter = ? WHERE id = ?").run(Number(counter), userId);
-    }
-    await database.prepare("DELETE FROM cms_totp_recovery_codes WHERE user_id = ?").run(userId);
     await recordCmsAudit(userId, request, "auth.mfa_disable", "account", userId, "Disabled authenticator-app multi-factor authentication.");
     return NextResponse.json({ data: { enabled: false } });
   }

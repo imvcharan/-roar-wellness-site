@@ -13,7 +13,6 @@ function isDate(value: string | null): value is string {
 export async function GET(request: Request) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
   const database = getCmsDatabase();
-  await database.prepare("DELETE FROM cms_audit_log WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
   const url = new URL(request.url);
   const search = (url.searchParams.get("q") || "").trim().slice(0, 100);
   const action = (url.searchParams.get("action") || "").trim().slice(0, 80);
@@ -27,7 +26,7 @@ export async function GET(request: Request) {
   const parameters: string[] = [];
   if (search) {
     const term = `%${search}%`;
-    clauses.push("(actor_name LIKE ? OR action LIKE ? OR resource_type LIKE ? OR summary LIKE ?)");
+    clauses.push("(LOWER(actor_name) LIKE LOWER(?) OR LOWER(action) LIKE LOWER(?) OR LOWER(resource_type) LIKE LOWER(?) OR LOWER(summary) LIKE LOWER(?))");
     parameters.push(term, term, term, term);
   }
   if (action) { clauses.push("action = ?"); parameters.push(action); }

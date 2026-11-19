@@ -1207,13 +1207,10 @@
         form.reset();
         challenge = null;
         trackAnalytics("appointment_submit");
-        const emailAlertConfigured = Boolean(result.data && result.data.emailAlertConfigured);
-        status.classList.add(emailAlertConfigured ? "form-status-success" : "form-status-warning");
-        status.textContent = emailAlertConfigured
-          ? "Your request has been received. Taking you to the confirmation page…"
-          : "Your request was saved and queued, but email alerts are not configured yet. Please call us if you need a prompt response.";
+        status.classList.add("form-status-success");
+        status.textContent = "Your request has been received. Taking you to the confirmation page…";
         window.setTimeout(() => {
-          window.location.assign(emailAlertConfigured ? "/thank-you" : "/thank-you?email-alert=unavailable");
+          window.location.assign("/thank-you");
         }, 700);
       } catch (error) {
         status.textContent = "We couldn’t connect to the request service. Please email help@roarwellness.org or call +91 93199 77207.";

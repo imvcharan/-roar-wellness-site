@@ -29,6 +29,8 @@ interface CmsOperations {
   jobs: { job_key: string; status: "running" | "succeeded" | "failed"; started_at: string; finished_at: string | null; summary: string | null }[];
 }
 
+type CmsRole = "admin" | "editor" | "viewer";
+
 function formatDate(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -44,9 +46,10 @@ export default function AdminOverviewPage() {
   const [overdueFollowUps, setOverdueFollowUps] = useState(0);
   const [unassignedEnquiries, setUnassignedEnquiries] = useState(0);
   const [activities, setActivities] = useState<CmsOverviewActivity[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<CmsRole>("viewer");
   const [operations, setOperations] = useState<CmsOperations | null>(null);
   const [retryingNotifications, setRetryingNotifications] = useState(false);
+  const [testingSmtp, setTestingSmtp] = useState(false);
   const [operationsNotice, setOperationsNotice] = useState("");
   const [operationsError, setOperationsError] = useState("");
 
@@ -56,12 +59,12 @@ export default function AdminOverviewPage() {
     try {
       const [contentResult, sessionResult] = await Promise.all([
         cmsRequest<{ data: CmsEntry[] }>("/api/cms/content?all=1"),
-        cmsRequest<{ data: { role: string } }>("/api/cms/session"),
+        cmsRequest<{ data: { role: CmsRole } }>("/api/cms/session"),
       ]);
       setEntries(contentResult.data);
-      const admin = sessionResult.data.role === "admin";
-      setIsAdmin(admin);
-      if (admin) {
+      const currentRole = sessionResult.data.role;
+      setRole(currentRole);
+      if (currentRole === "admin") {
         const [enquiriesResult, activityResult, operationsResult] = await Promise.all([
           cmsRequest<{ summary: { new: number; overdue: number; unassigned: number } }>("/api/cms/enquiries?summary=1"),
           cmsRequest<{ data: CmsOverviewActivity[] }>("/api/cms/activity?limit=5"),
@@ -101,6 +104,23 @@ export default function AdminOverviewPage() {
     }
   };
 
+  const testSmtpConnection = async () => {
+    setTestingSmtp(true);
+    setOperationsNotice("");
+    setOperationsError("");
+    try {
+      await cmsRequest("/api/cms/operations", {
+        method: "POST",
+        body: JSON.stringify({ action: "test-smtp-connection" }),
+      });
+      setOperationsNotice("SMTP connection and authentication were verified. This test did not send an email.");
+    } catch (testError) {
+      setOperationsError(testError instanceof Error ? testError.message : "SMTP connection verification failed.");
+    } finally {
+      setTestingSmtp(false);
+    }
+  };
+
   const published = entries.filter((entry) => entry.status === "published").length;
   const drafts = entries.filter((entry) => entry.status === "draft" && !entry.scheduled_publish_at).length;
   const scheduled = entries.filter((entry) => entry.scheduled_publish_at).length;
@@ -128,9 +148,9 @@ export default function AdminOverviewPage() {
           <h1 className="mt-1 text-3xl font-bold text-cms-text">Overview</h1>
           <p className="mt-2 text-cms-muted">A quick view of your website content and what needs attention.</p>
         </div>
-        <Link href="/admin/posts" className="inline-flex items-center justify-center gap-2 rounded-lg bg-cms-primary px-4 py-2 text-base font-medium text-white transition-colors hover:bg-cms-primary-hover">
+        {role !== "viewer" && <Link href="/admin/posts" className="inline-flex items-center justify-center gap-2 rounded-lg bg-cms-primary px-4 py-2 text-base font-medium text-white transition-colors hover:bg-cms-primary-hover">
           <Plus size={17} /> Create content
-        </Link>
+        </Link>}
       </header>
 
       {error && (
@@ -172,7 +192,7 @@ export default function AdminOverviewPage() {
             : recentEntries.length ? <ul className="divide-y divide-cms-border">
               {recentEntries.map((entry) => (
                 <li key={entry.id}>
-                  <Link href={`/admin/posts?edit=${encodeURIComponent(entry.id)}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-cms-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-cms-primary">
+                  <Link href={role === "viewer" ? "/admin/posts" : `/admin/posts?edit=${encodeURIComponent(entry.id)}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-cms-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-cms-primary">
                   <div className="min-w-0">
                     <p className="truncate font-medium text-cms-text">{entry.title}</p>
                     <p className="mt-1 text-xs text-cms-muted">{entry.category_name} · Updated {formatDate(entry.updated_at)}</p>
@@ -194,16 +214,23 @@ export default function AdminOverviewPage() {
           <h2 className="font-semibold text-cms-text">Quick links</h2>
           <p className="mt-1 text-sm text-cms-muted">Jump to a section of your workspace.</p>
           <div className="mt-4 space-y-2">
-            {[
-              { href: "/admin/posts", label: "All content" },
-              { href: "/admin/categories", label: "Categories" },
-              { href: "/admin/pages", label: "Pages" },
-              { href: "/admin/services", label: "Services" },
-              { href: "/admin/blog", label: "Blog" },
-              { href: "/admin/testimonials", label: "Testimonials" },
-              { href: "/admin/homepage", label: "Homepage sections" },
-              { href: "/admin/media", label: "Media library" },
-            ].map((item) => (
+            {([
+              { href: "/admin/posts", label: "All content", roles: ["admin", "editor", "viewer"] },
+              { href: "/admin/categories", label: "Categories", roles: ["admin", "editor", "viewer"] },
+              { href: "/admin/pages", label: "Pages", roles: ["admin", "editor", "viewer"] },
+              { href: "/admin/services", label: "Services", roles: ["admin", "editor", "viewer"] },
+              { href: "/admin/blog", label: "Blog", roles: ["admin", "editor", "viewer"] },
+              { href: "/admin/testimonials", label: "Testimonials", roles: ["admin", "editor"] },
+              { href: "/admin/team", label: "Team", roles: ["admin", "editor"] },
+              { href: "/admin/homepage", label: "Homepage sections", roles: ["admin", "editor"] },
+              { href: "/admin/gallery", label: "Gallery", roles: ["admin", "editor"] },
+              { href: "/admin/media", label: "Media library", roles: ["admin", "editor"] },
+              { href: "/admin/enquiries", label: "Enquiries", roles: ["admin"] },
+              { href: "/admin/activity", label: "Activity log", roles: ["admin"] },
+              { href: "/admin/analytics", label: "Analytics", roles: ["admin"] },
+              { href: "/admin/settings", label: "Settings", roles: ["admin"] },
+            ] satisfies { href: string; label: string; roles: readonly CmsRole[] }[])
+              .filter((item) => item.roles.includes(role)).map((item) => (
               <Link key={item.href} href={item.href} className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-cms-text transition-colors hover:bg-cms-background">
                 {item.label}<ArrowRight size={15} className="text-cms-muted" />
               </Link>
@@ -220,14 +247,14 @@ export default function AdminOverviewPage() {
           </div>
           {nextScheduled.length ? <ul className="divide-y divide-cms-border">
             {nextScheduled.map((entry) => <li key={entry.id}>
-              <Link href={`/admin/posts?edit=${encodeURIComponent(entry.id)}`} className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-cms-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-cms-primary">
+              <Link href={role === "viewer" ? "/admin/posts" : `/admin/posts?edit=${encodeURIComponent(entry.id)}`} className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-cms-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-cms-primary">
               <div className="min-w-0"><p className="truncate text-sm font-medium text-cms-text">{entry.title}</p><p className="mt-1 text-xs text-cms-muted">{entry.category_name} · {formatDate(entry.scheduled_publish_at!)}</p></div>
               <span className="rounded-full bg-[#ede9dd] px-2.5 py-1 text-xs font-medium text-[#695f53]">Scheduled</span>
               </Link>
             </li>)}
           </ul> : <p className="p-5 text-sm text-cms-muted">No content is scheduled for publication.</p>}
         </section>
-        {isAdmin && <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
+        {role === "admin" && <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
           <div className="flex items-center justify-between border-b border-cms-border px-5 py-4">
             <div>
               <h2 className="font-semibold text-cms-text">Enquiry follow-up</h2>
@@ -249,7 +276,7 @@ export default function AdminOverviewPage() {
         </section>}
       </div>
 
-      {isAdmin && operations && <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
+      {role === "admin" && operations && <section className="rounded-xl border border-cms-border bg-cms-surface shadow-sm">
         <div className="flex items-center gap-3 border-b border-cms-border px-5 py-4">
           <Server size={18} className="text-cms-primary" />
           <div>
@@ -267,9 +294,16 @@ export default function AdminOverviewPage() {
           <article>
             <h3 className="text-sm font-semibold text-cms-text">Enquiry alerts</h3>
             <p className="mt-1 text-sm text-cms-muted">
-              {!operations.notifications.configured && "SMTP is not configured · "}
+              {operations.notifications.configured
+                ? "SMTP settings are present; delivery is not verified. "
+                : "SMTP is not configured. "}
               {operations.notifications.pending} queued · {operations.notifications.due} due now · {operations.notifications.exhausted} exhausted
             </p>
+            <button type="button" disabled={testingSmtp || !operations.notifications.configured}
+              onClick={() => void testSmtpConnection()}
+              className="mt-2 rounded-md border border-cms-border px-3 py-1.5 text-xs font-medium text-cms-text disabled:opacity-50">
+              {testingSmtp ? "Testing SMTP…" : "Test SMTP connection"}
+            </button>
             {operations.notifications.exhausted > 0 && <>
               <p className="mt-1 text-sm font-medium text-red-700">Investigate failed deliveries and retry after resolving SMTP.</p>
               <button type="button" disabled={retryingNotifications || !operations.notifications.configured} onClick={() => void retryNotifications()} className="mt-2 rounded-md border border-cms-border px-3 py-1.5 text-xs font-medium text-cms-text disabled:opacity-50">
@@ -294,6 +328,8 @@ export default function AdminOverviewPage() {
               { key: "backup", label: "Daily backup" },
               { key: "backup-check", label: "Backup verification" },
               { key: "notifications", label: "Enquiry alerts" },
+              { key: "publishing", label: "Scheduled publishing" },
+              { key: "maintenance", label: "Data maintenance" },
             ].map((job) => {
               const run = operations.jobs.find((item) => item.job_key === job.key);
               return <article key={job.key} className="rounded-lg bg-cms-background p-3">

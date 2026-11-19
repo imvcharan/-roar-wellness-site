@@ -1,6 +1,6 @@
 import { getCmsDatabase } from "@/lib/cms-db";
 
-export type CmsJobName = "backup" | "backup-check" | "notifications";
+export type CmsJobName = "backup" | "backup-check" | "notifications" | "publishing" | "maintenance";
 export type CmsJobStatus = "running" | "succeeded" | "failed";
 
 export interface CmsJobRun {
@@ -11,17 +11,26 @@ export interface CmsJobRun {
   summary: string | null;
 }
 
+let jobTableSetup: Promise<void> | undefined;
+
 async function ensureCmsJobRunsTable() {
   const database = getCmsDatabase();
-  await database.exec(`
-    CREATE TABLE IF NOT EXISTS cms_job_runs (
-      job_key TEXT PRIMARY KEY CHECK (job_key IN ('backup', 'backup-check', 'notifications')),
-      status TEXT NOT NULL CHECK (status IN ('running', 'succeeded', 'failed')),
-      started_at TEXT NOT NULL,
-      finished_at TEXT,
-      summary TEXT
-    )
-  `);
+  jobTableSetup ??= (async () => {
+    await database.exec(`
+      CREATE TABLE IF NOT EXISTS cms_job_runs (
+        job_key TEXT PRIMARY KEY,
+        status TEXT NOT NULL CHECK (status IN ('running', 'succeeded', 'failed')),
+        started_at TEXT NOT NULL,
+        finished_at TEXT,
+        summary TEXT
+      )
+    `);
+    await database.exec("ALTER TABLE cms_job_runs DROP CONSTRAINT IF EXISTS cms_job_runs_job_key_check");
+  })().catch((error: unknown) => {
+    jobTableSetup = undefined;
+    throw error;
+  });
+  await jobTableSetup;
   return database;
 }
 
