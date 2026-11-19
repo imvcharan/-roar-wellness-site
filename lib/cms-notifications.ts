@@ -15,8 +15,8 @@ export function getEnquiryNotificationTransport(): NotificationTransport | null 
   const user = process.env.SMTP_USER?.trim();
   const pass = process.env.SMTP_PASSWORD;
   const from = process.env.ENQUIRY_ALERT_FROM?.trim();
-  const to = process.env.ENQUIRY_ALERT_TO?.trim();
-  if (!host || !Number.isInteger(port) || port < 1 || port > 65535 || !user || !pass || !from || !to) return null;
+  const to = process.env.ENQUIRY_ALERT_TO?.trim() || "help@roarwellness.org";
+  if (!host || !Number.isInteger(port) || port < 1 || port > 65535 || !user || !pass || !from) return null;
 
   cachedTransport ??= nodemailer.createTransport({
     host,
@@ -70,7 +70,8 @@ export async function processPendingEnquiryNotifications(limit = 10): Promise<{ 
     try {
       const baseUrl = (process.env.CMS_PUBLIC_URL?.trim() || "https://www.roarwellness.org").replace(/\/+$/, "");
       await transport.sendMail(buildEnquiryNotification(
-        row.created_at, baseUrl, process.env.ENQUIRY_ALERT_FROM!.trim(), process.env.ENQUIRY_ALERT_TO!.trim(),
+        row.created_at, baseUrl, process.env.ENQUIRY_ALERT_FROM!.trim(),
+        process.env.ENQUIRY_ALERT_TO?.trim() || "help@roarwellness.org",
       ));
       await database.prepare(`UPDATE cms_notification_outbox
         SET sent_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), last_error = NULL

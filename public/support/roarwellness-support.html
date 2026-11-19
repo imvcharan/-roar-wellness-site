@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#a1806e">
+  <meta name="description" content="Private, compassionate emotional wellness guidance for individuals and families. Speak with Roar Wellness by phone or WhatsApp.">
+  <title>Emotional Wellness, With Care | Roar Wellness</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #51483f;
+      --muted: #786f66;
+      --brand: #a1806e;
+      --brand-deep: #51483f;
+      --sage: #dad3be;
+      --mint: #ede9dd;
+      --paper: #fffcf5;
+      --white: #fff;
+      --gold: #a1806e;
+      --line: rgba(81, 72, 63, .12);
+      --shadow: 0 24px 70px rgba(81, 72, 63, .12);
+      --serif: Georgia, "Times New Roman", serif;
+      --sans: "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; }
+    button, input, select { font: inherit; }
+    .wrap { width: min(1160px, calc(100% - 48px)); margin-inline: auto; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 18px;
+      color: #a1806e;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { width: 25px; height: 1px; background: var(--gold); content: ""; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -.035em; }
+    h1 { margin-bottom: 22px; font-size: clamp(46px, 6vw, 76px); line-height: .99; }
+    h2 { margin-bottom: 16px; font-size: clamp(35px, 4.3vw, 53px); line-height: 1.08; }
+    h3 { margin-bottom: 10px; font-size: 25px; line-height: 1.18; }
+    .lead { max-width: 570px; color: var(--muted); font-size: 18px; line-height: 1.75; }
+    .button {
+      display: inline-flex;
+      min-height: 52px;
+      align-items: center;
+      justify-content: center;
+      gap: 11px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 13px 22px;
+      background: var(--brand);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); background: var(--brand-deep); box-shadow: 0 12px 25px rgba(81, 72, 63, .18); }
+    .button-light { border-color: var(--line); background: rgba(255,255,255,.82); color: var(--brand); }
+    .button-light:hover { background: var(--white); }
+    .button-whatsapp { background: #18764f; }
+    .button-whatsapp:hover { background: #115c3c; }
+    .icon { width: 19px; height: 19px; flex: 0 0 auto; fill: currentColor; }
+    .topline { background: var(--brand-deep); color: rgba(255,255,255,.85); }
+    .topline-inner { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 16px; font-size: 12px; }
+    .topline-note { margin: 0; }
+    .topline-links { display: flex; align-items: center; gap: 22px; }
+    .topline a { display: inline-flex; align-items: center; gap: 7px; color: #fff; font-weight: 700; text-decoration: none; }
+    .topline a .icon { width: 14px; height: 14px; color: #dad3be; }
+    .topline a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .nav {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      border-bottom: 1px solid rgba(81,72,63,.08);
+      background: rgba(255,252,245,.94);
+      backdrop-filter: blur(16px);
+    }
+    .nav-inner { display: flex; min-height: 78px; align-items: center; justify-content: space-between; gap: 24px; }
+    .brand { display: inline-flex; align-items: center; color: var(--brand); text-decoration: none; }
+    .brand img { width: 125px; max-height: 58px; object-fit: contain; }
+    .nav-links { display: flex; align-items: center; gap: clamp(16px, 2.8vw, 34px); }
+    .nav-links > a:not(.button) { color: #51483f; font-size: 13px; font-weight: 650; text-decoration: none; }
+    .nav-links > a:not(.button):hover { color: #a1806e; }
+    .nav-call { display: none; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 76px 0 86px;
+      background:
+        radial-gradient(ellipse at 10% 12%, rgba(218,211,190,.83), transparent 34%),
+        linear-gradient(110deg, #fffcf5 0%, #fffcf5 48%, #ede9dd 100%);
+    }
+    .hero::after {
+      position: absolute;
+      right: -120px;
+      bottom: -240px;
+      width: 560px;
+      height: 560px;
+      border: 1px solid rgba(81,72,63,.1);
+      border-radius: 50%;
+      box-shadow: 0 0 0 45px rgba(81,72,63,.025), 0 0 0 90px rgba(81,72,63,.02);
+      content: "";
+      pointer-events: none;
+    }
+    .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(390px, .84fr); align-items: center; gap: clamp(40px, 7vw, 94px); }
+    .hero-copy { padding: 15px 0; }
+    .hero h1 span { color: #a1806e; font-style: italic; }
+    .hero-copy .lead { margin-bottom: 27px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .hero-assurance { display: flex; align-items: center; gap: 11px; margin: 25px 0 0; color: var(--muted); font-size: 13px; }
+    .assurance-dot { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: #ede9dd; color: var(--brand); }
+    .hero-card {
+      position: relative;
+      min-height: 510px;
+      overflow: hidden;
+      border-radius: 190px 190px 24px 24px;
+      background: #ede9dd;
+      box-shadow: var(--shadow);
+    }
+    .hero-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .hero-card::after { position: absolute; inset: 35% 0 0; background: linear-gradient(180deg, transparent, rgba(81,72,63,.76)); content: ""; }
+    .hero-caption { position: absolute; z-index: 1; right: 27px; bottom: 25px; left: 27px; color: var(--white); }
+    .hero-caption span { display: block; margin-bottom: 7px; color: #dad3be; font-size: 11px; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+    .hero-caption p { max-width: 350px; margin: 0; font-family: var(--serif); font-size: 26px; line-height: 1.2; }
+    .photo-badge {
+      position: absolute;
+      z-index: 2;
+      top: 46%;
+      left: 18px;
+      display: flex;
+      width: 124px;
+      height: 124px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,.65);
+      border-radius: 50%;
+      background: rgba(251,250,246,.92);
+      color: var(--brand);
+      text-align: center;
+      transform: rotate(-9deg);
+      box-shadow: 0 12px 35px rgba(81,72,63,.12);
+    }
+    .photo-badge span { max-width: 78px; font-family: var(--serif); font-size: 17px; line-height: 1.1; }
+    .contact-strip { position: relative; z-index: 3; margin-top: -1px; background: var(--brand); color: var(--white); }
+    .contact-strip-inner { display: grid; grid-template-columns: 1fr 1fr; }
+    .contact-option { display: flex; min-height: 96px; align-items: center; justify-content: center; gap: 16px; padding: 15px 22px; text-decoration: none; transition: background .2s ease; }
+    .contact-option + .contact-option { border-left: 1px solid rgba(255,255,255,.2); }
+    .contact-option:hover { background: rgba(255,255,255,.08); }
+    .contact-icon { display: grid; width: 45px; height: 45px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,255,255,.34); border-radius: 50%; color: #dad3be; }
+    .contact-meta { display: grid; line-height: 1.25; }
+    .contact-meta strong { color: #fff; font-size: clamp(17px, 2vw, 22px); letter-spacing: .02em; }
+
+    .section { padding: 104px 0; }
+    .section-head { max-width: 700px; margin: 0 auto 48px; text-align: center; }
+    .section-head .eyebrow { justify-content: center; }
+    .section-head > p:last-child { max-width: 610px; margin: 0 auto; color: var(--muted); }
+    .program-section { background: var(--white); }
+    .program-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .program-card {
+      position: relative;
+      min-height: 236px;
+      padding: 28px 24px;
+      border: 1px solid var(--line);
+      border-radius: 3px 3px 28px 3px;
+      background: linear-gradient(150deg, #fff, #fffdfa);
+      transition: transform .24s ease, box-shadow .24s ease;
+    }
+    .program-card:hover { transform: translateY(-5px); box-shadow: 0 16px 38px rgba(81,72,63,.09); }
+    .card-number { display: inline-grid; width: 38px; height: 38px; margin-bottom: 22px; place-items: center; border-radius: 50%; background: var(--mint); color: #a1806e; font-family: var(--serif); font-size: 16px; }
+    .program-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+    .program-card h3 { font-size: 23px; }
+
+    .trust-section { overflow: hidden; background: var(--mint); }
+    .trust-grid { display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: clamp(40px, 8vw, 100px); }
+    .trust-copy p:not(.eyebrow) { color: var(--muted); }
+    .trust-note { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--brand); font-size: 13px; font-weight: 700; }
+    .trust-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .trust-card { min-height: 190px; padding: 25px; border: 1px solid rgba(81,72,63,.1); border-radius: 20px 4px 20px 4px; background: rgba(255,255,255,.76); }
+    .trust-card:nth-child(even) { margin-top: 25px; }
+    .trust-card .mini-icon { display: grid; width: 43px; height: 43px; margin-bottom: 18px; place-items: center; border-radius: 50%; background: #ede9dd; color: var(--brand); }
+    .trust-card .mini-icon .icon { width: 20px; height: 20px; }
+    .trust-card h3 { font-size: 21px; }
+    .trust-card p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+
+    .services-section { background: var(--paper); }
+    .service-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+    .service-card { min-height: 260px; padding: 28px 24px; border-top: 2px solid #dad3be; background: var(--white); box-shadow: 0 8px 26px rgba(81,72,63,.045); }
+    .service-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .service-icon { display: grid; width: 50px; height: 50px; flex: 0 0 auto; place-items: center; border-radius: 16px 16px 16px 4px; background: var(--brand); color: #dad3be; }
+    .service-card h3 { margin: 0; font-size: 22px; }
+    .service-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+
+    .process-section { background: #ede9dd; }
+    .process-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .process-step { position: relative; padding: 0 25px; }
+    .process-step:first-child { padding-left: 0; }
+    .process-step:last-child { padding-right: 0; }
+    .process-step:not(:last-child)::after { position: absolute; top: 29px; right: -15px; width: 30px; border-top: 1px solid #a1806e; content: ""; }
+    .step-number { display: grid; width: 58px; height: 58px; margin-bottom: 22px; place-items: center; border: 1px solid #a1806e; border-radius: 50%; background: #fffcf5; color: var(--brand); font-family: var(--serif); font-size: 22px; }
+    .process-step h3 { font-size: 22px; }
+    .process-step p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+
+    .request-section { position: relative; overflow: hidden; background: var(--brand-deep); color: var(--white); }
+    .request-section::before, .request-section::after { position: absolute; width: 430px; height: 430px; border: 1px solid rgba(255,255,255,.08); border-radius: 50%; content: ""; pointer-events: none; }
+    .request-section::before { top: -250px; left: -150px; box-shadow: 0 0 0 42px rgba(255,255,255,.025), 0 0 0 84px rgba(255,255,255,.02); }
+    .request-section::after { right: -240px; bottom: -300px; }
+    .request-grid { position: relative; z-index: 1; display: grid; grid-template-columns: .82fr 1.18fr; align-items: start; gap: clamp(35px, 7vw, 90px); }
+    .request-copy .eyebrow { color: #dad3be; }
+    .request-copy h2 { max-width: 460px; }
+    .request-copy > p:not(.eyebrow) { color: rgba(255,255,255,.73); }
+    .request-contact-list { display: grid; gap: 10px; margin-top: 28px; }
+    .request-contact { display: flex; align-items: center; gap: 13px; color: rgba(255,255,255,.8); font-size: 14px; font-weight: 650; text-decoration: none; }
+    .request-contact:hover { color: #fff; }
+    .request-contact strong { color: #fff; }
+    .request-contact-icon { display: grid; width: 35px; height: 35px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,255,255,.25); border-radius: 50%; color: #dad3be; }
+    .request-contact-icon .icon { width: 16px; height: 16px; }
+    .request-card { padding: clamp(24px, 4vw, 40px); border: 1px solid rgba(255,255,255,.13); border-radius: 6px 28px 6px 6px; background: #fff; color: var(--ink); box-shadow: 0 24px 70px rgba(0,0,0,.2); }
+    .request-card-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .request-card-heading-icon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--mint); color: var(--brand); }
+    .request-card-heading-icon .icon { width: 18px; height: 18px; }
+    .request-card-heading h3 { margin: 0; font-size: clamp(20px, 6vw, 28px); line-height: 1.15; }
+    .request-card-intro { margin-bottom: 24px; color: var(--muted); font-size: 14px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .field { display: grid; gap: 7px; }
+    .field-wide { grid-column: 1 / -1; }
+    .field label { color: #51483f; font-size: 12px; font-weight: 700; }
+    .field input, .field select { width: 100%; min-height: 48px; border: 1px solid #e2ddd0; border-radius: 7px; outline: none; padding: 10px 12px; background: #fffdfa; color: var(--ink); }
+    .field input:focus, .field select:focus { border-color: #a1806e; box-shadow: 0 0 0 3px rgba(161,128,110,.14); }
+    .honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+    .captcha-row { display: grid; grid-template-columns: 1fr 48px; align-items: end; gap: 10px; margin-top: 15px; }
+    .captcha-field label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
+    .captcha-field label span:last-child { color: var(--brand); }
+    .captcha-refresh { width: 48px; height: 48px; border: 1px solid #e2ddd0; border-radius: 7px; background: #fffdfa; color: var(--brand); font-size: 26px; cursor: pointer; }
+    .captcha-refresh:hover { background: #dad3be; }
+    .consent { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0; color: #786f66; font-size: 12px; line-height: 1.5; }
+    .consent input { width: 17px; height: 17px; flex: 0 0 auto; margin: 1px 0 0; accent-color: var(--brand); }
+    .request-card .button { width: 100%; margin-top: 16px; cursor: pointer; }
+    .form-privacy { margin: 12px 0 0 !important; color: #786f66 !important; font-size: 11px !important; text-align: center; }
+    .form-status { min-height: 22px; margin: 10px 0 0 !important; color: #a1806e !important; font-size: 12px !important; text-align: center; }
+
+    .closing { padding: 70px 0; background: #ede9dd; text-align: center; }
+    .closing h2 { max-width: 780px; margin: 0 auto 17px; font-size: clamp(35px, 4vw, 48px); }
+    .closing > .wrap > p:not(.eyebrow) { max-width: 700px; margin: 0 auto 25px; color: var(--muted); }
+    .closing-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    footer { padding: 28px 0 88px; background: var(--brand-deep); color: rgba(255,255,255,.76); }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .footer-brand { color: #fff; font-family: var(--serif); font-size: 22px; }
+    .footer-copy { margin: 5px 0 0; color: rgba(255,255,255,.56); font-size: 11px; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 20px; }
+    .footer-links a { display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+    .footer-links .icon { width: 15px; height: 15px; color: #dad3be; }
+    .footer-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .disclaimer { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.14); color: rgba(255,255,255,.55); font-size: 11px; }
+    .mobile-contact { display: none; }
+    :focus-visible { outline: 3px solid #a1806e; outline-offset: 3px; }
+
+    @media (max-width: 980px) {
+      .hero-grid { grid-template-columns: 1fr .85fr; gap: 34px; }
+      .hero-card { min-height: 450px; }
+      .program-grid, .service-grid { grid-template-columns: repeat(2, 1fr); }
+      .trust-grid { gap: 45px; }
+      .request-grid { grid-template-columns: .8fr 1.2fr; gap: 35px; }
+    }
+    @media (max-width: 720px) {
+      html { scroll-padding-top: 96px; }
+      .wrap { --mobile-gutter: clamp(16px, 5vw, 24px); width: 100%; padding-inline: var(--mobile-gutter); }
+      .topline-inner { min-height: 38px; justify-content: center; }
+      .topline-note { display: none; }
+      .topline-links { width: 100%; justify-content: space-around; gap: 12px; }
+      .topline-links span { display: none; }
+      .topline-links a[href^="mailto:"] { display: none; }
+      .topline-links a { font-size: 11px; }
+      .topline-links .icon { width: 13px; height: 13px; }
+      .nav-inner { min-height: 88px; gap: 4px; }
+      .brand img { width: 170px; max-height: 82px; }
+      .nav-links { gap: 0; }
+      .nav-links > a:not(.button) { display: none; }
+      .nav-links .button { min-height: 38px; padding: 6px; font-size: 10px; }
+      .hero { padding: 50px 0 55px; }
+      .hero-grid { grid-template-columns: 1fr; gap: 35px; }
+      .hero-copy { padding: 0; }
+      h1 { font-size: clamp(48px, 13vw, 66px); }
+      .hero-copy .lead { font-size: 16px; }
+      .hero-card { width: min(100%, 430px); min-height: 430px; justify-self: center; border-radius: 160px 160px 18px 18px; }
+      .photo-badge { left: 13px; width: 105px; height: 105px; }
+      .photo-badge span { font-size: 15px; }
+      .contact-strip-inner { grid-template-columns: 1fr; }
+      .contact-option { min-height: 76px; justify-content: flex-start; padding-left: 0; }
+      .contact-option + .contact-option { border-top: 1px solid rgba(255,255,255,.2); border-left: 0; }
+      .contact-icon { width: 39px; height: 39px; }
+      .section { padding: 72px 0; }
+      .section-head { margin-bottom: 32px; }
+      .section-head .eyebrow { justify-content: center; }
+      .program-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .program-card { min-height: 225px; padding: 20px 17px; }
+      .program-card h3 { font-size: 20px; }
+      .program-card p { font-size: 13px; }
+      .card-number { width: 33px; height: 33px; margin-bottom: 17px; }
+      .trust-grid { grid-template-columns: 1fr; gap: 30px; }
+      .trust-cards { gap: 10px; }
+      .trust-card { min-height: 180px; padding: 19px 16px; }
+      .trust-card:nth-child(even) { margin-top: 18px; }
+      .trust-card h3 { font-size: 19px; }
+      .service-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .service-card { min-height: 250px; padding: 20px 16px; }
+      .service-heading { gap: 10px; margin-bottom: 14px; }
+      .service-card h3 { font-size: 19px; }
+      .service-card p { font-size: 13px; }
+      .service-icon { width: 42px; height: 42px; }
+      .process-grid { grid-template-columns: 1fr 1fr; row-gap: 33px; }
+      .process-step { padding: 0 12px; }
+      .process-step:nth-child(odd) { padding-left: 0; }
+      .process-step:nth-child(even) { padding-right: 0; }
+      .process-step:not(:last-child)::after { display: none; }
+      .process-step h3 { font-size: 19px; }
+      .process-step p { font-size: 13px; }
+      .step-number { width: 48px; height: 48px; margin-bottom: 15px; font-size: 19px; }
+      .request-grid { grid-template-columns: 1fr; gap: 30px; }
+      .request-card {
+        width: calc(100% + var(--mobile-gutter) + var(--mobile-gutter));
+        margin-inline: calc(0px - var(--mobile-gutter));
+        padding: 24px 19px;
+      }
+      .request-card .button { gap: 8px; padding-inline: 12px; font-size: 13px; white-space: nowrap; }
+      .request-section { padding-bottom: 120px; }
+      .form-grid { gap: 12px; }
+      .closing { padding: 60px 0; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+      .footer-links { gap: 16px; }
+      footer { padding-bottom: 92px; }
+      .mobile-contact { position: fixed; z-index: 30; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); left: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 8px; border: 1px solid rgba(255,255,255,.22); border-radius: 999px; background: rgba(81,72,63,.96); box-shadow: 0 8px 30px rgba(81,72,63,.28); backdrop-filter: blur(14px); }
+      .mobile-contact .button { min-height: 45px; gap: 7px; padding: 9px 8px; font-size: 11px; }
+      .mobile-contact .icon { width: 16px; height: 16px; }
+    }
+    @media (max-width: 390px) {
+      .program-grid, .service-grid { grid-template-columns: 1fr; }
+      .trust-cards { grid-template-columns: 1fr; }
+      .trust-card:nth-child(even) { margin-top: 0; }
+      .program-card, .service-card { min-height: auto; }
+      .hero-actions .button { width: 100%; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field-wide { grid-column: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topline">
+    <div class="wrap topline-inner">
+      <p class="topline-note">A private, thoughtful first conversation can make a difference.</p>
+      <div class="topline-links" aria-label="Contact Roar Wellness">
+        <span>Speak with our team</span>
+        <a href="tel:+919319977207" aria-label="Call Roar Wellness at +91 93199 77207"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg>+91 93199 77207</a>
+        <a href="https://wa.me/919773890499" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Roar Wellness at +91 97738 90499"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.78 11.78 0 0 0 12.13 0C5.62 0 .32 5.3.32 11.81c0 2.08.54 4.11 1.57 5.9L.22 24l6.44-1.69a11.8 11.8 0 0 0 5.46 1.39h.01c6.5 0 11.8-5.3 11.8-11.81 0-3.15-1.23-6.12-3.41-8.41zM12.13 21.7a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.82 1 1.02-3.72-.24-.38a9.82 9.82 0 0 1-1.51-5.21c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.44-4.43 9.87-9.87 9.87z"/></svg>+91 97738 90499</a>
+        <a href="mailto:help@roarwellness.org" aria-label="Email help@roarwellness.org"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>help@roarwellness.org</a>
+      </div>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Roar Wellness home">
+        <img src="/images/logo.png" alt="Roar Wellness">
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#programs">Programs</a>
+        <a href="#why-roar">Why Roar</a>
+        <a href="#services">Support</a>
+        <a href="#approach">Our approach</a>
+        <a class="button" href="#contact">Talk privately <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Wellness, with understanding</p>
+          <h1>A calmer way<br>to find your <span>balance.</span></h1>
+          <p class="lead">Personal emotional wellness guidance for individuals and families—offered with care, respect and room to take things at your own pace.</p>
+          <div class="hero-actions">
+            <a class="button" href="#contact">Request a private callback <span aria-hidden="true">↗</span></a>
+            <a class="button button-light" href="tel:+919319977207">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg>
+              Call +91 93199 77207
+            </a>
+          </div>
+          <p class="hero-assurance"><span class="assurance-dot" aria-hidden="true">✓</span> A respectful, confidential conversation—without pressure.</p>
+        </div>
+        <div class="hero-card">
+          <img class="hero-photo" src="/images/rooted-recovery-campus.webp" alt="A peaceful, green campus at Roar Wellness" fetchpriority="high">
+          <div class="photo-badge"><span>Space to pause & begin again</span></div>
+          <div class="hero-caption"><span>Care that starts with listening</span><p>Your wellbeing deserves a conversation shaped around you.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact-strip" aria-label="Contact Roar Wellness">
+      <div class="wrap contact-strip-inner">
+        <a class="contact-option" href="tel:+919319977207">
+          <span class="contact-icon">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg>
+          </span>
+          <span class="contact-meta"><strong>+91 93199 77207</strong></span>
+        </a>
+        <a class="contact-option" href="https://wa.me/919773890499" target="_blank" rel="noopener noreferrer">
+          <span class="contact-icon">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.78 11.78 0 0 0 12.13 0C5.62 0 .32 5.3.32 11.81c0 2.08.54 4.11 1.57 5.9L.22 24l6.44-1.69a11.8 11.8 0 0 0 5.46 1.39h.01c6.5 0 11.8-5.3 11.8-11.81 0-3.15-1.23-6.12-3.41-8.41zM12.13 21.7a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.82 1 1.02-3.72-.24-.38a9.82 9.82 0 0 1-1.51-5.21c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.44-4.43 9.87-9.87 9.87zm5.42-7.39c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.47-2.4-1.49-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.11 3.22 5.12 4.52.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.08-.12-.27-.2-.57-.35z"/></svg>
+          </span>
+          <span class="contact-meta"><strong>+91 97738 90499</strong></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section program-section" id="programs">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Wellness programs</p>
+          <h2>Support for the whole of you.</h2>
+          <p>Thoughtful guidance that can meet you where you are, with practical ways to nurture emotional wellbeing in everyday life.</p>
+        </div>
+        <div class="program-grid">
+          <article class="program-card">
+            <span class="card-number">01</span>
+            <h3>Emotional balance</h3>
+            <p>Personalized conversations to help you explore what balance and wellbeing mean for you.</p>
+          </article>
+          <article class="program-card">
+            <span class="card-number">02</span>
+            <h3>Mindfulness & calm</h3>
+            <p>Gentle mindfulness practices that can encourage awareness, clarity and moments of calm.</p>
+          </article>
+          <article class="program-card">
+            <span class="card-number">03</span>
+            <h3>Everyday wellbeing</h3>
+            <p>Explore routines and healthy habits that support a more grounded, intentional daily life.</p>
+          </article>
+          <article class="program-card">
+            <span class="card-number">04</span>
+            <h3>Confidence & connection</h3>
+            <p>Build self-understanding and communication skills for more supportive relationships.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section trust-section" id="why-roar">
+      <div class="wrap trust-grid">
+        <div class="trust-copy">
+          <p class="eyebrow">Why Roar Wellness</p>
+          <h2>Care that makes space for your story.</h2>
+          <p>Every person and family brings a different story. Our approach begins with listening, then offers thoughtful guidance shaped around your goals, needs and pace.</p>
+          <p>We aim to make the first conversation feel clear, private and welcoming—so you can ask questions and decide what feels right for you.</p>
+          <a class="trust-note" href="#contact"><span aria-hidden="true">↗</span> Start with a private conversation</a>
+        </div>
+        <div class="trust-cards">
+          <article class="trust-card">
+            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2zm7 12 .9 3.1L23 18l-3.1.9L19 22l-.9-3.1L15 18l3.1-.9L19 14z"/></svg></span>
+            <h3>Personal to you</h3>
+            <p>Guidance shaped around your priorities, circumstances and everyday life.</p>
+          </article>
+          <article class="trust-card">
+            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-8-4.8-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 6.2-8 11-8 11zm0-2.4c1.8-1.2 6-4.4 6-8.6a2.5 2.5 0 0 0-4.7-1.2L12 11l-1.3-2.2A2.5 2.5 0 0 0 6 10c0 4.2 4.2 7.4 6 8.6z"/></svg></span>
+            <h3>Warm, experienced support</h3>
+            <p>A compassionate team here to listen and help you explore your next step.</p>
+          </article>
+          <article class="trust-card">
+            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2 3 6v5c0 5.2 3.8 9.6 9 11 5.2-1.4 9-5.8 9-11V6l-9-4zm0 2.2 7 3.1V11c0 4.1-2.8 7.7-7 9-4.2-1.3-7-4.9-7-9V7.3l7-3.1zm-1 11.2-3-3 1.4-1.4 1.6 1.6 3.6-3.6 1.4 1.4-5 5z"/></svg></span>
+            <h3>Privacy with respect</h3>
+            <p>Your conversation is approached thoughtfully and without judgement.</p>
+          </article>
+          <article class="trust-card">
+            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-3.9-5H11a4 4 0 1 0-4 5 4 4 0 0 0 3.9-3h1.2a4 4 0 0 0 3.9 3zM7 13c-3.3 0-6 1.7-6 4v3h10v-3c0-1 .4-1.9 1.1-2.6A10 10 0 0 0 7 13zm9 0c-.5 0-1.1 0-1.7.1A4.8 4.8 0 0 1 16 17v3h7v-3c0-2.3-3.1-4-7-4z"/></svg></span>
+            <h3>Include your family</h3>
+            <p>When you want, guidance can help loved ones build understanding and connection.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section services-section" id="services">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Our services</p>
+          <h2>Professional support, delivered with compassion.</h2>
+          <p>Choose a conversation that reflects what matters to you. We can discuss your needs and available support privately.</p>
+        </div>
+        <div class="service-grid">
+          <article class="service-card">
+            <div class="service-heading">
+              <span class="service-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4.42 0-8 2.24-8 5v3h16v-3c0-2.76-3.58-5-8-5z"/></svg>
+              </span>
+              <h3>Individual guidance</h3>
+            </div>
+            <p>One-to-one conversations around emotional balance, self-awareness and everyday stress.</p>
+          </article>
+          <article class="service-card">
+            <div class="service-heading">
+              <span class="service-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 17.93V18a1 1 0 0 0-1-1H9v-2a2 2 0 0 0-2-2H5.07A8.01 8.01 0 0 1 12 4v1a2 2 0 0 0 2 2h2v2a2 2 0 0 0 2 2h1.93A8.01 8.01 0 0 1 13 19.93z"/></svg>
+              </span>
+              <h3>Cognitive wellbeing</h3>
+            </div>
+            <p>Structured support to explore thought patterns, resilience and helpful daily habits.</p>
+          </article>
+          <article class="service-card">
+            <div class="service-heading">
+              <span class="service-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-3.99-4A4 4 0 0 0 16 11zM8 11a4 4 0 1 0-.01-8A4 4 0 0 0 8 11zm0 2c-2.67 0-8 1.34-8 4v3h11v-3c0-1.01.39-1.92 1.03-2.61A13.2 13.2 0 0 0 8 13zm8 0c-.34 0-.71.02-1.1.06A4.9 4.9 0 0 1 17 17v3h7v-3c0-2.66-5.33-4-8-4z"/></svg>
+              </span>
+              <h3>Family sessions</h3>
+            </div>
+            <p>Supportive conversations to strengthen communication and understanding at home.</p>
+          </article>
+          <article class="service-card">
+            <div class="service-heading">
+              <span class="service-icon" aria-hidden="true">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+              </span>
+              <h3>Mindfulness support</h3>
+            </div>
+            <p>Mindfulness, meditation and emotional-awareness practices for calm and clarity.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section process-section" id="approach">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">How it works</p>
+          <h2>A thoughtful path, one step at a time.</h2>
+          <p>There is no need to have everything figured out before reaching out. We can begin with a conversation.</p>
+        </div>
+        <div class="process-grid">
+          <article class="process-step">
+            <span class="step-number">01</span>
+            <h3>Private consultation</h3>
+            <p>Share what brings you here and what kind of support you are looking for.</p>
+          </article>
+          <article class="process-step">
+            <span class="step-number">02</span>
+            <h3>A plan for you</h3>
+            <p>Explore a considered plan that reflects your wellbeing goals and preferences.</p>
+          </article>
+          <article class="process-step">
+            <span class="step-number">03</span>
+            <h3>Ongoing guidance</h3>
+            <p>Continue with supportive sessions focused on the areas that matter to you.</p>
+          </article>
+          <article class="process-step">
+            <span class="step-number">04</span>
+            <h3>Room to grow</h3>
+            <p>Build on what is helpful and revisit your needs as life and goals evolve.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section request-section" id="contact">
+      <div class="wrap request-grid">
+        <div class="request-copy">
+          <p class="eyebrow">A private first step</p>
+          <h2>Let’s find a time to talk.</h2>
+          <p>Send a private callback request to our secure website inbox. Our team will receive an email notification at help@roarwellness.org with a secure link to your request.</p>
+          <div class="request-contact-list">
+            <a class="request-contact" href="tel:+919319977207" aria-label="Call +91 93199 77207"><span class="request-contact-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg></span><strong>+91 93199 77207</strong></a>
+            <a class="request-contact" href="https://wa.me/919773890499" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp +91 97738 90499"><span class="request-contact-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M20.52 3.48A11.78 11.78 0 0 0 12.13 0C5.62 0 .32 5.3.32 11.81c0 2.08.54 4.11 1.57 5.9L.22 24l6.44-1.69a11.8 11.8 0 0 0 5.46 1.39h.01c6.5 0 11.8-5.3 11.8-11.81 0-3.15-1.23-6.12-3.41-8.41zM12.13 21.7a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.82 1 1.02-3.72-.24-.38a9.82 9.82 0 0 1-1.51-5.21c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.44-4.43 9.87-9.87 9.87z"/></svg></span><strong>+91 97738 90499</strong></a>
+            <a class="request-contact" href="mailto:help@roarwellness.org" aria-label="Email help@roarwellness.org"><span class="request-contact-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></span><strong>help@roarwellness.org</strong></a>
+          </div>
+        </div>
+        <form class="request-card" id="callback-form">
+          <div class="request-card-heading">
+            <span class="request-card-heading-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg></span>
+            <h3>Request a private callback</h3>
+          </div>
+          <p class="request-card-intro">Share your contact details only. Please do not include sensitive health information.</p>
+          <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" tabindex="-1" autocomplete="off"></label>
+          <div class="form-grid">
+            <div class="field">
+              <label for="first-name">First name</label>
+              <input id="first-name" name="firstName" autocomplete="given-name" required>
+            </div>
+            <div class="field">
+              <label for="last-name">Last name</label>
+              <input id="last-name" name="lastName" autocomplete="family-name" required>
+            </div>
+            <div class="field field-wide">
+              <label for="phone">Phone number</label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+91" required>
+            </div>
+            <div class="field field-wide">
+              <label for="email">Email address</label>
+              <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+            </div>
+          </div>
+          <label class="consent" for="contact-consent">
+            <input id="contact-consent" type="checkbox" name="contactConsent" required>
+            <span>I agree that Roar Wellness may contact me about this request. I understand my contact details are stored securely and deleted after 12 months. I will not include sensitive health information here.</span>
+          </label>
+          <div class="captcha-row">
+            <div class="field captcha-field">
+              <label for="captcha-answer"><span>Math verification</span> <span id="captcha-question" aria-live="polite">Loading math question…</span></label>
+              <input id="captcha-answer" name="captchaAnswer" type="number" inputmode="numeric" min="0" max="99" step="1" autocomplete="off" placeholder="Your answer" required>
+            </div>
+            <button class="captcha-refresh" id="captcha-refresh" type="button" aria-label="Get a new verification question"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A8 8 0 0 0 4 12H1l4 4 4-4H6a6 6 0 0 1 10.24-4.24l1.41-1.41zM19 8l-4 4h3a6 6 0 0 1-10.24 4.24l-1.41 1.41A8 8 0 0 0 20 12h3l-4-4z"/></svg></button>
+          </div>
+          <button class="button" id="submit-button" type="submit" disabled>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zM7 8h10v2H7zm0 4h10v2H7zm0 4h6v2H7z"/></svg>
+            Send private callback request
+          </button>
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+          <p class="form-privacy">Your request is stored in Roar Wellness’ secure CMS inbox. For privacy, the email notification contains a private inbox link—not your contact details.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div class="wrap">
+        <p class="eyebrow">You can start with a conversation</p>
+        <h2>Support can begin with one small step.</h2>
+        <p>Whenever you feel ready, speak with someone who will listen. Call directly or send a WhatsApp message to Roar Wellness.</p>
+        <div class="closing-actions">
+          <a class="button" href="tel:+919319977207" aria-label="Call Roar Wellness at +91 93199 77207"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg>+91 93199 77207</a>
+          <a class="button button-whatsapp" href="https://wa.me/919773890499" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Roar Wellness at +91 97738 90499"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.78 11.78 0 0 0 12.13 0C5.62 0 .32 5.3.32 11.81c0 2.08.54 4.11 1.57 5.9L.22 24l6.44-1.69a11.8 11.8 0 0 0 5.46 1.39h.01c6.5 0 11.8-5.3 11.8-11.81 0-3.15-1.23-6.12-3.41-8.41zM12.13 21.7a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.82 1 1.02-3.72-.24-.38a9.82 9.82 0 0 1-1.51-5.21c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.44-4.43 9.87-9.87 9.87z"/></svg>+91 97738 90499</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">Roar Wellness</div>
+          <p class="footer-copy">Thoughtful support for individuals and families.</p>
+        </div>
+        <div class="footer-links">
+          <a href="tel:+919319977207" aria-label="Call +91 93199 77207"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg>+91 93199 77207</a>
+          <a href="https://wa.me/919773890499" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp +91 97738 90499"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.78 11.78 0 0 0 12.13 0C5.62 0 .32 5.3.32 11.81c0 2.08.54 4.11 1.57 5.9L.22 24l6.44-1.69a11.8 11.8 0 0 0 5.46 1.39h.01c6.5 0 11.8-5.3 11.8-11.81 0-3.15-1.23-6.12-3.41-8.41zM12.13 21.7a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.82 1 1.02-3.72-.24-.38a9.82 9.82 0 0 1-1.51-5.21c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.44-4.43 9.87-9.87 9.87z"/></svg>+91 97738 90499</a>
+          <a href="mailto:help@roarwellness.org" aria-label="Email help@roarwellness.org"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>help@roarwellness.org</a>
+          <a href="#top">Back to top ↑</a>
+        </div>
+      </div>
+      <p class="disclaimer">This page describes emotional wellness support and is not a substitute for medical advice, diagnosis, treatment or emergency care. If you or someone else is in immediate danger, contact local emergency services.</p>
+    </div>
+  </footer>
+
+  <div class="mobile-contact" aria-label="Quick contact">
+    <a class="button" href="tel:+919319977207" aria-label="Call +91 93199 77207"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.56.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.36 11.36 0 0 0 .57 3.56 1 1 0 0 1-.25 1.02l-2.2 2.21z"/></svg>+91 93199 77207</a>
+    <a class="button button-whatsapp" href="https://wa.me/919773890499" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp +91 97738 90499"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.78 11.78 0 0 0 12.13 0C5.62 0 .32 5.3.32 11.81c0 2.08.54 4.11 1.57 5.9L.22 24l6.44-1.69a11.8 11.8 0 0 0 5.46 1.39h.01c6.5 0 11.8-5.3 11.8-11.81 0-3.15-1.23-6.12-3.41-8.41zM12.13 21.7a9.83 9.83 0 0 1-5.01-1.37l-.36-.21-3.82 1 1.02-3.72-.24-.38a9.82 9.82 0 0 1-1.51-5.21c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.44-4.43 9.87-9.87 9.87z"/></svg>+91 97738 90499</a>
+  </div>
+
+  <script>
+    const form = document.getElementById("callback-form");
+    const question = document.getElementById("captcha-question");
+    const answer = document.getElementById("captcha-answer");
+    const status = document.getElementById("form-status");
+    const submitButton = document.getElementById("submit-button");
+    let challenge = null;
+    let submitting = false;
+
+    async function loadChallenge() {
+      challenge = null;
+      answer.value = "";
+      submitButton.disabled = true;
+      if (window.location.protocol === "file:") {
+        question.textContent = "Loads on the live site";
+        status.textContent = "The secure callback form works when this page is hosted on roarwellness.org.";
+        return;
+      }
+      question.textContent = "Loading math question…";
+      try {
+        const response = await fetch("/api/appointment-captcha", { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok || !result.question || !result.token) {
+          throw new Error(result.error || "Verification is temporarily unavailable.");
+        }
+        challenge = { question: result.question, token: result.token };
+        question.textContent = result.question;
+        submitButton.disabled = false;
+        status.textContent = "";
+      } catch (error) {
+        question.textContent = "Unavailable";
+        status.textContent = error instanceof Error
+          ? error.message + " Please call +91 93199 77207 or email help@roarwellness.org."
+          : "Verification is temporarily unavailable. Please call +91 93199 77207.";
+      }
+    }
+
+    document.getElementById("captcha-refresh").addEventListener("click", loadChallenge);
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      if (submitting || !challenge || !form.reportValidity()) return;
+
+      const data = new FormData(form);
+      submitting = true;
+      submitButton.disabled = true;
+      submitButton.textContent = "Sending request…";
+      status.textContent = "";
+
+      try {
+        const response = await fetch("/api/appointment-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            name: (data.get("firstName") + " " + data.get("lastName")).trim(),
+            email: data.get("email").trim(),
+            phone: data.get("phone").trim(),
+            source: "contact",
+            consent: data.get("contactConsent") === "on",
+            website: data.get("website") || "",
+            token: challenge.token,
+            answer: answer.value
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          status.textContent = result.error || "Your request could not be sent. Please try again.";
+          if (response.status === 400) await loadChallenge();
+          return;
+        }
+        form.reset();
+        challenge = null;
+        if (result.data && result.data.emailAlertQueued) {
+          status.textContent = "Thank you. Your request is in our secure inbox, and an email notification has been queued for help@roarwellness.org.";
+        } else {
+          status.textContent = "Your request is safely in our secure inbox, but email alerts are not configured. Please also email help@roarwellness.org or call +91 93199 77207.";
+        }
+        await loadChallenge();
+      } catch (error) {
+        status.textContent = "We couldn’t connect to the request service. Please email help@roarwellness.org or call +91 93199 77207.";
+      } finally {
+        submitting = false;
+        submitButton.disabled = !challenge;
+        submitButton.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zM7 8h10v2H7zm0 4h10v2H7zm0 4h6v2H7z"/></svg>Send private callback request';
+      }
+    });
+
+    loadChallenge();
+  </script>
+</body>
+</html>

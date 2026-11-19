@@ -53,5 +53,7 @@ export async function POST(request: Request) {
   } else {
     console.warn("Enquiry notification is not configured; administrators will need to monitor the CMS inbox.");
   }
-  return NextResponse.json({ data: { received: true } }, { status: 201, headers: noStore });
+  return NextResponse.json({
+    data: { received: true, emailAlertQueued: notificationQueued },
+  }, { status: 201, headers: noStore });
 }
