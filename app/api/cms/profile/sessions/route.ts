@@ -9,7 +9,7 @@ export async function GET() {
   const userId = await getCmsUserId();
   const currentSessionId = await getCmsSessionId();
   if (!userId || !currentSessionId) return NextResponse.json({ error: "Sign in to view your sessions." }, { status: 401 });
-  const data = getCmsDatabase().prepare(`
+  const data = await getCmsDatabase().prepare(`
     SELECT session_id, created_at, expires_at FROM cms_sessions
     WHERE user_id = ? AND expires_at > ?
     ORDER BY created_at DESC
@@ -36,8 +36,8 @@ export async function DELETE(request: Request) {
   if (typeof sessionId !== "string" || !sessionId || sessionId === currentSessionId) {
     return NextResponse.json({ error: "You cannot revoke the session you are currently using." }, { status: 400 });
   }
-  const result = getCmsDatabase().prepare("DELETE FROM cms_sessions WHERE session_id = ? AND user_id = ?").run(sessionId, userId);
+  const result = await getCmsDatabase().prepare("DELETE FROM cms_sessions WHERE session_id = ? AND user_id = ?").run(sessionId, userId);
   if (!result.changes) return NextResponse.json({ error: "That active session was not found." }, { status: 404 });
-  recordCmsAudit(userId, request, "auth.session_revoke", "session", sessionId, "Signed out another active CMS session.");
+  await recordCmsAudit(userId, request, "auth.session_revoke", "session", sessionId, "Signed out another active CMS session.");
   return NextResponse.json({ data: { revoked: true } });
 }

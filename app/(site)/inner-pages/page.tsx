@@ -12,8 +12,8 @@ export default async function LegacyInnerPagesPage({
   const slug = typeof query.slug === "string" ? query.slug : undefined;
   const category = typeof query.category === "string" ? query.category : undefined;
   if (query.preview !== "1" && slug) {
-    listContent();
-    const item = findContentBySlug(slug);
+    await listContent();
+    const item = await findContentBySlug(slug);
     if (item) redirect(getCmsContentHref(item.slug, item.category_slug));
   }
   if (query.preview !== "1" && category === "blog") redirect("/blog");

@@ -10,7 +10,7 @@ const enquiryStatuses = ["new", "contacted", "scheduled", "closed"] as const;
 export async function GET(request: Request) {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
   const database = getCmsDatabase();
-  database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
+  await database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
   const url = new URL(request.url);
   const search = (url.searchParams.get("q") || "").trim().slice(0, 100);
   const requestedStatus = url.searchParams.get("status") || "all";
@@ -42,10 +42,10 @@ export async function GET(request: Request) {
     parameters.push(term, term, term, term);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-  const total = (database.prepare(`SELECT COUNT(*) AS count FROM cms_enquiries e ${where}`).get(...parameters) as { count: number }).count;
+  const total = (await database.prepare(`SELECT COUNT(*) AS count FROM cms_enquiries e ${where}`).get(...parameters) as { count: number }).count;
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const page = Math.min(requestedPageNumber, pages);
-  const summary = database.prepare(`
+  const summary = await database.prepare(`
     SELECT COUNT(*) AS total,
       SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new,
       SUM(CASE WHEN status != 'closed' THEN 1 ELSE 0 END) AS open,
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
         AND follow_up_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now') THEN 1 ELSE 0 END) AS overdue
     FROM cms_enquiries
   `).get() as { total: number; new: number | null; open: number | null; unassigned: number | null; overdue: number | null };
-  const data = url.searchParams.get("summary") === "1" ? [] : database.prepare(`
+  const data = url.searchParams.get("summary") === "1" ? [] : await database.prepare(`
     SELECT e.id, e.name, e.email, e.phone, e.source, e.status, e.assigned_user_id,
       u.name AS assigned_user_name, e.follow_up_at, e.created_at, e.updated_at
     FROM cms_enquiries e LEFT JOIN cms_users u ON u.id = e.assigned_user_id
@@ -93,7 +93,7 @@ export async function PATCH(request: Request) {
   }
   const database = getCmsDatabase();
   if (hasAssignedUser && assignedUserId !== null
-    && !database.prepare("SELECT 1 FROM cms_users WHERE id = ? AND role = 'admin'").get(assignedUserId)) {
+    && !await database.prepare("SELECT 1 FROM cms_users WHERE id = ? AND role = 'admin'").get(assignedUserId)) {
     return NextResponse.json({ error: "Choose an existing administrator account." }, { status: 400 });
   }
   const assignments: string[] = [];
@@ -105,7 +105,7 @@ export async function PATCH(request: Request) {
     values.push(typeof followUpAt === "string" ? new Date(followUpAt).toISOString() : null);
   }
   assignments.push("updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')");
-  const result = database.prepare(`UPDATE cms_enquiries SET ${assignments.join(", ")} WHERE id = ?`)
+  const result = await database.prepare(`UPDATE cms_enquiries SET ${assignments.join(", ")} WHERE id = ?`)
     .run(...values, id);
   if (!result.changes) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
   const changes = [
@@ -113,9 +113,9 @@ export async function PATCH(request: Request) {
     hasAssignedUser ? "staff assignment" : "",
     hasFollowUp ? "follow-up date" : "",
   ].filter(Boolean).join(" and ");
-  recordCmsAudit(await getCmsUserId(), request, "enquiry.update", "enquiry", id, `Updated enquiry ${changes}.`);
+  await recordCmsAudit(await getCmsUserId(), request, "enquiry.update", "enquiry", id, `Updated enquiry ${changes}.`);
   return NextResponse.json({
-    data: database.prepare(`SELECT e.id, e.name, e.email, e.phone, e.source, e.status, e.assigned_user_id,
+    data: await database.prepare(`SELECT e.id, e.name, e.email, e.phone, e.source, e.status, e.assigned_user_id,
       u.name AS assigned_user_name, e.follow_up_at, e.created_at, e.updated_at
       FROM cms_enquiries e LEFT JOIN cms_users u ON u.id = e.assigned_user_id WHERE e.id = ?`).get(id),
   });
@@ -126,8 +126,8 @@ export async function DELETE(request: Request) {
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Choose an enquiry to delete." }, { status: 400 });
-  const result = getCmsDatabase().prepare("DELETE FROM cms_enquiries WHERE id = ?").run(id);
+  const result = await getCmsDatabase().prepare("DELETE FROM cms_enquiries WHERE id = ?").run(id);
   if (!result.changes) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
-  recordCmsAudit(await getCmsUserId(), request, "enquiry.delete", "enquiry", id, "Deleted an appointment enquiry.");
+  await recordCmsAudit(await getCmsUserId(), request, "enquiry.delete", "enquiry", id, "Deleted an appointment enquiry.");
   return NextResponse.json({ data: { deleted: true } });
 }

@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await getCmsRole()) return NextResponse.json({ error: "Sign in to view content history." }, { status: 401 });
   const { id } = await params;
-  const data = getCmsDatabase().prepare(`
+  const data = await getCmsDatabase().prepare(`
     SELECT r.id, r.content_id, r.created_at, u.name AS created_by,
       json_extract(r.snapshot, '$.title') AS title,
       json_extract(r.snapshot, '$.status') AS status

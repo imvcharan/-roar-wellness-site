@@ -5,8 +5,10 @@ import { insertCmsContent } from "@/lib/cms-content-create";
 import {
   findCategory,
   getCmsDatabase,
+  isCmsUniqueViolation,
   listContent,
   toPublicContent,
+  withCmsTransaction,
 } from "@/lib/cms-db";
 import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
 import { CmsContentValidationError, isReservedCmsRootSlug, parseCmsContentInput } from "@/lib/cms-validation";
@@ -21,8 +23,9 @@ export async function GET(request: Request) {
   }
   const categoryId = url.searchParams.get("categoryId") || undefined;
   const categorySlug = url.searchParams.get("category") || undefined;
+  const content = await listContent({ includeUnpublished, categoryId, categorySlug });
   return NextResponse.json({
-    data: listContent({ includeUnpublished, categoryId, categorySlug }).map(toPublicContent),
+    data: content.map(toPublicContent),
   }, { headers: { "Cache-Control": "no-store, max-age=0" } });
 }
 
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
     const field = error instanceof CmsContentValidationError ? error.field : undefined;
     return NextResponse.json({ error: message, ...(field ? { field } : {}) }, { status: 400 });
   }
-  const category = findCategory(input.categoryId);
+  const category = await findCategory(input.categoryId);
   if (!category) {
     return NextResponse.json({ error: "The selected category does not exist.", field: "categoryId" }, { status: 400 });
   }
@@ -51,18 +54,19 @@ export async function POST(request: Request) {
   const id = crypto.randomUUID();
   const createdBy = await getCmsUserId();
   try {
-    database.exec("BEGIN IMMEDIATE");
-    insertCmsContent(database, id, input);
-    database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(getCmsContentHref(input.slug, category.slug));
-    const item = listContent({ includeUnpublished: true }).find((entry) => entry.id === id);
-    database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
-      .run(crypto.randomUUID(), id, JSON.stringify(item), createdBy);
-    database.exec("COMMIT");
-    recordCmsAudit(createdBy, request, "content.create", "content", id, `Created content “${input.title}” as ${input.status}.`);
+    const item = await withCmsTransaction(async () => {
+      await insertCmsContent(database, id, input);
+      await database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(getCmsContentHref(input.slug, category.slug));
+      const entries = await listContent({ includeUnpublished: true });
+      const created = entries.find((entry) => entry.id === id);
+      await database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
+        .run(crypto.randomUUID(), id, JSON.stringify(created), createdBy);
+      return created;
+    });
+    await recordCmsAudit(createdBy, request, "content.create", "content", id, `Created content “${input.title}” as ${input.status}.`);
     return NextResponse.json({ data: item && toPublicContent(item) }, { status: 201 });
   } catch (error) {
-    if (database.isTransaction) database.exec("ROLLBACK");
-    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+    if (isCmsUniqueViolation(error)) {
       return NextResponse.json({ error: "A content item with that slug already exists.", field: "slug" }, { status: 409 });
     }
     throw error;

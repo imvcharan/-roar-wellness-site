@@ -13,8 +13,8 @@ function utcDate(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 
-function periodTotals(start: string, end: string): Totals {
-  const result = getCmsDatabase().prepare(`
+async function periodTotals(start: string, end: string): Promise<Totals> {
+  const result = await getCmsDatabase().prepare(`
     SELECT
       SUM(CASE WHEN event_type = 'page_view' THEN 1 ELSE 0 END) AS page_views,
       SUM(CASE WHEN event_type = 'appointment_submit' THEN 1 ELSE 0 END) AS appointment_requests
@@ -53,16 +53,18 @@ export async function GET(request: Request) {
   const start = `${utcDate(startDate)}T00:00:00.000Z`;
   const end = `${utcDate(endDate)}T00:00:00.000Z`;
   const previousStart = `${utcDate(previousStartDate)}T00:00:00.000Z`;
-  const previous = periodTotals(previousStart, start);
-  const totals = periodTotals(start, end);
+  const [previous, totals] = await Promise.all([
+    periodTotals(previousStart, start),
+    periodTotals(start, end),
+  ]);
   const database = getCmsDatabase();
-  const popularPages = database.prepare(`
+  const popularPages = await database.prepare(`
     SELECT page_path, COUNT(*) AS views
     FROM cms_analytics_events
     WHERE event_type = 'page_view' AND created_at >= ? AND created_at < ?
     GROUP BY page_path ORDER BY views DESC, page_path LIMIT 10
   `).all(start, end);
-  const recordedDays = database.prepare(`
+  const recordedDays = await database.prepare(`
     SELECT substr(created_at, 1, 10) AS day,
       SUM(CASE WHEN event_type = 'page_view' THEN 1 ELSE 0 END) AS page_views,
       SUM(CASE WHEN event_type = 'appointment_submit' THEN 1 ELSE 0 END) AS appointment_requests

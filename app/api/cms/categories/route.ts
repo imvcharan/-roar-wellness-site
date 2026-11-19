@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
-import { getCmsDatabase, listCategories } from "@/lib/cms-db";
+import { getCmsDatabase, isCmsUniqueViolation, listCategories } from "@/lib/cms-db";
 import { parseCategoryInput } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  return NextResponse.json({ data: listCategories() }, {
+  return NextResponse.json({ data: await listCategories() }, {
     headers: { "Cache-Control": "no-store, max-age=0" },
   });
 }
@@ -26,13 +26,14 @@ export async function POST(request: Request) {
 
   try {
     const id = crypto.randomUUID();
-    getCmsDatabase()
+    await getCmsDatabase()
       .prepare("INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)")
       .run(id, category.name, category.slug);
-    recordCmsAudit(await getCmsUserId(), request, "category.create", "category", id, `Created category “${category.name}”.`);
-    return NextResponse.json({ data: listCategories().find((item) => item.id === id) }, { status: 201 });
+    await recordCmsAudit(await getCmsUserId(), request, "category.create", "category", id, `Created category “${category.name}”.`);
+    const categories = await listCategories();
+    return NextResponse.json({ data: categories.find((item) => item.id === id) }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+    if (isCmsUniqueViolation(error)) {
       return NextResponse.json({ error: "A category with that name or slug already exists." }, { status: 409 });
     }
     throw error;

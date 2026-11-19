@@ -13,21 +13,21 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required to delete media." }, { status: 403 });
   const { id } = await params;
   const database = getCmsDatabase();
-  const media = database.prepare("SELECT url FROM cms_media WHERE id = ?").get(id) as { url: string } | undefined;
+  const media = await database.prepare("SELECT url FROM cms_media WHERE id = ?").get(id) as { url: string } | undefined;
   if (!media) return NextResponse.json({ error: "Media item was not found." }, { status: 404 });
   const urlPath = media.url.startsWith("/") ? media.url : new URL(media.url).pathname;
   if (urlPath !== `/api/media/${id}` && urlPath !== `/uploads/${id}.webp`) {
     return NextResponse.json({ error: "Media path is invalid; refusing to delete a file outside the upload library." }, { status: 409 });
   }
   const urlPattern = `%${urlPath}%`;
-  const contentUsage = database.prepare(`
+  const contentUsage = await database.prepare(`
     SELECT COUNT(*) AS count FROM content
     WHERE image_url = ? OR image_url LIKE ? OR content LIKE ? OR description LIKE ?
   `).get(media.url, urlPattern, urlPattern, urlPattern) as { count: number };
-  const homepageUsage = database.prepare(`
+  const homepageUsage = await database.prepare(`
     SELECT COUNT(*) AS count FROM cms_home_sections WHERE image_url = ? OR image_url LIKE ?
   `).get(media.url, urlPattern) as { count: number };
-  const galleryUsage = database.prepare(`
+  const galleryUsage = await database.prepare(`
     SELECT COUNT(*) AS count FROM cms_gallery_images WHERE image_url = ? OR image_url LIKE ?
   `).get(media.url, urlPattern) as { count: number };
   if (contentUsage.count || homepageUsage.count || galleryUsage.count) {
@@ -39,7 +39,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     ? storagePath
     : urlPath === `/uploads/${id}.webp` ? legacyPath : storagePath;
   await unlink(filePath);
-  database.prepare("DELETE FROM cms_media WHERE id = ?").run(id);
-  recordCmsAudit(await getCmsUserId(), request, "media.delete", "media", id, "Deleted an image from the media library.");
+  await database.prepare("DELETE FROM cms_media WHERE id = ?").run(id);
+  await recordCmsAudit(await getCmsUserId(), request, "media.delete", "media", id, "Deleted an image from the media library.");
   return NextResponse.json({ data: { deleted: true } });
 }

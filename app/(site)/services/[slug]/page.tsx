@@ -7,14 +7,14 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const resolved = resolvePublishedRouteContent(slug, "service");
+  const resolved = await resolvePublishedRouteContent(slug, "service");
   const fallbackCanonical = resolved.item ? getCmsContentHref(resolved.item.slug, resolved.item.category_slug) : `/${encodeURIComponent(slug)}`;
   return getRouteContentMetadata(resolved.item, fallbackCanonical);
 }
 
 export default async function ServiceDetailPage({ params }: Props) {
   const { slug } = await params;
-  const resolved = resolvePublishedRouteContent(slug, "service");
+  const resolved = await resolvePublishedRouteContent(slug, "service");
   if (resolved.redirectTo) permanentRedirect(resolved.redirectTo);
   if (!resolved.item) notFound();
   permanentRedirect(getCmsContentHref(resolved.item.slug, resolved.item.category_slug));

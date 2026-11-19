@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
-import { findContentBySlug, getCmsDatabase, listCategories, recordContentRevision } from "@/lib/cms-db";
+import { findContentBySlug, getCmsDatabase, listCategories, recordContentRevision, withCmsTransaction } from "@/lib/cms-db";
 import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
 import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
 import { isReservedCmsRootSlug, makeSlug } from "@/lib/cms-validation";
@@ -60,9 +60,9 @@ export async function POST(request: Request) {
   const importRows = [...uniqueRows.values()];
 
   const database = getCmsDatabase();
-  const existingCategories = listCategories();
+  const existingCategories = await listCategories();
   const bySlug = new Map(existingCategories.map((category) => [category.slug, category]));
-  const resolveCategory = (row: Record<string, unknown>, slug: string) => {
+  const resolveCategory = async (row: Record<string, unknown>, slug: string) => {
     const knownSlug = inferImportedCategorySlug(row, slug);
     const known = bySlug.get(knownSlug);
     if (known) return known;
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const current = bySlug.get(categorySlug);
     if (current) return current;
     const id = randomUUID();
-    database.prepare("INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)").run(id, name.slice(0, 80), categorySlug);
+    await database.prepare("INSERT INTO categories (id, name, slug) VALUES (?, ?, ?)").run(id, name.slice(0, 80), categorySlug);
     const created = { id, name: name.slice(0, 80), slug: categorySlug, is_default: 0, created_at: new Date().toISOString() };
     bySlug.set(categorySlug, created);
     return created;
@@ -83,8 +83,8 @@ export async function POST(request: Request) {
   let imported = 0;
   const failures: string[] = [];
   const importingUser = await getCmsUserId();
-  database.exec("BEGIN IMMEDIATE");
   try {
+    await withCmsTransaction(async () => {
     for (const [index, row] of importRows.entries()) {
       const title = titleOf(row);
       if (!title.trim()) {
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       const slugValue = row.slug ?? row.post_name;
       const slug = typeof slugValue === "string" ? slugValue : title;
       const normalizedSlug = makeSlug(slug);
-      const category = resolveCategory(row, normalizedSlug);
+      const category = await resolveCategory(row, normalizedSlug);
       let input: ReturnType<typeof parseImportedContent>;
       try {
         input = parseImportedContent(row, category.id);
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
         failures.push(`Item ${index + 1} (${title}): slug “${input.slug}” is reserved for a built-in website route.`);
         continue;
       }
-      const previous = findContentBySlug(input.slug, true);
+      const previous = await findContentBySlug(input.slug, true);
       const nextPath = getCmsContentHref(input.slug, category.slug);
       const changed = previous && (
         previous.title !== input.title || previous.category_id !== input.categoryId
@@ -118,17 +118,17 @@ export async function POST(request: Request) {
         || previous.seo_title !== input.seoTitle || previous.seo_description !== input.seoDescription
         || previous.seo_keywords !== input.seoKeywords || previous.seo_robots !== input.seoRobots
       );
-      if (changed) recordContentRevision(previous.id, importingUser);
+      if (changed) await recordContentRevision(previous.id, importingUser);
       if (previous && getCmsContentHref(previous.slug, previous.category_slug) !== nextPath) {
-        database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(nextPath);
-        database.prepare(`
+        await database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(nextPath);
+        await database.prepare(`
           INSERT INTO cms_url_redirects (source_path, content_id) VALUES (?, ?)
           ON CONFLICT(source_path) DO UPDATE SET content_id = excluded.content_id
         `).run(getCmsContentHref(previous.slug, previous.category_slug), previous.id);
       } else {
-        database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(nextPath);
+        await database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(nextPath);
       }
-      database.prepare(`
+      await database.prepare(`
         INSERT INTO content (id, title, slug, category_id, excerpt, summary, description, content, image_url, image_alt_text, image_position, status, seo_title, seo_description, seo_keywords, seo_robots, published_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'published' THEN COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ELSE NULL END)
         ON CONFLICT(slug) DO UPDATE SET title = excluded.title, category_id = excluded.category_id,
@@ -143,11 +143,10 @@ export async function POST(request: Request) {
       imported++;
     }
     if (failures.length) throw new Error(failures.slice(0, 10).join("\n"));
-    database.exec("COMMIT");
+    });
   } catch (error) {
-    database.exec("ROLLBACK");
     return NextResponse.json({ error: error instanceof Error ? error.message : "Import failed; no changes were made." }, { status: 400 });
   }
-  recordCmsAudit(importingUser, request, "content.import", "content", null, `Imported ${imported} content items.`);
+  await recordCmsAudit(importingUser, request, "content.import", "content", null, `Imported ${imported} content items.`);
   return NextResponse.json({ data: { imported, categories: bySlug.size - existingCategories.length, skippedDuplicates: rows.length - importRows.length } });
 }

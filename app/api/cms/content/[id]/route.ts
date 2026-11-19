@@ -5,7 +5,9 @@ import {
   findCategory,
   findContentById,
   getCmsDatabase,
+  isCmsUniqueViolation,
   toPublicContent,
+  withCmsTransaction,
 } from "@/lib/cms-db";
 import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
 import { CmsContentValidationError, isReservedCmsRootSlug, parseCmsContentInput } from "@/lib/cms-validation";
@@ -20,7 +22,7 @@ export async function PUT(
     return NextResponse.json({ error: "Sign in to update CMS content." }, { status: 401 });
   }
   const { id } = await params;
-  const previous = findContentById(id);
+  const previous = await findContentById(id);
   if (!previous) return NextResponse.json({ error: "Content not found." }, { status: 404 });
   const body: unknown = await request.json().catch(() => null);
   let input: ReturnType<typeof parseCmsContentInput>;
@@ -31,7 +33,7 @@ export async function PUT(
     const field = error instanceof CmsContentValidationError ? error.field : undefined;
     return NextResponse.json({ error: message, ...(field ? { field } : {}) }, { status: 400 });
   }
-  const category = findCategory(input.categoryId);
+  const category = await findCategory(input.categoryId);
   if (!category) {
     return NextResponse.json({ error: "The selected category does not exist.", field: "categoryId" }, { status: 400 });
   }
@@ -44,12 +46,13 @@ export async function PUT(
   const nextPath = getCmsContentHref(input.slug, category.slug);
   const updatedBy = await getCmsUserId();
   const previousSnapshot = JSON.stringify(previous);
+  let updatedItem: NonNullable<Awaited<ReturnType<typeof findContentById>>>;
   try {
-    database.exec("BEGIN IMMEDIATE");
-    const hasPreviousSnapshot = database.prepare(
-      "SELECT 1 FROM cms_revisions WHERE content_id = ? AND snapshot = ? LIMIT 1",
-    ).get(id, previousSnapshot);
-    database.prepare(`
+    updatedItem = await withCmsTransaction(async () => {
+      const hasPreviousSnapshot = await database.prepare(
+        "SELECT 1 FROM cms_revisions WHERE content_id = ? AND snapshot = ? LIMIT 1",
+      ).get(id, previousSnapshot);
+      await database.prepare(`
       UPDATE content SET title = ?, slug = ?, category_id = ?, excerpt = ?, summary = ?,
         description = ?, content = ?, image_url = ?, image_alt_text = ?, image_position = ?, status = ?, seo_title = ?,
         seo_description = ?, seo_keywords = ?, seo_robots = ?, seo_canonical_url = ?,
@@ -61,39 +64,41 @@ export async function PUT(
           ELSE NULL
         END
       WHERE id = ?
-    `).run(
+      `).run(
       input.title, input.slug, input.categoryId, input.excerpt, input.summary,
       input.description, input.content, input.imageUrl, input.imageAltText, input.imagePosition, input.status, input.seoTitle,
       input.seoDescription, input.seoKeywords, input.seoRobots, input.seoCanonicalUrl,
       input.seoOgTitle, input.seoOgDescription, input.seoOgImage,
       input.seoTwitterTitle, input.seoTwitterDescription, input.seoTwitterImage,
       input.scheduledPublishAt, input.status, id,
-    );
-    if (previousPath !== nextPath) {
-      database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(nextPath);
-      database.prepare(`
+      );
+      if (previousPath !== nextPath) {
+        await database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(nextPath);
+        await database.prepare(`
         INSERT INTO cms_url_redirects (source_path, content_id) VALUES (?, ?)
         ON CONFLICT(source_path) DO UPDATE SET content_id = excluded.content_id
-      `).run(previousPath, id);
-    }
-    if (!hasPreviousSnapshot) {
-      database.prepare(`
+        `).run(previousPath, id);
+      }
+      if (!hasPreviousSnapshot) {
+        await database.prepare(`
         INSERT INTO cms_revisions (id, content_id, snapshot, created_by, created_at)
         VALUES (?, ?, ?, NULL, ?)
-      `).run(crypto.randomUUID(), id, previousSnapshot, previous.updated_at);
-    }
-    database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
-      .run(crypto.randomUUID(), id, JSON.stringify(findContentById(id)), updatedBy);
-    database.exec("COMMIT");
-    recordCmsAudit(updatedBy, request, "content.update", "content", id, `Updated content “${input.title}” (${previous.status} → ${input.status}).`);
-    return NextResponse.json({ data: toPublicContent(findContentById(id)!) });
+        `).run(crypto.randomUUID(), id, previousSnapshot, previous.updated_at);
+      }
+      const updated = await findContentById(id);
+      if (!updated) throw new Error("Updated CMS content could not be loaded.");
+      await database.prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
+        .run(crypto.randomUUID(), id, JSON.stringify(updated), updatedBy);
+      return updated;
+    });
   } catch (error) {
-    if (database.isTransaction) database.exec("ROLLBACK");
-    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+    if (isCmsUniqueViolation(error)) {
       return NextResponse.json({ error: "A content item with that slug already exists.", field: "slug" }, { status: 409 });
     }
     throw error;
   }
+  await recordCmsAudit(updatedBy, request, "content.update", "content", id, `Updated content “${input.title}” (${previous.status} → ${input.status}).`);
+  return NextResponse.json({ data: toPublicContent(updatedItem) });
 }
 
 export async function DELETE(
@@ -106,9 +111,9 @@ export async function DELETE(
 
   const { id } = await params;
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Only administrators can delete content." }, { status: 403 });
-  const existing = findContentById(id);
+  const existing = await findContentById(id);
   if (!existing) return NextResponse.json({ error: "Content not found." }, { status: 404 });
-  getCmsDatabase().prepare("DELETE FROM content WHERE id = ?").run(id);
-  recordCmsAudit(await getCmsUserId(), request, "content.delete", "content", id, `Deleted content “${existing.title}”.`);
+  await getCmsDatabase().prepare("DELETE FROM content WHERE id = ?").run(id);
+  await recordCmsAudit(await getCmsUserId(), request, "content.delete", "content", id, `Deleted content “${existing.title}”.`);
   return NextResponse.json({ data: { deleted: true } });
 }

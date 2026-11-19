@@ -30,16 +30,16 @@ export function getEnquiryNotificationTransport(): NotificationTransport | null 
   return cachedTransport;
 }
 
-export function enqueueEnquiryNotification(enquiryId: string): boolean {
+export async function enqueueEnquiryNotification(enquiryId: string): Promise<boolean> {
   if (!getEnquiryNotificationTransport()) return false;
-  getCmsDatabase().prepare(
+  await getCmsDatabase().prepare(
     "INSERT OR IGNORE INTO cms_notification_outbox (enquiry_id) VALUES (?)",
   ).run(enquiryId);
   return true;
 }
 
-export function retryExhaustedEnquiryNotifications(): number {
-  const result = getCmsDatabase().prepare(`UPDATE cms_notification_outbox
+export async function retryExhaustedEnquiryNotifications(): Promise<number> {
+  const result = await getCmsDatabase().prepare(`UPDATE cms_notification_outbox
     SET attempts = 0, next_attempt_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), last_error = NULL
     WHERE sent_at IS NULL AND attempts >= 8`).run();
   return Number(result.changes);
@@ -49,7 +49,7 @@ export async function processPendingEnquiryNotifications(limit = 10): Promise<{ 
   const transport = getEnquiryNotificationTransport();
   if (!transport) throw new Error("SMTP notification settings are incomplete.");
   const database = getCmsDatabase();
-  const rows = database.prepare(`SELECT o.enquiry_id, o.attempts, e.created_at
+  const rows = await database.prepare(`SELECT o.enquiry_id, o.attempts, e.created_at
     FROM cms_notification_outbox o
     JOIN cms_enquiries e ON e.id = o.enquiry_id
     WHERE o.sent_at IS NULL AND o.attempts < 8
@@ -60,7 +60,7 @@ export async function processPendingEnquiryNotifications(limit = 10): Promise<{ 
   let sent = 0;
   let failed = 0;
   for (const row of rows) {
-    const claimed = database.prepare(`UPDATE cms_notification_outbox
+    const claimed = await database.prepare(`UPDATE cms_notification_outbox
       SET attempts = attempts + 1,
         next_attempt_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '+1 hour')
       WHERE enquiry_id = ? AND sent_at IS NULL AND attempts = ?
@@ -72,22 +72,22 @@ export async function processPendingEnquiryNotifications(limit = 10): Promise<{ 
       await transport.sendMail(buildEnquiryNotification(
         row.created_at, baseUrl, process.env.ENQUIRY_ALERT_FROM!.trim(), process.env.ENQUIRY_ALERT_TO!.trim(),
       ));
-      database.prepare(`UPDATE cms_notification_outbox
+      await database.prepare(`UPDATE cms_notification_outbox
         SET sent_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), last_error = NULL
         WHERE enquiry_id = ?`).run(row.enquiry_id);
       sent += 1;
     } catch (error) {
       const attempts = row.attempts + 1;
       const retryMinutes = Math.min(60, 2 ** Math.min(attempts, 6));
-      database.prepare(`UPDATE cms_notification_outbox
-        SET next_attempt_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?),
+      await database.prepare(`UPDATE cms_notification_outbox
+        SET next_attempt_at = to_char((clock_timestamp() + (?::text || ' minutes')::interval) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
           last_error = 'Delivery failed'
         WHERE enquiry_id = ?`).run(`+${retryMinutes} minutes`, row.enquiry_id);
       console.error("Unable to deliver an enquiry notification; it remains queued for retry.", error);
       failed += 1;
     }
   }
-  const exhausted = (database.prepare(`SELECT COUNT(*) AS count FROM cms_notification_outbox
+  const exhausted = (await database.prepare(`SELECT COUNT(*) AS count FROM cms_notification_outbox
     WHERE sent_at IS NULL AND attempts >= 8`).get() as { count: number }).count;
   return { sent, failed, exhausted };
 }

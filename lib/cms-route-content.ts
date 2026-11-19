@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { Metadata } from "next";
 import { getCmsContentImage } from "@/lib/cms-content-image";
 import { findContentBySlug, findPublishedContentRedirect, getCmsSettings, listContent, type CmsContent } from "@/lib/cms-db";
@@ -5,21 +7,21 @@ import { getCmsContentHref, getCmsContentRoutePath, getCmsRouteKind } from "@/li
 
 export type CmsRouteKind = "service" | "blog" | "page";
 
-export function findPublishedRouteContent(slug: string, kind: CmsRouteKind): CmsContent | undefined {
-  listContent();
-  const item = findContentBySlug(slug);
+export async function findPublishedRouteContent(slug: string, kind: CmsRouteKind): Promise<CmsContent | undefined> {
+  await listContent();
+  const item = await findContentBySlug(slug);
   return item && getCmsRouteKind(item.category_slug) === kind ? item : undefined;
 }
 
-export function resolvePublishedRouteContent(slug: string, kind: CmsRouteKind): {
+export async function resolvePublishedRouteContent(slug: string, kind: CmsRouteKind): Promise<{
   item?: CmsContent;
   redirectTo?: string;
-} {
-  const item = findPublishedRouteContent(slug, kind);
+}> {
+  const item = await findPublishedRouteContent(slug, kind);
   if (item) return { item };
 
   const previousUrl = getCmsContentRoutePath(slug, kind);
-  const redirectedItem = findPublishedContentRedirect(previousUrl);
+  const redirectedItem = await findPublishedContentRedirect(previousUrl);
   if (!redirectedItem) return {};
 
   return {
@@ -28,15 +30,15 @@ export function resolvePublishedRouteContent(slug: string, kind: CmsRouteKind): 
   };
 }
 
-export function resolvePublishedRootRouteContent(slug: string): {
+export async function resolvePublishedRootRouteContent(slug: string): Promise<{
   item?: CmsContent;
   redirectTo?: string;
   kind: "page" | "service";
-} {
-  const page = resolvePublishedRouteContent(slug, "page");
+}> {
+  const page = await resolvePublishedRouteContent(slug, "page");
   if (page.item || page.redirectTo) return { ...page, kind: "page" };
 
-  const service = resolvePublishedRouteContent(slug, "service");
+  const service = await resolvePublishedRouteContent(slug, "service");
   if (service.item || service.redirectTo) return { ...service, kind: "service" };
   return { kind: "page" };
 }
@@ -52,18 +54,36 @@ export function getCmsContentCanonical(item: CmsContent, fallback: string): stri
   return fallback;
 }
 
-export function getCmsContentStructuredData(
+function getCmsSocialImageUrl(item: CmsContent, kind: CmsRouteKind, siteUrl: string): string {
+  const imageUrl = item.seo_og_image || item.image_url || getCmsContentImage(item.content);
+  const fallback = kind === "service" ? "/images/ready-to-begin.webp" : "/images/rooted-recovery-campus.webp";
+  if (!imageUrl) return new URL(fallback, `${siteUrl}/`).toString();
+
+  const parsedImageUrl = new URL(imageUrl, `${siteUrl}/`);
+  if (!parsedImageUrl.pathname.startsWith("/wp-content/uploads/")) return parsedImageUrl.toString();
+
+  const localCandidates = kind === "blog"
+    ? [".webp", ".png", ".jpg"].map((extension) => `/images/blog/${item.slug}${extension}`)
+    : kind === "service"
+      ? [".webp", ".jpg", ".png"].map((extension) => `/images/${item.slug}-hero-01${extension}`)
+      : [];
+  const localImage = localCandidates.find((candidate) =>
+    existsSync(join(process.cwd(), "public", candidate.slice(1))),
+  );
+
+  return new URL(localImage || fallback, `${siteUrl}/`).toString();
+}
+
+export async function getCmsContentStructuredData(
   item: CmsContent,
   fallbackCanonical: string,
   kind: "service" | "blog",
 ) {
-  const settings = getCmsSettings();
+  const settings = await getCmsSettings();
   const siteUrl = (settings.siteUrl || "https://www.roarwellness.org").replace(/\/+$/, "");
   const canonical = getCmsContentCanonical(item, fallbackCanonical);
   const pageUrl = new URL(canonical, `${siteUrl}/`).toString();
-  const imageUrl = item.seo_og_image || item.image_url || getCmsContentImage(item.content)
-    || (kind === "service" ? "/images/ready-to-begin.webp" : null);
-  const absoluteImageUrl = imageUrl ? new URL(imageUrl, `${siteUrl}/`).toString() : undefined;
+  const absoluteImageUrl = getCmsSocialImageUrl(item, kind, siteUrl);
   const title = item.seo_title || `${item.title} | Roar Wellness`;
   const description = item.seo_description || item.summary || item.excerpt || undefined;
   const pageId = `${pageUrl}#webpage`;
@@ -126,12 +146,11 @@ export function getCmsContentStructuredData(
   };
 }
 
-export function getRouteContentMetadata(item: CmsContent | undefined, canonical: string): Metadata {
+export async function getRouteContentMetadata(item: CmsContent | undefined, canonical: string): Promise<Metadata> {
   if (!item) return { title: "Page not found | Roar Wellness" };
   const routeKind = getCmsRouteKind(item.category_slug);
-  const settings = getCmsSettings();
-  const imageUrl = item.seo_og_image || item.image_url || getCmsContentImage(item.content)
-    || (routeKind === "service" ? "/images/ready-to-begin.webp" : null);
+  const settings = await getCmsSettings();
+  const imageUrl = getCmsSocialImageUrl(item, routeKind, settings.siteUrl || "https://www.roarwellness.org");
   const canonicalUrl = getCmsContentCanonical(item, canonical);
   const title = item.seo_title || `${item.title} | Roar Wellness`;
   const defaultDescription = item.slug === "videos"
@@ -170,7 +189,7 @@ export function getRouteContentMetadata(item: CmsContent | undefined, canonical:
       title: openGraphTitle,
       ...(openGraphDescription ? { description: openGraphDescription } : {}),
       url: canonicalUrl,
-      type: "article",
+      type: routeKind === "blog" ? "article" : "website",
       ...(imageUrl ? { images: [imageUrl] } : {}),
     },
     twitter: {

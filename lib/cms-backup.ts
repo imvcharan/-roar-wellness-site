@@ -1,11 +1,8 @@
-import { randomUUID } from "node:crypto";
-import { readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { gzipSync, gunzipSync } from "node:zlib";
-import { DatabaseSync } from "node:sqlite";
 import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getCmsDatabase } from "@/lib/cms-db";
+import { getCmsDatabase, withCmsTransaction } from "@/lib/cms-db";
 import { decryptCmsBackup, encryptCmsBackup, parseCmsBackupKey } from "@/lib/cms-backup-crypto";
 import { getCmsMediaFilePath, isCmsMediaId } from "@/lib/cms-media-storage";
 
@@ -58,14 +55,10 @@ function createS3Client(region: string, endpoint?: string): S3Client {
 
 async function getBackupPayload(): Promise<BackupPayload> {
   const database = getCmsDatabase();
-  const snapshotPath = join(tmpdir(), `roar-cms-${randomUUID()}.sqlite`);
-  const escapedPath = snapshotPath.replace(/'/g, "''");
-  database.exec(`VACUUM INTO '${escapedPath}'`);
-  const snapshot = new DatabaseSync(snapshotPath, { readOnly: true });
-  try {
-    const media = snapshot.prepare(
+  return withCmsTransaction(async () => {
+    const media = await database.prepare(
       "SELECT id, filename, url, mime_type, size, width, height, created_at FROM cms_media",
-    ).all() as unknown as BackupMedia[];
+    ).all<BackupMedia>();
     const mediaFiles: BackupPayload["mediaFiles"] = [];
     for (const item of media) {
       if (!isCmsMediaId(item.id)) throw new Error(`Invalid media identifier for ${item.filename}.`);
@@ -84,29 +77,26 @@ async function getBackupPayload(): Promise<BackupPayload> {
       }
       mediaFiles.push({ filename, base64: bytes.toString("base64") });
     }
-    const rows = (sql: string) => snapshot.prepare(sql).all();
+    const rows = async (sql: string) => database.prepare(sql).all();
     return {
       format: "roar-cms-backup",
       version: 2,
       createdAt: new Date().toISOString(),
-      categories: rows("SELECT id, name, slug, is_default, created_at FROM categories"),
-      content: rows("SELECT * FROM content"),
-      revisions: rows("SELECT id, content_id, snapshot, created_by, created_at FROM cms_revisions"),
-      faqs: rows("SELECT * FROM cms_faqs"),
-      settings: rows("SELECT key, value, updated_at FROM cms_settings"),
-      homeSections: rows("SELECT * FROM cms_home_sections"),
-      galleryImages: rows("SELECT * FROM cms_gallery_images"),
-      urlRedirects: rows("SELECT source_path, content_id, created_at FROM cms_url_redirects"),
+      categories: await rows("SELECT id, name, slug, is_default, created_at FROM categories"),
+      content: await rows("SELECT * FROM content"),
+      revisions: await rows("SELECT id, content_id, snapshot, created_by, created_at FROM cms_revisions"),
+      faqs: await rows("SELECT * FROM cms_faqs"),
+      settings: await rows("SELECT key, value, updated_at FROM cms_settings"),
+      homeSections: await rows("SELECT * FROM cms_home_sections"),
+      galleryImages: await rows("SELECT * FROM cms_gallery_images"),
+      urlRedirects: await rows("SELECT source_path, content_id, created_at FROM cms_url_redirects"),
       media,
       mediaFiles,
-      enquiries: rows("SELECT id, name, email, phone, source, status, assigned_user_id, follow_up_at, created_at, updated_at FROM cms_enquiries"),
-      auditLog: rows("SELECT id, actor_name, action, resource_type, resource_id, summary, location, created_at FROM cms_audit_log"),
-      analyticsEvents: rows("SELECT id, event_type, page_path, created_at FROM cms_analytics_events"),
+      enquiries: await rows("SELECT id, name, email, phone, source, status, assigned_user_id, follow_up_at, created_at, updated_at FROM cms_enquiries"),
+      auditLog: await rows("SELECT id, actor_name, action, resource_type, resource_id, summary, location, created_at FROM cms_audit_log"),
+      analyticsEvents: await rows("SELECT id, event_type, page_path, created_at FROM cms_analytics_events"),
     };
-  } finally {
-    snapshot.close();
-    await rm(snapshotPath, { force: true });
-  }
+  }, "read-only");
 }
 
 export async function createAndUploadCmsBackup(): Promise<{ key: string; createdAt: string }> {

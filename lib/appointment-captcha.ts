@@ -21,7 +21,7 @@ export function createAppointmentCaptchaToken(challengeId: string, expiresAt: st
   return secret ? signChallenge(challengeId, expiresAt, secret) : null;
 }
 
-export function consumeAppointmentCaptcha(token: unknown, answer: unknown): boolean {
+export async function consumeAppointmentCaptcha(token: unknown, answer: unknown): Promise<boolean> {
   const secret = getCaptchaSecret();
   if (!secret || typeof token !== "string" || token.length > 256
     || typeof answer !== "string" || !/^\d{1,3}$/.test(answer)) return false;
@@ -33,7 +33,7 @@ export function consumeAppointmentCaptcha(token: unknown, answer: unknown): bool
   const actualSignature = Buffer.from(suppliedSignature);
   if (expectedSignature.length !== actualSignature.length || !timingSafeEqual(expectedSignature, actualSignature)) return false;
 
-  const challenge = getCmsDatabase().prepare(
+  const challenge = await getCmsDatabase().prepare(
     "DELETE FROM appointment_captcha_challenges WHERE challenge_id = ? AND expires_at = ? AND expires_at > ? RETURNING answer",
   ).get(challengeId, Number(tokenExpiry), Math.floor(Date.now() / 1000)) as { answer: number } | undefined;
   return challenge?.answer === Number(answer);

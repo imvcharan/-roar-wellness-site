@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   if (!isCmsMediaId(id)) return new Response("Media not found.", { status: 404 });
 
-  const media = getCmsDatabase().prepare("SELECT url, mime_type FROM cms_media WHERE id = ?")
+  const media = await getCmsDatabase().prepare("SELECT url, mime_type FROM cms_media WHERE id = ?")
     .get(id) as { url: string; mime_type: string } | undefined;
   if (!media) return new Response("Media not found.", { status: 404 });
 

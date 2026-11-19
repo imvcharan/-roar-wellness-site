@@ -4,7 +4,7 @@ import { getCmsSettings } from "@/lib/cms-db";
 export const runtime = "nodejs";
 
 export async function GET() {
-  return NextResponse.json({ data: getCmsSettings() }, {
+  return NextResponse.json({ data: await getCmsSettings() }, {
     headers: { "Cache-Control": "no-store, max-age=0" },
   });
 }

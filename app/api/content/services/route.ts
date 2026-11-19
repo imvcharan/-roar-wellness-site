@@ -10,10 +10,11 @@ export async function GET(request: Request) {
   const includeArchiveServices = searchParams.get("archive") === "1";
   const excludeLocationServices = !includeAllServices || includeArchiveServices;
   const content = includeAllServices || includeArchiveServices
-    ? ["treatments", "therapy", "mental-healthcare"]
-      .flatMap((categorySlug) => listContent({ categorySlug }))
+    ? (await Promise.all(["treatments", "therapy", "mental-healthcare"]
+      .map((categorySlug) => listContent({ categorySlug }))))
+      .flat()
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
-    : listContent({ categorySlug: "treatments" });
+    : await listContent({ categorySlug: "treatments" });
   return NextResponse.json({
     data: content
       .filter((item) => isServiceCategory(item.category_slug)

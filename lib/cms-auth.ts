@@ -11,9 +11,9 @@ function getSessionSecret(): string | undefined {
   return process.env.CMS_SESSION_SECRET?.trim();
 }
 
-export function cmsAuthConfigured(): boolean {
+export async function cmsAuthConfigured(): Promise<boolean> {
   if (!getSessionSecret()) return false;
-  const users = getCmsDatabase().prepare("SELECT COUNT(*) AS count FROM cms_users").get() as { count: number };
+  const users = await getCmsDatabase().prepare("SELECT COUNT(*) AS count FROM cms_users").get() as { count: number };
   return users.count > 0;
 }
 
@@ -21,7 +21,7 @@ function signature(sessionId: string, expiresAt: string, secret: string): string
   return createHmac("sha256", secret).update(`${sessionId}.${expiresAt}`).digest("base64url");
 }
 
-export function verifyCmsSession(token: string | undefined): boolean {
+export async function verifyCmsSession(token: string | undefined): Promise<boolean> {
   const secret = getSessionSecret();
   if (!secret || !token) return false;
   const [sessionId, expiresAt, suppliedSignature, extra] = token.split(".");
@@ -31,7 +31,7 @@ export function verifyCmsSession(token: string | undefined): boolean {
   const expected = Buffer.from(signature(sessionId, expiresAt, secret));
   const supplied = Buffer.from(suppliedSignature);
   if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return false;
-  const session = getCmsDatabase()
+  const session = await getCmsDatabase()
     .prepare("SELECT expires_at FROM cms_sessions WHERE session_id = ?")
     .get(sessionId) as { expires_at: number } | undefined;
   return session?.expires_at === Number(expiresAt);
@@ -40,9 +40,9 @@ export function verifyCmsSession(token: string | undefined): boolean {
 export async function getCmsRole(): Promise<CmsRole | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
-  if (!verifyCmsSession(token)) return null;
+  if (!await verifyCmsSession(token)) return null;
   const sessionId = token!.split(".")[0];
-  const row = getCmsDatabase()
+  const row = await getCmsDatabase()
     .prepare("SELECT u.role FROM cms_sessions s JOIN cms_users u ON u.id = s.user_id WHERE s.session_id = ?")
     .get(sessionId) as { role: CmsRole } | undefined;
   return row?.role ?? null;
@@ -60,9 +60,9 @@ export async function canEditCms(): Promise<boolean> {
 export async function getCmsUserId(): Promise<string | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
-  if (!verifyCmsSession(token)) return null;
+  if (!await verifyCmsSession(token)) return null;
   const sessionId = token!.split(".")[0];
-  const session = getCmsDatabase()
+  const session = await getCmsDatabase()
     .prepare("SELECT user_id FROM cms_sessions WHERE session_id = ?")
     .get(sessionId) as { user_id: string | null } | undefined;
   return session?.user_id ?? null;
@@ -71,19 +71,19 @@ export async function getCmsUserId(): Promise<string | null> {
 export async function getCmsSessionId(): Promise<string | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
-  if (!verifyCmsSession(token)) return null;
+  if (!await verifyCmsSession(token)) return null;
   return token!.split(".")[0];
 }
 
-export function createCmsSession(userId: string): { token: string; maxAge: number } {
+export async function createCmsSession(userId: string): Promise<{ token: string; maxAge: number }> {
   const secret = getSessionSecret();
   if (!secret) throw new Error("CMS_SESSION_SECRET is not configured.");
   const maxAge = sessionLifetimeSeconds;
   const expiresAt = String(Math.floor(Date.now() / 1000) + maxAge);
   const sessionId = randomUUID();
   const database = getCmsDatabase();
-  database.prepare("DELETE FROM cms_sessions WHERE expires_at <= ?").run(Math.floor(Date.now() / 1000));
-  database.prepare("INSERT INTO cms_sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)")
+  await database.prepare("DELETE FROM cms_sessions WHERE expires_at <= ?").run(Math.floor(Date.now() / 1000));
+  await database.prepare("INSERT INTO cms_sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)")
     .run(sessionId, userId, Number(expiresAt));
   return { token: `${sessionId}.${expiresAt}.${signature(sessionId, expiresAt, secret)}`, maxAge };
 }
@@ -97,7 +97,7 @@ export async function revokeCmsSession(): Promise<void> {
   const token = cookieStore.get(sessionCookieName)?.value;
   const sessionId = token?.split(".")[0];
   if (sessionId) {
-    getCmsDatabase().prepare("DELETE FROM cms_sessions WHERE session_id = ?").run(sessionId);
+    await getCmsDatabase().prepare("DELETE FROM cms_sessions WHERE session_id = ?").run(sessionId);
   }
 }
 

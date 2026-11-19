@@ -1,20 +1,7 @@
-import { mkdirSync } from "node:fs";
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { DatabaseSync } from "node:sqlite";
-import { randomBytes, randomUUID, scryptSync } from "node:crypto";
-import { homepageSeeds } from "@/lib/homepage-seed-data";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { randomUUID } from "node:crypto";
+import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
 import { getCmsContentImage } from "@/lib/cms-content-image";
-import { inferImportedCategorySlug, parseImportedContent } from "@/lib/cms-import-utils";
-import { getCmsContentHref } from "@/lib/cms-routes";
-import {
-  defaultGalleryImageAlts,
-  defaultGalleryImages,
-  galleryRoomImageAlts,
-  galleryRoomImages,
-} from "@/lib/gallery-images";
-import { normalizeCmsPlainText } from "@/lib/cms-text";
-import { getImportedPublishedAt } from "@/lib/cms-date";
 
 export interface CmsCategory {
   id: string;
@@ -56,1264 +43,180 @@ export interface CmsContent {
   published_at: string | null;
 }
 
+interface CmsQueryResult<Row> {
+  rows: Row[];
+  changes: number;
+}
+
+export interface CmsDatabase {
+  prepare(sql: string): {
+    all<Row extends QueryResultRow = QueryResultRow>(...values: unknown[]): Promise<Row[]>;
+    get<Row extends QueryResultRow = QueryResultRow>(...values: unknown[]): Promise<Row | undefined>;
+    run(...values: unknown[]): Promise<{ changes: number }>;
+  };
+  exec(sql: string): Promise<void>;
+  query<Row extends QueryResultRow = QueryResultRow>(
+    sql: string,
+    values?: unknown[],
+  ): Promise<CmsQueryResult<Row>>;
+}
+
 type CmsGlobal = typeof globalThis & {
-  roarCmsDatabase?: DatabaseSync;
-  roarCmsPublishTimer?: NodeJS.Timeout;
+  roarCmsPool?: Pool;
+  roarCmsDatabase?: CmsDatabase;
 };
 
 const globalCms = globalThis as CmsGlobal;
+const transactionContext = new AsyncLocalStorage<PoolClient>();
+types.setTypeParser(20, (value) => {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) throw new Error("PostgreSQL integer value exceeds JavaScript's safe integer range.");
+  return parsed;
+});
 
-const blogFeaturedImageSlugs = [
-  "10-warning-signs-someone-needs-alcohol-addiction-treatment",
-  "5-signs-which-proves-you-need-a-professional-assistance-for-drug-abuse",
-  "a-guide-on-how-to-stop-heroin-addiction-and-turn-your-life",
-  "alcohol-addiction-treatment-in-delhi-does-it-matters-to-choose-the-right-sort-of-rehab",
-  "borderline-personality-disorder-diagnosis-substance-addiction-and-recovery",
-  "can-alcohol-addiction-be-treated-without-relapse",
-  "detox-for-alcohol-addiction-aud-treatment-in-delhi",
-  "sarah-overcame-alcohol-addiction",
-  "explore-effective-drug-addiction-treatment-options",
-  "fighting-for-drug-de-addiction-this-nasha-mukti-kendra-in-delhi-will-not-let-you-feel-alone",
-  "how-to-deal-the-rising-drug-addiction-among-youngsters",
-  "how-to-get-a-healthy-life-with-drug-deaddiction-center",
-  "how-to-reduce-alcohol-addiction-control-of-your-life",
-  "impact-of-schizophrenia-on-relationships-and-social-life",
-  "instantly-busting-the-top-7-myths-about-drug-rehabilitation-centers",
-  "navigating-alcohol-detoxification-understanding-safe-methods",
-  "overcoming-drug-addiction-the-recovery-journey-of-rahul-mehra-at-roar-wellness-rehab-centre",
-  "psychological-support-for-dementia-patients",
-  "drug-awareness-week-in-delhi-how-a-rehab-centre-near-me-can-help-build-a-drug-free-society",
-  "roar-wellness-rehabilitation-centre-honoured-as-most-trusted-de-addiction-rehabilitation-centre-in-delhi-at-pride-bharat-awards-2026",
-  "understanding-the-alcohol-addiction-and-the-stages",
-  "the-science-of-rehabilitation-how-therapy-helps-you-heal-faster",
-  "three-amazing-advantages-of-heroin-detox-programs-in-delhi",
-  "understanding-addiction-effects-recovery-and-pitfalls",
-  "what-happens-on-day-one-in-rehab-centre",
-  "what-you-can-expect-during-cocaine-detox-treatment-in-delhi",
-  "why-a-personalized-alcohol-addiction-treatment-related-programs-matters-the-most",
-  "why-person-centered-care-is-the-future-of-dementia-treatment",
-  "why-young-adults-in-metro-cities-are-turning-to-cocaine-and-how-they-can-break-free",
-];
-
-function openDatabase(): DatabaseSync {
-  const databasePath = resolve(
-    process.env.CMS_DATABASE_PATH?.trim() || "data/cms.sqlite",
-  );
-  mkdirSync(dirname(databasePath), { recursive: true });
-  const database = new DatabaseSync(databasePath);
-  database.exec(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA foreign_keys = ON;
-    PRAGMA busy_timeout = 5000;
-    CREATE TABLE IF NOT EXISTS categories (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
-      slug TEXT NOT NULL UNIQUE,
-      is_default INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS content (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      slug TEXT NOT NULL UNIQUE,
-      category_id TEXT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
-      excerpt TEXT,
-      summary TEXT,
-      description TEXT,
-      content TEXT,
-      image_url TEXT,
-      image_alt_text TEXT,
-      image_position TEXT NOT NULL DEFAULT '50% 50%',
-      status TEXT NOT NULL CHECK (status IN ('draft', 'published', 'archived')),
-      seo_title TEXT,
-      seo_description TEXT,
-      seo_keywords TEXT,
-      seo_robots TEXT,
-      seo_canonical_url TEXT,
-      seo_og_title TEXT,
-      seo_og_description TEXT,
-      seo_og_image TEXT,
-      seo_twitter_title TEXT,
-      seo_twitter_description TEXT,
-      seo_twitter_image TEXT,
-      scheduled_publish_at TEXT,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-      published_at TEXT
-    );
-    CREATE TABLE IF NOT EXISTS cms_sessions (
-      session_id TEXT PRIMARY KEY,
-      user_id TEXT REFERENCES cms_users(id) ON DELETE CASCADE,
-      expires_at INTEGER NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_enquiries (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      source TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'scheduled', 'closed')),
-      assigned_user_id TEXT REFERENCES cms_users(id) ON DELETE SET NULL,
-      follow_up_at TEXT,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE INDEX IF NOT EXISTS cms_enquiries_created ON cms_enquiries(status, created_at DESC);
-    CREATE TABLE IF NOT EXISTS cms_notification_outbox (
-      enquiry_id TEXT PRIMARY KEY REFERENCES cms_enquiries(id) ON DELETE CASCADE,
-      attempts INTEGER NOT NULL DEFAULT 0,
-      next_attempt_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-      sent_at TEXT,
-      last_error TEXT
-    );
-    CREATE TABLE IF NOT EXISTS cms_audit_log (
-      id TEXT PRIMARY KEY,
-      user_id TEXT REFERENCES cms_users(id) ON DELETE SET NULL,
-      actor_name TEXT NOT NULL,
-      action TEXT NOT NULL,
-      resource_type TEXT NOT NULL,
-      resource_id TEXT,
-      summary TEXT NOT NULL,
-      location TEXT,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE INDEX IF NOT EXISTS cms_audit_created ON cms_audit_log(created_at DESC);
-    CREATE TABLE IF NOT EXISTS cms_analytics_events (
-      id TEXT PRIMARY KEY,
-      event_type TEXT NOT NULL CHECK (event_type IN ('page_view', 'appointment_submit')),
-      page_path TEXT,
-      region TEXT,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE INDEX IF NOT EXISTS cms_analytics_created ON cms_analytics_events(created_at DESC, event_type);
-    CREATE TABLE IF NOT EXISTS appointment_captcha_challenges (
-      challenge_id TEXT PRIMARY KEY,
-      answer INTEGER NOT NULL,
-      expires_at INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS cms_rate_limits (
-      key TEXT PRIMARY KEY,
-      hits INTEGER NOT NULL,
-      window_started_at INTEGER NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS cms_rate_limits_window ON cms_rate_limits(window_started_at);
-    CREATE TABLE IF NOT EXISTS cms_users (
-      id TEXT PRIMARY KEY,
-      email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-      name TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('admin', 'editor', 'viewer')),
-      password_hash TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_login_challenges (
-      challenge_hash TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES cms_users(id) ON DELETE CASCADE,
-      expires_at INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS cms_totp_recovery_codes (
-      code_hash TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES cms_users(id) ON DELETE CASCADE,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_revisions (
-      id TEXT PRIMARY KEY,
-      content_id TEXT NOT NULL,
-      snapshot TEXT NOT NULL,
-      created_by TEXT,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_url_redirects (
-      source_path TEXT PRIMARY KEY,
-      content_id TEXT NOT NULL REFERENCES content(id) ON DELETE CASCADE,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE INDEX IF NOT EXISTS cms_revisions_content_created
-      ON cms_revisions(content_id, created_at DESC);
-    CREATE TABLE IF NOT EXISTS cms_media (
-      id TEXT PRIMARY KEY,
-      filename TEXT NOT NULL,
-      url TEXT NOT NULL UNIQUE,
-      mime_type TEXT NOT NULL,
-      size INTEGER NOT NULL,
-      width INTEGER NOT NULL,
-      height INTEGER NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_gallery_images (
-      id TEXT PRIMARY KEY,
-      image_url TEXT NOT NULL,
-      alt_text TEXT NOT NULL DEFAULT '',
-      caption TEXT,
-      position INTEGER NOT NULL DEFAULT 0,
-      is_published INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_faqs (
-      id TEXT PRIMARY KEY,
-      question TEXT NOT NULL,
-      answer TEXT NOT NULL,
-      position INTEGER NOT NULL DEFAULT 0,
-      status TEXT NOT NULL CHECK (status IN ('draft', 'published')),
-      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_settings (
-      key TEXT PRIMARY KEY,
-      value TEXT NOT NULL,
-      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_bootstrap_state (
-      key TEXT PRIMARY KEY,
-      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE TABLE IF NOT EXISTS cms_home_sections (
-      section_key TEXT PRIMARY KEY,
-      group_name TEXT NOT NULL DEFAULT 'custom',
-      heading TEXT NOT NULL,
-      eyebrow TEXT,
-      body TEXT,
-      image_url TEXT,
-      position INTEGER NOT NULL DEFAULT 0,
-      is_published INTEGER NOT NULL DEFAULT 1,
-      updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-    );
-    CREATE INDEX IF NOT EXISTS content_status_category_updated
-      ON content(status, category_id, updated_at DESC);
-  `);
-  const addColumn = (table: string, column: string, definition: string) => {
-    const hasColumn = () => {
-      const columns = database.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-      return columns.some((item) => item.name === column);
-    };
-    if (!hasColumn()) {
-      try {
-        database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-      } catch (error) {
-        if (!(error instanceof Error) || !/duplicate column name/i.test(error.message) || !hasColumn()) {
-          throw error;
+function convertPlaceholders(sql: string): string {
+  let output = "";
+  let parameter = 0;
+  let quote: "'" | '"' | null = null;
+  for (let index = 0; index < sql.length; index += 1) {
+    const character = sql[index];
+    if (quote) {
+      output += character;
+      if (character === quote) {
+        if (sql[index + 1] === quote) {
+          output += sql[index + 1];
+          index += 1;
+        } else {
+          quote = null;
         }
       }
-    }
-  };
-  addColumn("content", "seo_title", "TEXT");
-  addColumn("content", "image_alt_text", "TEXT");
-  addColumn("content", "image_position", "TEXT NOT NULL DEFAULT '50% 50%'");
-  addColumn("content", "seo_description", "TEXT");
-  addColumn("content", "seo_keywords", "TEXT");
-  addColumn("content", "seo_robots", "TEXT");
-  addColumn("content", "seo_canonical_url", "TEXT");
-  addColumn("content", "seo_og_title", "TEXT");
-  addColumn("content", "seo_og_description", "TEXT");
-  addColumn("content", "seo_og_image", "TEXT");
-  addColumn("content", "seo_twitter_title", "TEXT");
-  addColumn("content", "seo_twitter_description", "TEXT");
-  addColumn("content", "seo_twitter_image", "TEXT");
-  addColumn("content", "scheduled_publish_at", "TEXT");
-  addColumn("cms_sessions", "user_id", "TEXT REFERENCES cms_users(id) ON DELETE CASCADE");
-  addColumn("cms_enquiries", "assigned_user_id", "TEXT REFERENCES cms_users(id) ON DELETE SET NULL");
-  addColumn("cms_enquiries", "follow_up_at", "TEXT");
-  addColumn("cms_users", "totp_secret_enc", "TEXT");
-  addColumn("cms_users", "totp_pending_secret_enc", "TEXT");
-  const featuredAltMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'featured-image-alt-fallback-v1'",
-  ).get();
-  if (!featuredAltMigration) {
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      database.prepare(`
-        UPDATE content SET image_alt_text = title
-        WHERE image_url IS NOT NULL AND trim(image_url) != ''
-          AND (image_alt_text IS NULL OR trim(image_alt_text) = '')
-      `).run();
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('featured-image-alt-fallback-v1')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
+    } else if (character === "'" || character === '"') {
+      quote = character;
+      output += character;
+    } else if (character === "?") {
+      parameter += 1;
+      output += `$${parameter}`;
+    } else {
+      output += character;
     }
   }
-  addColumn("cms_users", "totp_pending_at", "TEXT");
-  addColumn("cms_users", "totp_last_counter", "INTEGER NOT NULL DEFAULT -1");
-  addColumn("cms_home_sections", "group_name", "TEXT NOT NULL DEFAULT 'custom'");
-  database.exec("CREATE INDEX IF NOT EXISTS cms_url_redirects_content ON cms_url_redirects(content_id)");
-  addColumn("cms_home_sections", "position", "INTEGER NOT NULL DEFAULT 0");
-  database.prepare("UPDATE cms_home_sections SET group_name = 'site-copy' WHERE section_key IN ('hero', 'approach') AND group_name = 'custom'").run();
-  const normalizedContentText = database.prepare(
-    "SELECT id, excerpt, summary FROM content WHERE excerpt LIKE '%&%' OR summary LIKE '%&%'",
-  ).all() as { id: string; excerpt: string | null; summary: string | null }[];
-  const updateContentText = database.prepare("UPDATE content SET excerpt = ?, summary = ? WHERE id = ?");
-  for (const item of normalizedContentText) {
-    const excerpt = item.excerpt === null ? null : normalizeCmsPlainText(item.excerpt);
-    const summary = item.summary === null ? null : normalizeCmsPlainText(item.summary);
-    if (excerpt !== item.excerpt || summary !== item.summary) {
-      updateContentText.run(excerpt, summary, item.id);
-    }
-  }
-  const adminEmail = process.env.CMS_ADMIN_EMAIL?.trim().toLowerCase() || "admin@roarwellness.org";
-  const adminPassword = process.env.CMS_ADMIN_PASSWORD?.trim();
-  if (adminPassword) {
-    const existingAdmin = database.prepare("SELECT id FROM cms_users WHERE email = ?").get(adminEmail);
-    if (!existingAdmin) {
-      const salt = randomBytes(16).toString("hex");
-      const hash = scryptSync(adminPassword, salt, 64).toString("hex");
-      database.prepare("INSERT INTO cms_users (id, email, name, role, password_hash) VALUES (?, ?, ?, 'admin', ?)")
-        .run(randomUUID(), adminEmail, "CMS Administrator", `${salt}:${hash}`);
-    }
-  }
-  const settingDefaults: [string, string][] = [
-    ["siteName", "Roar Wellness"],
-    ["siteDescription", "Get expert help today at Roar Wellness Rehab Centre – confidential consultation available. Start your recovery journey now."],
-    ["siteUrl", "https://www.roarwellness.org"],
-    ["seoTitle", "Luxury Rehabilitation Centre | Drug & Alcohol Rehab Centre Delhi NCR, India"],
-    ["seoDescription", "Roar Wellness is the best rehabilitation Centre in Delhi NCR, India. Leading alcohol addiction treatment and luxury rehab facilities. Contact Roar Wellness Center Delhi."],
-    ["postsPerPage", "20"],
-    ["homepageHeroTitle", "Roar Wellness"],
-    ["homepageHeroEyebrow", "Rehabilitation centre · Delhi"],
-    ["homepageHeroDescription", "A premier rehabilitation centre committed to transforming lives through personalized, evidence-based care."],
-    ["homepageApproachTitle", "Our Approach"],
-    ["homepageApproachEyebrow", "Approach"],
-    ["homepageApproachDescription", "At Roar Wellness Rehab Centre, we believe that healing and transformation happen through experiences. Our Evidence Based Therapy is a unique and dynamic approach designed to support individuals struggling with addiction, mental health issues, and emotional distress."],
-    ["homepagePersonalizedCareTitle", "Personalized care at Roar Wellness"],
-    ["homepagePersonalizedCareDescription", "Professional guidance and compassionate support through recovery."],
-    ["contactEmail", "help@roarwellness.org"],
-    ["contactPhone", "+919319977207"],
-    ["contactWhatsApp", "+919773890499"],
-    ["contactAddress", "Akhil Farm, 1 Daisy Lane, Off Central Drive, DLF Chattarpur Farms, New Delhi 110074, India"],
-  ];
-  database.prepare("UPDATE cms_settings SET value = ? WHERE key = ? AND value = ?").run(
-    "Luxury Rehabilitation Centre | Drug & Alcohol Rehab Centre Delhi NCR, India",
-    "seoTitle",
-    "Roar Wellness | Rehabilitation Centre in Delhi",
-  );
-  database.prepare("UPDATE cms_settings SET value = ? WHERE key = ? AND value = ?").run(
-    "Roar Wellness is the best rehabilitation Centre in Delhi NCR, India. Leading alcohol addiction treatment and luxury rehab facilities. Contact Roar Wellness Center Delhi.",
-    "seoDescription",
-    "Personalized, evidence-based rehabilitation and mental healthcare at Roar Wellness in Delhi.",
-  );
-  database.prepare("UPDATE cms_settings SET value = ? WHERE key = ? AND value = ?").run(
-    "Get expert help today at Roar Wellness Rehab Centre – confidential consultation available. Start your recovery journey now.",
-    "siteDescription",
-    "Personalized, evidence-based rehabilitation and mental healthcare at Roar Wellness in Delhi.",
-  );
-  const seedSetting = database.prepare("INSERT OR IGNORE INTO cms_settings (key, value) VALUES (?, ?)");
-  settingDefaults.forEach(([key, value]) => seedSetting.run(key, value));
-  const seededGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-defaults-v1'").get();
-  if (!seededGallery) {
-    const galleryInsert = database.prepare("INSERT OR IGNORE INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published) VALUES (?, ?, ?, ?, ?, ?)");
-    defaultGalleryImages.forEach((imageUrl, index) => {
-      galleryInsert.run(
-        randomUUID(),
-        imageUrl,
-        defaultGalleryImageAlts[index] ?? "Roar Wellness gallery image",
-        "",
-        index,
-        1,
-      );
-    });
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('gallery-defaults-v1')").run();
-  }
-  const seededRoomGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-room-images-v1'").get();
-  if (!seededRoomGallery) {
-    const galleryInsert = database.prepare("INSERT INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published) VALUES (?, ?, ?, ?, ?, ?)");
-    const existingRoomImage = database.prepare("SELECT 1 FROM cms_gallery_images WHERE image_url = ? LIMIT 1");
-    const roomImagePosition = defaultGalleryImages.length;
-    galleryRoomImages.forEach((imageUrl, index) => {
-      if (existingRoomImage.get(imageUrl)) return;
-      galleryInsert.run(
-        randomUUID(),
-        imageUrl,
-        galleryRoomImageAlts[index],
-        "",
-        roomImagePosition + index,
-        1,
-      );
-    });
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-v1')").run();
-  }
-  const deduplicatedRoomGallery = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'gallery-room-images-deduplicated-v1'").get();
-  if (!deduplicatedRoomGallery) {
-    const roomImageRows = database.prepare(
-      "SELECT id FROM cms_gallery_images WHERE image_url = ? ORDER BY updated_at DESC, position ASC, created_at ASC, id ASC",
-    );
-    const deleteRoomImage = database.prepare("DELETE FROM cms_gallery_images WHERE id = ?");
-    galleryRoomImages.forEach((imageUrl) => {
-      const rows = roomImageRows.all(imageUrl) as Array<{ id: string }>;
-      rows.slice(1).forEach(({ id }) => deleteRoomImage.run(id));
-    });
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('gallery-room-images-deduplicated-v1')").run();
-  }
-  const seededHomepage = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-defaults'").get();
-  if (!seededHomepage) {
-    const homeDefaults: [string, string, string, string][] = [
-      ["hero", "Roar Wellness", "Rehabilitation centre · Delhi", "A premier rehabilitation centre committed to transforming lives through personalized, evidence-based care."],
-      ["approach", "Our Approach", "Approach", "At Roar Wellness Rehab Centre, we believe that healing and transformation happen through experiences. Our Evidence Based Therapy is a unique and dynamic approach designed to support individuals struggling with addiction, mental health issues, and emotional distress."],
-    ];
-    const seedHomeSection = database.prepare("INSERT OR IGNORE INTO cms_home_sections (section_key, group_name, heading, eyebrow, body) VALUES (?, 'site-copy', ?, ?, ?)");
-    homeDefaults.forEach(([key, heading, eyebrow, body]) => seedHomeSection.run(key, heading, eyebrow, body));
-    const seedHomeCard = database.prepare("INSERT OR IGNORE INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    const positionByGroup = new Map<string, number>();
-    homepageSeeds.forEach((item) => {
-      const position = positionByGroup.get(item.group) ?? 0;
-      seedHomeCard.run(item.key, item.group, item.heading, item.eyebrow, item.body, item.imageUrl, position);
-      positionByGroup.set(item.group, position + 1);
-    });
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('homepage-defaults')").run();
-  }
-  const seededHomepageVisuals = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'homepage-visual-controls-v1'",
-  ).get();
-  if (!seededHomepageVisuals) {
-    const visualSeeds: Array<[string, string, string, string, string, number]> = [
-      ["home-care-interlude-1", "care-interlude", "Care section image 1", "Care that sees you", "/images/home-care-consultation.webp", 0],
-      ["home-care-interlude-2", "care-interlude", "Care section image 2", "Care and support", "/images/home-care-facility.webp", 1],
-      ["home-care-interlude-3", "care-interlude", "Recovery section image", "Recovery at your pace", "/images/home-care-campus.webp", 2],
-      ["home-essence-rooted-1", "essence-rooted", "Rooted in recovery image 1", "An aerial view of Roar Wellness surrounded by trees.", "/images/rooted-recovery-campus.webp", 0],
-      ["home-essence-rooted-2", "essence-rooted", "Rooted in recovery image 2", "A quiet terrace surrounded by greenery at Roar Wellness.", "/images/rooted-recovery-terrace.webp", 1],
-      ["home-essence-personal-1", "essence-personal", "Truly personal image", "Personalized guidance and care.", "/images/nutritional-guidance.png", 0],
-      ["home-essence-feature-1", "essence-feature", "Personalized care image", "Personalized care at Roar Wellness.", "/images/personalized-care-1.webp", 0],
-      ["home-essence-timeline-1", "essence-timeline", "Your path at your pace image", "A supportive space for recovery.", "/images/recovery-at-your-pace.webp", 0],
-    ];
-    const getSavedVisual = database.prepare("SELECT value FROM cms_settings WHERE key = ?");
-    const insertVisual = database.prepare(`
-      INSERT OR IGNORE INTO cms_home_sections
-        (section_key, group_name, heading, eyebrow, body, image_url, position, is_published)
-      VALUES (?, ?, ?, ?, '', ?, ?, 1)
-    `);
-    for (const [sectionKey, groupName, heading, altText, defaultImageUrl, position] of visualSeeds) {
-      const settingKey = groupName === "care-interlude"
-        ? `homepageCareInterludeImage${position + 1}`
-        : groupName === "essence-rooted"
-          ? `homepageRootedRecoveryImage${position + 1}`
-          : groupName === "essence-feature"
-            ? `homepagePersonalizedCareImage${position + 1}`
-            : null;
-      const savedVisual = settingKey ? getSavedVisual.get(settingKey) as { value: string } | undefined : undefined;
-      insertVisual.run(sectionKey, groupName, heading, altText, savedVisual?.value || defaultImageUrl, position);
-    }
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('homepage-visual-controls-v1')").run();
-  }
-  const madhavSinghPhotoMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-madhav-photo-v1'",
-  ).get();
-  if (!madhavSinghPhotoMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'team-madhav'
-        AND group_name = 'team'
-        AND image_url = ?
-    `).run(
-      "/images/team-madhav-singh.webp",
-      "https://www.roarwellness.org/wp-content/uploads/2025/05/111383828753madhav-1.jpg",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-madhav-photo-v1')").run();
-  }
-  const dhruvTanwarPhotoMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-dhruv-photo-v1'",
-  ).get();
-  if (!dhruvTanwarPhotoMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'team-dhruv'
-        AND group_name = 'team'
-        AND image_url = ?
-    `).run(
-      "/images/team-dhruv-tanwar.webp",
-      "https://www.roarwellness.org/wp-content/uploads/2025/05/880816739116Dhruv-Singh-Tanwa-1.jpg",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-dhruv-photo-v1')").run();
-  }
-  const missingTeamProfilesMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-live-profiles-v1'",
-  ).get();
-  if (!missingTeamProfilesMigration) {
-    const nextPosition = database.prepare(
-      "SELECT COALESCE(MAX(position), -1) + 1 AS position FROM cms_home_sections WHERE group_name = 'team'",
-    ).get() as { position: number };
-    const addTeamProfile = database.prepare(`
-      INSERT OR IGNORE INTO cms_home_sections
-        (section_key, group_name, heading, eyebrow, body, image_url, position, is_published)
-      VALUES (?, 'team', ?, ?, ?, ?, ?, 1)
-    `);
-    let position = nextPosition.position;
-    homepageSeeds.filter((item) => item.group === "team").forEach((item) => {
-      const result = addTeamProfile.run(
-          item.key,
-          item.heading,
-          item.eyebrow,
-          item.body,
-          item.imageUrl,
-          position,
-      );
-      if (Number(result.changes) > 0) position += 1;
-    });
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-live-profiles-v1')").run();
-  }
-  const teamProfileDetailsMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'team-profile-details-v2'",
-  ).get();
-  if (!teamProfileDetailsMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = 'team-manish' AND group_name = 'team'
-    `).run("/images/team-manish-sarkar.jpg");
-    database.prepare(`
-      UPDATE cms_home_sections
-      SET heading = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = 'team-jyotsna-gulati' AND group_name = 'team'
-    `).run("Dr. Jyotsna Gulati");
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('team-profile-details-v2')").run();
-  }
-  const gameTherapyImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-game-therapy-image-v1'",
-  ).get();
-  if (!gameTherapyImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'facility-game-therapy' AND group_name = 'facility'
-    `).run("/images/game-therapy.webp");
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-game-therapy-image-v1')").run();
-  }
-  const openSpaceImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-image-v1'",
-  ).get();
-  if (!openSpaceImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'facility-open-space'
-        AND group_name = 'facility'
-        AND image_url = ?
-    `).run(
-      "/images/facility-open-space.png",
-      "https://www.roarwellness.org/wp-content/uploads/2025/04/544658068149SS_05316.jpg",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v1')").run();
-  }
-  const openSpacePhotoMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-image-v2'",
-  ).get();
-  if (!openSpacePhotoMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'facility-open-space'
-        AND group_name = 'facility'
-        AND image_url = ?
-    `).run(
-      "/images/facility-open-space.webp",
-      "/images/facility-open-space.png",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-open-space-image-v2')").run();
-  }
-  const swimmingPoolImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-swimming-pool-image-v1'",
-  ).get();
-  if (!swimmingPoolImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'facility-pool'
-        AND group_name = 'facility'
-        AND image_url = ?
-    `).run(
-      "/images/facility-swimming-pool.png",
-      "https://www.roarwellness.org/wp-content/uploads/2025/04/452908267532SS_05330.jpg",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v1')").run();
-  }
-  const swimmingPoolPhotoMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-swimming-pool-image-v2'",
-  ).get();
-  if (!swimmingPoolPhotoMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'facility-pool'
-        AND group_name = 'facility'
-        AND image_url = ?
-    `).run(
-      "/images/facility-swimming-pool.webp",
-      "/images/facility-swimming-pool.png",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-swimming-pool-image-v2')").run();
-  }
-  const yogaMeditationImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-yoga-meditation-image-v1'",
-  ).get();
-  if (!yogaMeditationImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'facility-yoga'
-        AND group_name = 'facility'
-        AND image_url = ?
-    `).run(
-      "/images/facility-yoga-meditation.webp",
-      "https://www.roarwellness.org/wp-content/uploads/2025/04/157245510430SS_05239-1.jpg",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-yoga-meditation-image-v1')").run();
-  }
-  const therapyRoomImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-therapy-room-image-v1'",
-  ).get();
-  if (!therapyRoomImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections SET image_url = ?
-      WHERE section_key = 'facility-therapy-room'
-        AND group_name = 'facility'
-        AND image_url = ?
-    `).run(
-      "/images/facility-therapy-room.webp",
-      "https://www.roarwellness.org/wp-content/uploads/2025/04/285728832438SS_05308.jpg",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-therapy-room-image-v1')").run();
-  }
-  const facilityContentMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-live-content-v1'",
-  ).get();
-  if (!facilityContentMigration) {
-    const facilities = homepageSeeds.filter((item) => item.group === "facility");
-    const keys = facilities.map((item) => item.key);
-    database.prepare(
-      `DELETE FROM cms_home_sections WHERE group_name = 'facility' AND section_key NOT IN (${keys.map(() => "?").join(", ")})`,
-    ).run(...keys);
-    const upsertFacility = database.prepare(`
-      INSERT INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(section_key) DO UPDATE SET
-        group_name = excluded.group_name,
-        heading = excluded.heading,
-        eyebrow = excluded.eyebrow,
-        body = excluded.body,
-        image_url = excluded.image_url,
-        position = excluded.position,
-        is_published = 1,
-        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    `);
-    facilities.forEach((item, position) => {
-      upsertFacility.run(item.key, item.group, item.heading, item.eyebrow, item.body, item.imageUrl, position);
-    });
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-live-content-v1')").run();
-  }
-  const facilityImageAlignmentMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-image-alignment-v1'",
-  ).get();
-  if (!facilityImageAlignmentMigration) {
-    const updateFacilityImage = database.prepare(`
-      UPDATE cms_home_sections
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = ? AND group_name = 'facility'
-    `);
-    homepageSeeds
-      .filter((item) => item.group === "facility")
-      .forEach((item) => updateFacilityImage.run(item.imageUrl, item.key));
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-image-alignment-v1')").run();
-  }
-  const facilityCustomImagesMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-custom-images-v1'",
-  ).get();
-  if (!facilityCustomImagesMigration) {
-    const updateFacilityImage = database.prepare(`
-      UPDATE cms_home_sections
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = ? AND group_name = 'facility'
-    `);
-    for (const item of homepageSeeds) {
-      if (["facility-therapy-room", "facility-yoga", "facility-snooker-table", "facility-table-tennis"].includes(item.key)) {
-        updateFacilityImage.run(item.imageUrl, item.key);
-      }
-    }
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-custom-images-v1')").run();
-  }
-  const facilityGymImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-gym-image-v1'",
-  ).get();
-  if (!facilityGymImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = 'facility-gym' AND group_name = 'facility'
-    `).run("/images/facility-gym.webp");
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-gym-image-v1')").run();
-  }
-  const facilityPoolImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-pool-local-image-v1'",
-  ).get();
-  if (!facilityPoolImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = 'facility-pool' AND group_name = 'facility'
-    `).run("/images/facility-swimming-pool.webp");
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-pool-local-image-v1')").run();
-  }
-  const facilityOpenSpaceLocalImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-open-space-local-image-v1'",
-  ).get();
-  if (!facilityOpenSpaceLocalImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = 'facility-open-space' AND group_name = 'facility'
-    `).run("/images/facility-open-space.webp");
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-open-space-local-image-v1')").run();
-  }
-  const facilityLibraryImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'facility-library-local-image-v1'",
-  ).get();
-  if (!facilityLibraryImageMigration) {
-    database.prepare(`
-      UPDATE cms_home_sections
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE section_key = 'facility-library' AND group_name = 'facility'
-    `).run("/images/facility-library.webp");
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('facility-library-local-image-v1')").run();
-  }
-  const recoveryCommunityBlogImageMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-sarah-recovery-community-image-v1'",
-  ).get();
-  if (!recoveryCommunityBlogImageMigration) {
-    database.prepare(`
-      UPDATE content
-      SET image_url = ?, image_alt_text = ?,
-          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE slug = 'sarah-overcame-alcohol-addiction'
-        AND (image_url IS NULL OR image_url = '')
-    `).run(
-      "/images/blog-sarah-recovery-community.png",
-      "A woman speaking with a counselor alongside a recovery support group.",
-    );
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('blog-sarah-recovery-community-image-v1')").run();
-  }
-  const seededFaqs = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'faq-defaults'").get();
-  if (!seededFaqs) {
-    const faqDefaults: [string, string][] = [
-      ["What are the commonly abused drugs?", "Substances that may be misused include alcohol, cannabis, opioids, cocaine, stimulants, hallucinogens, and other drugs. The effects and risks vary by substance and person."],
-      ["What are some recurring side effects to drug abuse?", "Substance use can affect physical and mental health. Possible effects vary, and anxiety, depression, sleep problems, and other concerns may occur. A qualified health professional can help assess symptoms."],
-      ["What are some serious health issues related to drug abuse?", "Substance use can cause serious physical and mental health problems, including risks that require urgent medical care. If someone may be in immediate danger, contact local emergency services."],
-      ["Is drug abuse influencing women in India?", "Substance use can affect people of any gender. Stigma and barriers to care can make it harder for women to seek support; confidential, non-judgmental care can help."],
-      ["Why should addicts consider rehabilitation?", "Rehabilitation centres are organizations committed to seeing addicts reach a state of total abstinence based on the 12 step program."],
-      ["What is 12 step treatment?", "The 12-step approach began with Alcoholics Anonymous and is used by some peer-support groups. It is one possible source of support; people can discuss treatment options with a qualified professional."],
-      ["Why is the 12 steps by and large the most successful method?", "Some people find 12-step peer support helpful, while others prefer different approaches. Support needs vary, and a qualified professional can help someone find care that fits."],
-    ];
-    const seedFaq = database.prepare("INSERT OR IGNORE INTO cms_faqs (id, question, answer, position, status) VALUES (?, ?, ?, ?, 'published')");
-    faqDefaults.forEach(([question, answer], index) => seedFaq.run(`seed-faq-${index + 1}`, question, answer, index));
-    database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('faq-defaults')").run();
-  }
-  const liveFaqsMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'live-homepage-faq-content-v1'",
-  ).get();
-  if (!liveFaqsMigration) {
-    const replacements: [string, string, string, string][] = [
-      [
-        "What are the commonly abused drugs?",
-        "Alcohol, Marijuana, amphetamine-type stimulants (basic over the counter drugs), cocaine, heroin, hallucinogens, and party drugs are commonly abused.",
-        "What are the commonly abused drugs?",
-        "Substances that may be misused include alcohol, cannabis, opioids, cocaine, stimulants, hallucinogens, and other drugs. The effects and risks vary by substance and person.",
-      ],
-      [
-        "What are some recurring side effects to drug abuse?",
-        "Apart from physical dependency, anxiety or depression often affects the life of nearly every addict. A psychological disorder may also arise from drug addiction.",
-        "What are some recurring side effects to drug abuse?",
-        "Substance use can affect physical and mental health. Possible effects vary, and anxiety, depression, sleep problems, and other concerns may occur. A qualified health professional can help assess symptoms.",
-      ],
-      [
-        "What are some serious health issues related to drug abuse?",
-        "Along with serious physiological damage, drug abuse often results in a psychological disorder and can damage neurological function.",
-        "What are some serious health issues related to drug abuse?",
-        "Substance use can cause serious physical and mental health problems, including risks that require urgent medical care. If someone may be in immediate danger, contact local emergency services.",
-      ],
-      [
-        "Is drug abuse influencing women in India?",
-        "Yes. The association between women and substance abuse disorder is becoming an inconvenient reality in India, as cultural roles change and addiction becomes more visible.",
-        "Is drug abuse influencing women in India?",
-        "Substance use can affect people of any gender. Stigma and barriers to care can make it harder for women to seek support; confidential, non-judgmental care can help.",
-      ],
-      [
-        "What is 12 step treatment?",
-        "Originally designed for alcoholics, the 12 step program begins by admitting powerlessness over alcohol and drugs, then guides people toward satisfying lives apart from substance abuse.",
-        "What is 12 step treatment?",
-        "The 12-step approach began with Alcoholics Anonymous and is used by some peer-support groups. It is one possible source of support; people can discuss treatment options with a qualified professional.",
-      ],
-      [
-        "Why are the 12 steps successful?",
-        "Adopted from Alcoholics Anonymous, the 12 steps help people overcome denial and develop a practice of seeking objective feedback.",
-        "Why is the 12 steps by and large the most successful method?",
-        "Some people find 12-step peer support helpful, while others prefer different approaches. Support needs vary, and a qualified professional can help someone find care that fits.",
-      ],
-    ];
-    const updateFaq = database.prepare(
-      "UPDATE cms_faqs SET question = ?, answer = ? WHERE id = ? AND question = ? AND answer = ?",
-    );
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      replacements.forEach(([oldQuestion, oldAnswer, question, answer], index) => {
-        updateFaq.run(question, answer, `seed-faq-${index + 1}`, oldQuestion, oldAnswer);
-      });
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('live-homepage-faq-content-v1')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const liveFaqsMigrationV2 = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'live-homepage-faq-content-v2'",
-  ).get();
-  if (!liveFaqsMigrationV2) {
-    const replacements: [string, string, string, string, string][] = [
-      [
-        "seed-faq-6",
-        "What is 12 step treatment?",
-        "Originally designed for alcoholics, the 12 step program begins by admitting powerlessness over alcohol and drugs, then guides people toward satisfying lives apart from substance abuse.",
-        "What is 12 step treatment?",
-        "The 12-step approach began with Alcoholics Anonymous and is used by some peer-support groups. It is one possible source of support; people can discuss treatment options with a qualified professional.",
-      ],
-      [
-        "seed-faq-7",
-        "Why are the 12 steps successful?",
-        "Adopted from Alcoholics Anonymous, the 12 steps help people overcome denial and develop a practice of seeking objective feedback.",
-        "Why is the 12 steps by and large the most successful method?",
-        "Some people find 12-step peer support helpful, while others prefer different approaches. Support needs vary, and a qualified professional can help someone find care that fits.",
-      ],
-    ];
-    const updateFaq = database.prepare(
-      "UPDATE cms_faqs SET question = ?, answer = ? WHERE id = ? AND question = ? AND answer = ?",
-    );
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      replacements.forEach(([id, oldQuestion, oldAnswer, question, answer]) => {
-        updateFaq.run(question, answer, id, oldQuestion, oldAnswer);
-      });
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('live-homepage-faq-content-v2')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const seedCategory = database.prepare(
-    "INSERT OR IGNORE INTO categories (id, name, slug, is_default) VALUES (?, ?, ?, 1)",
-  );
-  [
-    ["treatments", "Treatments", "treatments"],
-    ["therapy", "Therapy", "therapy"],
-    ["mental-healthcare", "Mental healthcare", "mental-healthcare"],
-    ["main-pages", "Main pages", "main-pages"],
-    ["blog", "Blog", "blog"],
-  ].forEach(([id, name, slug]) => seedCategory.run(id, name, slug));
-  const importedSnapshot = database.prepare("SELECT 1 FROM cms_bootstrap_state WHERE key = 'wordpress-content-v1'").get();
-  if (!importedSnapshot) {
-    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
-      items: Record<string, unknown>[];
-    };
-    const categoryIds = new Map(
-      (database.prepare("SELECT id, slug FROM categories").all() as { id: string; slug: string }[])
-        .map((category) => [category.slug, category.id]),
-    );
-    const insertContent = database.prepare(`
-      INSERT INTO content (
-        id, title, slug, category_id, excerpt, summary, description, content,
-        image_url, status, seo_title, seo_description, published_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-      ON CONFLICT(slug) DO UPDATE SET
-        title = excluded.title, category_id = excluded.category_id,
-        excerpt = COALESCE(content.excerpt, excluded.excerpt),
-        summary = COALESCE(content.summary, excluded.summary),
-        description = COALESCE(content.description, excluded.description),
-        content = excluded.content, image_url = COALESCE(content.image_url, excluded.image_url),
-        status = 'published', seo_title = COALESCE(content.seo_title, excluded.seo_title),
-        seo_description = COALESCE(content.seo_description, excluded.seo_description),
-        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
-        published_at = COALESCE(content.published_at, excluded.published_at)
-      WHERE content.content IS NULL OR content.content = ''
-    `);
-    const importTransaction = database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-content-v1')");
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      for (const row of snapshot.items) {
-        const rawSlug = typeof row.slug === "string" ? row.slug : "";
-        const categorySlug = inferImportedCategorySlug(row, rawSlug);
-        const categoryId = categoryIds.get(categorySlug);
-        if (!categoryId) throw new Error(`Initial WordPress content references missing category “${categorySlug}”.`);
-        const input = parseImportedContent(row, categoryId);
-        insertContent.run(
-          randomUUID(), input.title, input.slug, input.categoryId, input.excerpt, input.summary,
-          input.description, input.content, input.imageUrl, input.seoTitle, input.seoDescription,
-        );
-      }
-      importTransaction.run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const blogFeaturedImagesMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'blog-featured-images-v1'",
-  ).get();
-  if (!blogFeaturedImagesMigration) {
-    const updateFeaturedImage = database.prepare(`
-      UPDATE content
-      SET image_url = ?, image_alt_text = title,
-        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE slug = ? AND category_id = (SELECT id FROM categories WHERE slug = 'blog')
-    `);
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      for (const slug of blogFeaturedImageSlugs) {
-        updateFeaturedImage.run(`/images/blog/${slug}.webp`, slug);
-      }
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('blog-featured-images-v1')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const publishedDateMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'wordpress-published-dates-v1'",
-  ).get();
-  if (!publishedDateMigration) {
-    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
-      items: Record<string, unknown>[];
-    };
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      const updatePublishedAt = database.prepare(
-        "UPDATE content SET published_at = ? WHERE slug = ? AND status = 'published'",
-      );
-      for (const row of snapshot.items) {
-        const slug = typeof row.slug === "string" ? row.slug : "";
-        if (!slug) continue;
-        const publishedAt = getImportedPublishedAt(row);
-        if (publishedAt) updatePublishedAt.run(publishedAt, slug);
-      }
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-published-dates-v1')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const routeTaxonomyMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'content-route-taxonomy-v2'",
-  ).get();
-  if (!routeTaxonomyMigration) {
-    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
-      items: Record<string, unknown>[];
-    };
-    const categoryIds = new Map(
-      (database.prepare("SELECT id, slug FROM categories").all() as { id: string; slug: string }[])
-        .map((category) => [category.slug, category.id]),
-    );
-    const updateCategory = database.prepare(`
-      UPDATE content SET category_id = ?
-      WHERE slug = ? AND category_id = (SELECT id FROM categories WHERE slug = ?)
-    `);
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      for (const row of snapshot.items) {
-        const slug = typeof row.slug === "string" ? row.slug : "";
-        const postType = typeof row.post_type === "string" ? row.post_type : "";
-        const categorySlug = inferImportedCategorySlug(row, slug);
-        const previousCategory = postType === "post" ? "blog"
-          : slug === "drug-alcohol-rehabilitation-experts" ? "treatments"
-            : categorySlug;
-        if (categorySlug === previousCategory) continue;
-        const categoryId = categoryIds.get(categorySlug);
-        if (!categoryId) throw new Error(`Route taxonomy references missing category “${categorySlug}”.`);
-        updateCategory.run(categoryId, slug, previousCategory);
-      }
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('content-route-taxonomy-v2')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const rehabArticleMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'service-route-classification-v3'",
-  ).get();
-  if (!rehabArticleMigration) {
-    const treatmentCategory = database.prepare("SELECT id FROM categories WHERE slug = 'treatments'").get() as { id: string } | undefined;
-    if (!treatmentCategory) throw new Error("Service route classification requires the Treatments category.");
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      database.prepare(`
-        UPDATE content SET category_id = ?
-        WHERE slug = 'rehab-center-in-india'
-          AND category_id = (SELECT id FROM categories WHERE slug = 'blog')
-      `).run(treatmentCategory.id);
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('service-route-classification-v3')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const serviceArticleMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'service-article-categories-v4'",
-  ).get();
-  if (!serviceArticleMigration) {
-    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
-      items: Record<string, unknown>[];
-    };
-    const categoryIds = new Map(
-      (database.prepare("SELECT id, slug FROM categories").all() as { id: string; slug: string }[])
-        .map((category) => [category.slug, category.id]),
-    );
-    const updateCategory = database.prepare(`
-      UPDATE content SET category_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE slug = ? AND category_id = (SELECT id FROM categories WHERE slug = 'blog')
-    `);
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      for (const row of snapshot.items) {
-        if (row.post_type !== "post" || typeof row.slug !== "string") continue;
-        const categorySlug = inferImportedCategorySlug(row, row.slug);
-        if (categorySlug === "blog") continue;
-        const categoryId = categoryIds.get(categorySlug);
-        if (!categoryId) throw new Error(`Service article classification references missing category “${categorySlug}”.`);
-        updateCategory.run(categoryId, row.slug);
-      }
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('service-article-categories-v4')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const blogPostMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'wordpress-posts-blog-v5'",
-  ).get();
-  if (!blogPostMigration) {
-    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
-      items: Record<string, unknown>[];
-    };
-    const blogCategory = database.prepare("SELECT id FROM categories WHERE slug = 'blog'").get() as { id: string } | undefined;
-    if (!blogCategory) throw new Error("WordPress post classification requires the Blog category.");
-    const findImportedPost = database.prepare(`
-      SELECT c.id, c.slug, cat.slug AS category_slug
-      FROM content c JOIN categories cat ON cat.id = c.category_id
-      WHERE c.slug = ? AND c.status = 'published'
-        AND cat.slug IN ('treatments', 'therapy', 'mental-healthcare')
-    `);
-    const updateCategory = database.prepare(`
-      UPDATE content SET category_id = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE id = ?
-    `);
-    const recordRedirect = database.prepare(`
-      INSERT INTO cms_url_redirects (source_path, content_id) VALUES (?, ?)
-      ON CONFLICT(source_path) DO UPDATE SET content_id = excluded.content_id
-    `);
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      for (const row of snapshot.items) {
-        if (row.post_type !== "post" || typeof row.slug !== "string"
-          || inferImportedCategorySlug(row, row.slug) !== "blog") continue;
-        const current = findImportedPost.get(row.slug) as {
-          id: string;
-          slug: string;
-          category_slug: string;
-        } | undefined;
-        if (!current) continue;
-        const previousPath = getCmsContentHref(current.slug, current.category_slug);
-        updateCategory.run(blogCategory.id, current.id);
-        recordRedirect.run(previousPath, current.id);
-      }
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-posts-blog-v5')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const postFeaturedImagesMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'wordpress-post-featured-images-v2'",
-  ).get();
-  if (!postFeaturedImagesMigration) {
-    const snapshot = JSON.parse(readFileSync(resolve(process.cwd(), "data/wordpress-content.json"), "utf8")) as {
-      items: Record<string, unknown>[];
-    };
-    const updateImage = database.prepare(`
-      UPDATE content
-      SET image_url = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-      WHERE slug = ? AND (image_url IS NULL OR image_url = '')
-    `);
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      for (const row of snapshot.items) {
-        if (row.post_type !== "post") continue;
-        const imageUrl = typeof row.image_url === "string" ? row.image_url.trim() : "";
-        const slug = typeof row.slug === "string" ? row.slug : "";
-        if (imageUrl && slug) updateImage.run(imageUrl, slug);
-      }
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('wordpress-post-featured-images-v2')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const psychosisDescription = "Experiences associated with psychosis can be confusing or frightening for the person affected and for those close to them. Psychosis is a group of symptoms, not a diagnosis by itself. A qualified mental health professional can assess what is happening and discuss appropriate care.";
-  const psychosisPageContent = `<p>${psychosisDescription}</p>
-<h2>What is psychosis?</h2>
-<p>Psychosis can affect a person's perception, thoughts, emotions, and ability to distinguish internal experiences from what is happening around them. Experiences differ from person to person and may change over time. Only a qualified clinician can assess symptoms and identify possible causes.</p>
-<h2>When to seek an assessment</h2>
-<p>Consider arranging a professional assessment when changes in perception, beliefs, communication, sleep, or everyday functioning are persistent, distressing, or concerning to the person or their family. A clinician will listen to the person's experiences, consider their health and circumstances, and recommend next steps. There is no single assessment or treatment plan that is right for everyone.</p>
-<h2>Care and treatment</h2>
-<p>Care is guided by an individual assessment and may involve a psychiatrist, psychologist, and other healthcare professionals. Depending on the person's needs, a care plan can include regular clinical follow-up, psychological support, practical help with daily routines, and medication prescribed and monitored by a qualified clinician. Treatment decisions should be made with the care team; medication should not be started, stopped, or changed without medical guidance.</p>
-<h2>How families can offer support</h2>
-<ul>
-<li>Listen calmly and respectfully, without arguing about or dismissing the person's experience.</li>
-<li>Encourage professional help and offer to accompany them if they would find that useful.</li>
-<li>Keep communication simple, give the person time, and ask what support feels helpful.</li>
-<li>Look after your own wellbeing and seek guidance from qualified professionals.</li>
-</ul>
-<h2>Urgent help</h2>
-<p>If someone may harm themselves or another person, cannot keep themselves safe, or needs immediate medical attention, contact local emergency services or go to the nearest emergency department now. Do not wait for a routine appointment.</p>
-<p>Roar Wellness can help families discuss available mental healthcare and the next appropriate step. This page provides general information only; it is not a diagnosis or a substitute for professional medical advice.</p>`;
-  const psychosisSeoTitle = "Psychosis Treatment and Mental Healthcare in Delhi | Roar Wellness";
-  const psychosisSeoDescription = "Explore professional assessment and individualized mental healthcare for psychosis in Delhi. Contact Roar Wellness to discuss appropriate support.";
-  const psychosisContentMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'psychosis-treatment-content-v1'",
-  ).get();
-  if (!psychosisContentMigration) {
-    const mentalHealthcare = database.prepare(
-      "SELECT id FROM categories WHERE slug = 'mental-healthcare'",
-    ).get() as { id: string } | undefined;
-    if (!mentalHealthcare) throw new Error("Psychosis treatment content requires the Mental healthcare category.");
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      database.prepare(`
-        INSERT OR IGNORE INTO content (
-          id, title, slug, category_id, excerpt, summary, description, content,
-          status, seo_title, seo_description, published_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-      `).run(
-        randomUUID(),
-        "Psychosis Treatment",
-        "psychosis-treatment",
-        mentalHealthcare.id,
-        "Psychosis can affect how a person understands and experiences reality. A qualified mental health professional can assess symptoms and help plan appropriate care.",
-        "Learn about professional assessment, treatment options, and family support for people experiencing psychosis.",
-        psychosisDescription,
-        psychosisPageContent,
-        psychosisSeoTitle,
-        psychosisSeoDescription,
-      );
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('psychosis-treatment-content-v1')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const psychosisSeoMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'psychosis-treatment-seo-fix-v2'",
-  ).get();
-  if (!psychosisSeoMigration) {
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      database.prepare(`
-        UPDATE content SET description = ?, content = ?, seo_title = ?, seo_description = ?
-        WHERE slug = 'psychosis-treatment' AND seo_description IS NULL
-          AND seo_title = ?
-      `).run(
-        psychosisDescription,
-        psychosisPageContent,
-        psychosisSeoTitle,
-        psychosisSeoDescription,
-        psychosisSeoDescription,
-      );
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('psychosis-treatment-seo-fix-v2')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  const bpdDescription = "Borderline personality disorder (BPD) can affect emotions, relationships, self-image, and day-to-day life. A qualified mental health professional can assess an individual's experiences and discuss appropriate support.";
-  const bpdPageContent = `<p>${bpdDescription}</p>
-<h2>Understanding BPD</h2>
-<p>BPD is a mental health condition that can involve intense emotions, changes in self-image, and difficulties in relationships. Experiences vary, and only a qualified clinician can assess whether someone meets diagnostic criteria. A compassionate assessment can also consider other health or life factors that may affect how a person is feeling.</p>
-<h2>Assessment and diagnosis</h2>
-<p>A mental health professional will talk with the person about their concerns, history, strengths, and goals. Assessment may take more than one appointment and can include screening for other mental health concerns. The person should have the opportunity to ask questions and take part in decisions about their care.</p>
-<h2>Treatment and support</h2>
-<p>Care is individualized and may include structured psychotherapy, regular follow-up, and practical support. Dialectical behavior therapy (DBT) is one evidence-based therapy that may be considered; a clinician can discuss whether it is appropriate and what other options are available. Medication is not a cure for BPD, though a prescriber may discuss it for specific symptoms or co-occurring conditions. Do not start, stop, or change medication without medical guidance.</p>
-<h2>Support from family and friends</h2>
-<ul>
-<li>Listen respectfully and validate the person's feelings without making assumptions about their experience.</li>
-<li>Encourage professional support and ask how you can help with practical next steps.</li>
-<li>Agree on clear, kind boundaries and seek guidance from qualified professionals when needed.</li>
-<li>Look after your own wellbeing and consider support for family members or carers.</li>
-</ul>
-<h2>Urgent help</h2>
-<p>If someone may harm themselves or another person, cannot keep themselves safe, or needs immediate medical attention, contact local emergency services or go to the nearest emergency department now. Do not wait for a routine appointment.</p>
-<p>Roar Wellness can help people and families discuss mental healthcare and appropriate next steps. This page provides general information only; it is not a diagnosis or a substitute for professional medical advice.</p>`;
-  const bpdSeoTitle = "BPD Treatment and Support in Delhi | Roar Wellness";
-  const bpdSeoDescription = "Learn about professional assessment and individualized support for borderline personality disorder (BPD) in Delhi. Contact Roar Wellness to discuss next steps.";
-  const bpdContentMigration = database.prepare(
-    "SELECT 1 FROM cms_bootstrap_state WHERE key = 'bpd-treatment-content-v1'",
-  ).get();
-  if (!bpdContentMigration) {
-    const mentalHealthcare = database.prepare(
-      "SELECT id FROM categories WHERE slug = 'mental-healthcare'",
-    ).get() as { id: string } | undefined;
-    if (!mentalHealthcare) throw new Error("BPD treatment content requires the Mental healthcare category.");
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      database.prepare(`
-        INSERT OR IGNORE INTO content (
-          id, title, slug, category_id, excerpt, summary, description, content,
-          status, seo_title, seo_description, published_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-      `).run(
-        randomUUID(),
-        "BPD Treatment",
-        "bpd-treatment",
-        mentalHealthcare.id,
-        "A qualified mental health professional can assess borderline personality disorder and discuss individualized treatment and support options.",
-        "Explore professional assessment, therapy options, and support for people living with borderline personality disorder (BPD).",
-        bpdDescription,
-        bpdPageContent,
-        bpdSeoTitle,
-        bpdSeoDescription,
-      );
-      database.prepare("INSERT OR IGNORE INTO cms_bootstrap_state (key) VALUES ('bpd-treatment-content-v1')").run();
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-  }
-  return database;
+  return output;
 }
 
-export function getCmsDatabase(): DatabaseSync {
-  if (!globalCms.roarCmsDatabase) globalCms.roarCmsDatabase = openDatabase();
-  if (!globalCms.roarCmsPublishTimer) {
-    globalCms.roarCmsPublishTimer = setInterval(() => {
-      try {
-        publishDueContent(globalCms.roarCmsDatabase!);
-      } catch (error) {
-        console.error("Failed to publish scheduled CMS content.", error);
-      }
-    }, 30_000);
-    globalCms.roarCmsPublishTimer.unref();
+function convertSql(sql: string): string {
+  const ignoreConflicts = /^\s*INSERT\s+OR\s+IGNORE\s+INTO\b/i.test(sql);
+  let converted = sql
+    .replace(/^\s*INSERT\s+OR\s+IGNORE\s+INTO\b/i, "INSERT INTO")
+    .replace(/\b([A-Za-z_][A-Za-z0-9_.]*)\s+COLLATE\s+NOCASE\b/gi, "lower($1)")
+    .replace(
+      /strftime\('%Y-%m-%dT%H:%M:%fZ',\s*'now'(?:,\s*'([+-]\d+)\s+(months?|days?|hours?|minutes?)')?\)/gi,
+      (_match, amount?: string, unit?: string) => {
+        const time = amount && unit
+          ? `(clock_timestamp() ${amount.startsWith("-") ? "-" : "+"} INTERVAL '${Math.abs(Number(amount))} ${unit.replace(/s$/, "")}')`
+          : "clock_timestamp()";
+        return `to_char(${time} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
+      },
+    );
+  converted = convertPlaceholders(converted);
+  if (ignoreConflicts) {
+    const returningAt = converted.search(/\bRETURNING\b/i);
+    if (returningAt >= 0) {
+      converted = `${converted.slice(0, returningAt).trimEnd()} ON CONFLICT DO NOTHING ${converted.slice(returningAt)}`;
+    } else {
+      converted = `${converted.trimEnd()} ON CONFLICT DO NOTHING`;
+    }
   }
+  return converted;
+}
+
+function getPool(): Pool {
+  if (!globalCms.roarCmsPool) {
+    const connectionString = process.env.DATABASE_URL?.trim();
+    if (!connectionString) throw new Error("DATABASE_URL must be configured for the PostgreSQL CMS.");
+    globalCms.roarCmsPool = new Pool({
+      connectionString,
+      max: 10,
+      connectionTimeoutMillis: 15_000,
+      idleTimeoutMillis: 30_000,
+    });
+  }
+  return globalCms.roarCmsPool;
+}
+
+function createDatabase(): CmsDatabase {
+  const query = async <Row extends QueryResultRow>(
+    sql: string,
+    values: unknown[] = [],
+  ): Promise<CmsQueryResult<Row>> => {
+    const client = transactionContext.getStore();
+    const result = await (client ?? getPool()).query<Row>(convertSql(sql), values);
+    return { rows: result.rows, changes: result.rowCount ?? 0 };
+  };
+
+  return {
+    query,
+    async exec(sql) {
+      await query(sql);
+    },
+    prepare(sql) {
+      return {
+        all: async <Row extends QueryResultRow = QueryResultRow>(...values: unknown[]) =>
+          (await query<Row>(sql, values)).rows,
+        get: async <Row extends QueryResultRow = QueryResultRow>(...values: unknown[]) =>
+          (await query<Row>(sql, values)).rows[0],
+        run: async (...values: unknown[]) => ({ changes: (await query(sql, values)).changes }),
+      };
+    },
+  };
+}
+
+export function getCmsDatabase(): CmsDatabase {
+  if (!globalCms.roarCmsDatabase) globalCms.roarCmsDatabase = createDatabase();
   return globalCms.roarCmsDatabase;
 }
 
-export function listCategories(): CmsCategory[] {
-  return getCmsDatabase()
-    .prepare("SELECT id, name, slug, is_default, created_at FROM categories ORDER BY is_default DESC, name COLLATE NOCASE")
-    .all() as unknown as CmsCategory[];
+export function isCmsUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error
+    && error.code === "23505";
 }
 
-export function findCategory(id: string): CmsCategory | undefined {
-  return getCmsDatabase()
-    .prepare("SELECT id, name, slug, is_default, created_at FROM categories WHERE id = ?")
-    .get(id) as unknown as CmsCategory | undefined;
+export function isCmsForeignKeyViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error
+    && error.code === "23503";
+}
+
+export async function withCmsTransaction<T>(
+  action: () => Promise<T>,
+  mode: "read-write" | "read-only" = "read-write",
+): Promise<T> {
+  const client = await getPool().connect();
+  try {
+    await client.query(mode === "read-only" ? "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY" : "BEGIN");
+    const result = await transactionContext.run(client, action);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("PostgreSQL transaction rollback failed.", rollbackError);
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function listCategories(): Promise<CmsCategory[]> {
+  return await getCmsDatabase().prepare(
+    "SELECT id, name, slug, is_default, created_at FROM categories ORDER BY is_default DESC, lower(name)",
+  ).all<CmsCategory>();
+}
+
+export async function findCategory(id: string): Promise<CmsCategory | undefined> {
+  return await getCmsDatabase().prepare(
+    "SELECT id, name, slug, is_default, created_at FROM categories WHERE id = ?",
+  ).get<CmsCategory>(id);
 }
 
 const contentSelect = `
@@ -1326,11 +229,11 @@ const contentSelect = `
   FROM content c JOIN categories cat ON cat.id = c.category_id
 `;
 
-export function listContent(options: {
+export async function listContent(options: {
   includeUnpublished?: boolean;
   categoryId?: string;
   categorySlug?: string;
-} = {}): CmsContent[] {
+} = {}): Promise<CmsContent[]> {
   const clauses: string[] = [];
   const values: string[] = [];
   if (!options.includeUnpublished) clauses.push("c.status = 'published'");
@@ -1344,56 +247,56 @@ export function listContent(options: {
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const database = getCmsDatabase();
-  if (!options.includeUnpublished) {
-    publishDueContent(database);
-  }
-  return database.prepare(`${contentSelect} ${where} ORDER BY c.updated_at DESC, c.title COLLATE NOCASE`)
-    .all(...values) as unknown as CmsContent[];
+  if (!options.includeUnpublished) await publishDueContent(database);
+  return await database.prepare(`${contentSelect} ${where} ORDER BY c.updated_at DESC, lower(c.title)`)
+    .all<CmsContent>(...values);
 }
 
-function publishDueContent(database: DatabaseSync): void {
-  database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
-  database.prepare("DELETE FROM cms_analytics_events WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
-  database.prepare("DELETE FROM cms_audit_log WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
-  database.prepare(`
-    UPDATE content SET status = 'published', published_at = COALESCE(published_at, scheduled_publish_at),
-      scheduled_publish_at = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    WHERE status = 'draft' AND scheduled_publish_at IS NOT NULL AND scheduled_publish_at <= ?
-  `).run(new Date().toISOString());
+async function publishDueContent(database: CmsDatabase): Promise<void> {
+  await Promise.all([
+    await database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run(),
+    await database.prepare("DELETE FROM cms_analytics_events WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run(),
+    await database.prepare("DELETE FROM cms_audit_log WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run(),
+    await database.prepare(`
+      UPDATE content SET status = 'published', published_at = COALESCE(published_at, scheduled_publish_at),
+        scheduled_publish_at = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+      WHERE status = 'draft' AND scheduled_publish_at IS NOT NULL AND scheduled_publish_at <= ?
+    `).run(new Date().toISOString()),
+  ]);
 }
 
-export function getCmsSettings(): Record<string, string> {
-  const rows = getCmsDatabase().prepare("SELECT key, value FROM cms_settings").all() as { key: string; value: string }[];
+export async function getCmsSettings(): Promise<Record<string, string>> {
+  const rows = await getCmsDatabase().prepare("SELECT key, value FROM cms_settings").all<{
+    key: string;
+    value: string;
+  }>();
   return Object.fromEntries(rows.map(({ key, value }) => [key, value]));
 }
 
-export function recordContentRevision(contentId: string, createdBy: string | null): void {
-  const item = findContentById(contentId);
+export async function recordContentRevision(contentId: string, createdBy: string | null): Promise<void> {
+  const item = await findContentById(contentId);
   if (!item) return;
-  getCmsDatabase().prepare("INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)")
-    .run(randomUUID(), contentId, JSON.stringify(item), createdBy);
+  await getCmsDatabase().prepare(
+    "INSERT INTO cms_revisions (id, content_id, snapshot, created_by) VALUES (?, ?, ?, ?)",
+  ).run(randomUUID(), contentId, JSON.stringify(item), createdBy);
 }
 
-export function findContentBySlug(slug: string, includeUnpublished = false): CmsContent | undefined {
+export async function findContentBySlug(slug: string, includeUnpublished = false): Promise<CmsContent | undefined> {
   const statusClause = includeUnpublished ? "" : "AND c.status = 'published'";
-  return getCmsDatabase()
-    .prepare(`${contentSelect} WHERE c.slug = ? ${statusClause}`)
-    .get(slug) as unknown as CmsContent | undefined;
+  return await getCmsDatabase().prepare(`${contentSelect} WHERE c.slug = ? ${statusClause}`)
+    .get<CmsContent>(slug);
 }
 
-export function findContentById(id: string): CmsContent | undefined {
-  return getCmsDatabase()
-    .prepare(`${contentSelect} WHERE c.id = ?`)
-    .get(id) as unknown as CmsContent | undefined;
+export async function findContentById(id: string): Promise<CmsContent | undefined> {
+  return await getCmsDatabase().prepare(`${contentSelect} WHERE c.id = ?`).get<CmsContent>(id);
 }
 
-export function findPublishedContentRedirect(sourcePath: string): CmsContent | undefined {
-  listContent();
-  return getCmsDatabase()
-    .prepare(`${contentSelect}
-      JOIN cms_url_redirects redirect ON redirect.content_id = c.id
-      WHERE redirect.source_path = ? AND c.status = 'published'`)
-    .get(sourcePath) as unknown as CmsContent | undefined;
+export async function findPublishedContentRedirect(sourcePath: string): Promise<CmsContent | undefined> {
+  await listContent();
+  return await getCmsDatabase().prepare(`${contentSelect}
+    JOIN cms_url_redirects redirect ON redirect.content_id = c.id
+    WHERE redirect.source_path = ? AND c.status = 'published'`)
+    .get<CmsContent>(sourcePath);
 }
 
 export function toPublicContent(item: CmsContent) {

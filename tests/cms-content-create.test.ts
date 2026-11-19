@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { describe, it } from "node:test";
 import { insertCmsContent } from "../lib/cms-content-create.ts";
+import type { CmsDatabase } from "../lib/cms-db.ts";
 import { parseCmsContentInput } from "../lib/cms-validation.ts";
 
 describe("CMS content creation SQL", () => {
-  it("inserts all content fields and sets publication time only for published content", () => {
+  it("inserts all content fields and sets publication time only for published content", async () => {
     const database = new DatabaseSync(":memory:");
     database.exec(`
       CREATE TABLE content (
@@ -30,8 +31,8 @@ describe("CMS content creation SQL", () => {
       status: "published",
     });
 
-    insertCmsContent(database, "draft-id", draft);
-    insertCmsContent(database, "published-id", published);
+    await insertCmsContent(database as unknown as CmsDatabase, "draft-id", draft);
+    await insertCmsContent(database as unknown as CmsDatabase, "published-id", published);
 
     const draftRow = database.prepare("SELECT * FROM content WHERE id = ?").get("draft-id") as {
       title: string;

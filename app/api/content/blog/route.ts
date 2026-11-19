@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const archiveOnly = new URL(request.url).searchParams.get("archive") === "true";
-  const posts = listContent().filter((item) => archiveOnly
+  const posts = (await listContent()).filter((item) => archiveOnly
     ? item.category_slug === "blog"
     : item.category_slug === "blog" || servicePostSlugs.has(item.slug)
   ).sort((first, second) => compareCmsPublicationDates(first.published_at, second.published_at));

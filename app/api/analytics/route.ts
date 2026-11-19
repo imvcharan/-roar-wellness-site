@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Analytics event is invalid." }, { status: 400 });
   }
   const database = getCmsDatabase();
-  database.prepare("DELETE FROM cms_analytics_events WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
-  database.prepare("INSERT INTO cms_analytics_events (id, event_type, page_path) VALUES (?, ?, ?)")
+  await database.prepare("DELETE FROM cms_analytics_events WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
+  await database.prepare("INSERT INTO cms_analytics_events (id, event_type, page_path) VALUES (?, ?, ?)")
     .run(randomUUID(), eventType, pagePath);
   return new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }

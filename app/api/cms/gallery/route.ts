@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   if (!await getCmsRole()) return NextResponse.json({ error: "CMS access is required." }, { status: 403 });
-  const data = getCmsDatabase().prepare(
+  const data = await getCmsDatabase().prepare(
     "SELECT id, image_url, alt_text, caption, position, is_published, updated_at FROM cms_gallery_images ORDER BY position, created_at DESC",
   ).all();
   return NextResponse.json({ data });
@@ -40,9 +40,9 @@ export async function POST(request: Request) {
 
   const id = randomUUID();
   const database = getCmsDatabase();
-  database.prepare(
+  await database.prepare(
     "INSERT INTO cms_gallery_images (id, image_url, alt_text, caption, position, is_published) VALUES (?, ?, ?, ?, ?, ?)",
   ).run(id, imageUrl, altText, caption, position, isPublished ? 1 : 0);
-  recordCmsAudit(await getCmsUserId(), request, "gallery.create", "gallery", id, `Added a gallery image.`);
-  return NextResponse.json({ data: database.prepare("SELECT * FROM cms_gallery_images WHERE id = ?").get(id) }, { status: 201 });
+  await recordCmsAudit(await getCmsUserId(), request, "gallery.create", "gallery", id, `Added a gallery image.`);
+  return NextResponse.json({ data: await database.prepare("SELECT * FROM cms_gallery_images WHERE id = ?").get(id) }, { status: 201 });
 }

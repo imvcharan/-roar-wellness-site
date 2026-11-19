@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = getCmsSettings();
+  const settings = await getCmsSettings();
   const siteUrl = settings.siteUrl || "https://www.roarwellness.org";
   const title = settings.seoTitle || settings.siteName || "Luxury Rehabilitation Centre | Drug & Alcohol Rehab Centre Delhi NCR, India";
   const description = settings.seoDescription || settings.siteDescription || "Roar Wellness is the best rehabilitation Centre in Delhi NCR, India. Leading alcohol addiction treatment and luxury rehab facilities. Contact Roar Wellness Center Delhi.";
@@ -40,12 +40,12 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function SiteLayout({
+export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const settings = getCmsSettings();
+  const settings = await getCmsSettings();
   const siteUrl = (settings.siteUrl || "https://www.roarwellness.org").replace(/\/+$/, "");
   const structuredData = {
     "@context": "https://schema.org",

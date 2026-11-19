@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppointmentPage } from "@/components/site/AppointmentPage";
+import { getCmsSettings } from "@/lib/cms-db";
 
 export const metadata: Metadata = {
   title: "Schedule an Appointment | Roar Wellness",
@@ -27,14 +28,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AppointmentRoute() {
+export default async function AppointmentRoute() {
+  const settings = await getCmsSettings();
+  const siteUrl = (settings.siteUrl || "https://www.roarwellness.org").replace(/\/+$/, "");
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     name: "Schedule an Appointment | Roar Wellness",
     description: "Request a confidential appointment with the Roar Wellness team to talk through care and recovery options.",
-    url: "https://www.roarwellness.org/appointment/",
-    about: { "@id": "https://www.roarwellness.org/#organization" },
+    url: `${siteUrl}/appointment`,
+    about: { "@id": `${siteUrl}/#organization` },
     inLanguage: "en-IN",
   };
 

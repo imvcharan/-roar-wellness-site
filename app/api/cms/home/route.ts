@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   if (!await canEditCms()) return NextResponse.json({ error: "Editor access is required." }, { status: 403 });
-  const data = getCmsDatabase().prepare("SELECT section_key, group_name, heading, eyebrow, body, image_url, position, is_published, updated_at FROM cms_home_sections WHERE group_name != 'site-copy' ORDER BY group_name, position, heading COLLATE NOCASE").all();
+  const data = await getCmsDatabase().prepare("SELECT section_key, group_name, heading, eyebrow, body, image_url, position, is_published, updated_at FROM cms_home_sections WHERE group_name != 'site-copy' ORDER BY group_name, position, heading COLLATE NOCASE").all();
   return NextResponse.json({ data });
 }
 
@@ -22,8 +22,8 @@ export async function POST(request: Request) {
   }
   const sectionKey = randomUUID();
   const database = getCmsDatabase();
-  database.prepare("INSERT INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+  await database.prepare("INSERT INTO cms_home_sections (section_key, group_name, heading, eyebrow, body, image_url, position, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
     .run(sectionKey, input.group_name, input.heading, input.eyebrow, input.body, input.image_url, input.position, input.is_published);
-  recordCmsAudit(await getCmsUserId(), request, "homepage.create", "homepage", sectionKey, `Created homepage card “${input.heading}”.`);
-  return NextResponse.json({ data: database.prepare("SELECT * FROM cms_home_sections WHERE section_key = ?").get(sectionKey) }, { status: 201 });
+  await recordCmsAudit(await getCmsUserId(), request, "homepage.create", "homepage", sectionKey, `Created homepage card “${input.heading}”.`);
+  return NextResponse.json({ data: await database.prepare("SELECT * FROM cms_home_sections WHERE section_key = ?").get(sectionKey) }, { status: 201 });
 }

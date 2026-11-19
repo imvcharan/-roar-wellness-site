@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { canEditCms, getCmsUserId } from "@/lib/cms-auth";
-import { findCategory, findContentById, getCmsDatabase, recordContentRevision } from "@/lib/cms-db";
+import { findCategory, findContentById, getCmsDatabase, isCmsUniqueViolation, recordContentRevision, withCmsTransaction } from "@/lib/cms-db";
 import { getCmsRestoredSchedule } from "@/lib/cms-date";
 import { getCmsContentHref, isPageCategory, isServiceCategory } from "@/lib/cms-routes";
 import { isReservedCmsRootSlug } from "@/lib/cms-validation";
@@ -16,9 +16,9 @@ export async function POST(
   const { id, revisionId } = await params;
   const restoringUser = await getCmsUserId();
   const database = getCmsDatabase();
-  const revision = database.prepare("SELECT snapshot FROM cms_revisions WHERE id = ? AND content_id = ?")
+  const revision = await database.prepare("SELECT snapshot FROM cms_revisions WHERE id = ? AND content_id = ?")
     .get(revisionId, id) as { snapshot: string } | undefined;
-  const previous = findContentById(id);
+  const previous = await findContentById(id);
   if (!revision || !previous) return NextResponse.json({ error: "Content revision was not found." }, { status: 404 });
   let snapshot: Record<string, unknown>;
   try {
@@ -26,7 +26,7 @@ export async function POST(
   } catch {
     return NextResponse.json({ error: "This revision cannot be restored because its snapshot is invalid." }, { status: 409 });
   }
-  const category = typeof snapshot.category_id === "string" ? findCategory(snapshot.category_id) : undefined;
+  const category = typeof snapshot.category_id === "string" ? await findCategory(snapshot.category_id) : undefined;
   const status = snapshot.status === "draft" || snapshot.status === "published" || snapshot.status === "archived"
     ? snapshot.status
     : null;
@@ -43,14 +43,14 @@ export async function POST(
   let scheduledPublishAt: string | null = null;
   let clearedSchedule = false;
   try {
-    database.exec("BEGIN IMMEDIATE");
+    await withCmsTransaction(async () => {
     const restoredSchedule = getCmsRestoredSchedule(
       status,
       text(snapshot.scheduled_publish_at),
     );
     scheduledPublishAt = restoredSchedule.scheduledPublishAt;
     clearedSchedule = restoredSchedule.cleared;
-    database.prepare(`
+    await database.prepare(`
       UPDATE content SET title = ?, slug = ?, category_id = ?, excerpt = ?, summary = ?,
         description = ?, content = ?, image_url = ?, image_alt_text = ?, image_position = ?, status = ?, seo_title = ?,
         seo_description = ?, seo_keywords = ?, seo_robots = ?, seo_canonical_url = ?,
@@ -70,23 +70,22 @@ export async function POST(
       text(snapshot.published_at), id,
     );
     if (previousPath !== restoredPath) {
-      database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(restoredPath);
-      database.prepare(`
+      await database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(restoredPath);
+      await database.prepare(`
         INSERT INTO cms_url_redirects (source_path, content_id) VALUES (?, ?)
         ON CONFLICT(source_path) DO UPDATE SET content_id = excluded.content_id
       `).run(previousPath, id);
     } else {
-      database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(restoredPath);
+      await database.prepare("DELETE FROM cms_url_redirects WHERE source_path = ?").run(restoredPath);
     }
-    recordContentRevision(id, restoringUser);
-    database.exec("COMMIT");
+    await recordContentRevision(id, restoringUser);
+    });
   } catch (error) {
-    if (database.isTransaction) database.exec("ROLLBACK");
-    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+    if (isCmsUniqueViolation(error)) {
       return NextResponse.json({ error: "The revision slug is now used by another page. Resolve the duplicate before restoring." }, { status: 409 });
     }
     throw error;
   }
-  recordCmsAudit(restoringUser, request, "content.restore", "content", id, `Restored a previous version of “${snapshot.title}”.`);
-  return NextResponse.json({ data: findContentById(id), clearedSchedule });
+  await recordCmsAudit(restoringUser, request, "content.restore", "content", id, `Restored a previous version of “${snapshot.title}”.`);
+  return NextResponse.json({ data: await findContentById(id), clearedSchedule });
 }

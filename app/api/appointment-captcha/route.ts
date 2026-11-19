@@ -27,9 +27,9 @@ export async function GET() {
   const token = `${challengeId}.${tokenExpiry}.${signature}`;
   const database = getCmsDatabase();
 
-  database.prepare("DELETE FROM appointment_captcha_challenges WHERE expires_at <= ?")
+  await database.prepare("DELETE FROM appointment_captcha_challenges WHERE expires_at <= ?")
     .run(Math.floor(Date.now() / 1000));
-  database.prepare("INSERT INTO appointment_captcha_challenges (challenge_id, answer, expires_at) VALUES (?, ?, ?)")
+  await database.prepare("INSERT INTO appointment_captcha_challenges (challenge_id, answer, expires_at) VALUES (?, ?, ?)")
     .run(challengeId, left + right, expiresAt);
 
   return NextResponse.json(

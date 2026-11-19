@@ -5,6 +5,6 @@ export const runtime = "nodejs";
 
 export async function GET() {
   return NextResponse.json({
-    data: listContent({ categorySlug: "main-pages" }).map(toPublicContent),
+    data: (await listContent({ categorySlug: "main-pages" })).map(toPublicContent),
   }, { headers: { "Cache-Control": "no-store, max-age=0" } });
 }

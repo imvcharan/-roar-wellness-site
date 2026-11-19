@@ -17,13 +17,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter your current password and a new password of at least 12 characters." }, { status: 400 });
   }
   const database = getCmsDatabase();
-  const user = database.prepare("SELECT password_hash FROM cms_users WHERE id = ?").get(userId) as { password_hash: string } | undefined;
+  const user = await database.prepare("SELECT password_hash FROM cms_users WHERE id = ?").get(userId) as { password_hash: string } | undefined;
   if (!user || !verifyPassword(data.currentPassword, user.password_hash)) return NextResponse.json({ error: "Current password is incorrect." }, { status: 401 });
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(data.newPassword, salt, 64).toString("hex");
-  database.prepare("UPDATE cms_users SET password_hash = ? WHERE id = ?").run(`${salt}:${hash}`, userId);
+  await database.prepare("UPDATE cms_users SET password_hash = ? WHERE id = ?").run(`${salt}:${hash}`, userId);
   const sessionId = await getCmsSessionId();
-  database.prepare("DELETE FROM cms_sessions WHERE user_id = ? AND session_id != ?").run(userId, sessionId);
-  recordCmsAudit(userId, request, "auth.password", "account", userId, "Changed account password and signed out other sessions.");
+  await database.prepare("DELETE FROM cms_sessions WHERE user_id = ? AND session_id != ?").run(userId, sessionId);
+  await recordCmsAudit(userId, request, "auth.password", "account", userId, "Changed account password and signed out other sessions.");
   return NextResponse.json({ data: { updated: true } });
 }

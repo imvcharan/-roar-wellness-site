@@ -11,9 +11,9 @@ export interface CmsJobRun {
   summary: string | null;
 }
 
-function ensureCmsJobRunsTable() {
+async function ensureCmsJobRunsTable() {
   const database = getCmsDatabase();
-  database.exec(`
+  await database.exec(`
     CREATE TABLE IF NOT EXISTS cms_job_runs (
       job_key TEXT PRIMARY KEY CHECK (job_key IN ('backup', 'backup-check', 'notifications')),
       status TEXT NOT NULL CHECK (status IN ('running', 'succeeded', 'failed')),
@@ -25,11 +25,11 @@ function ensureCmsJobRunsTable() {
   return database;
 }
 
-function recordCmsJobState(job: CmsJobName, status: CmsJobStatus, summary: string | null) {
-  const database = ensureCmsJobRunsTable();
+async function recordCmsJobState(job: CmsJobName, status: CmsJobStatus, summary: string | null): Promise<void> {
+  const database = await ensureCmsJobRunsTable();
   const now = new Date().toISOString();
   if (status === "running") {
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO cms_job_runs (job_key, status, started_at, finished_at, summary)
       VALUES (?, 'running', ?, NULL, NULL)
       ON CONFLICT(job_key) DO UPDATE SET
@@ -37,7 +37,7 @@ function recordCmsJobState(job: CmsJobName, status: CmsJobStatus, summary: strin
     `).run(job, now);
     return;
   }
-  database.prepare(`
+  await database.prepare(`
     UPDATE cms_job_runs SET status = ?, finished_at = ?, summary = ? WHERE job_key = ?
   `).run(status, now, summary, job);
 }
@@ -48,20 +48,20 @@ export async function runCmsJob<T>(
   successSummary: (result: T) => string,
   didSucceed: (result: T) => boolean = () => true,
 ): Promise<T> {
-  recordCmsJobState(job, "running", null);
+  await recordCmsJobState(job, "running", null);
   try {
     const result = await action();
-    recordCmsJobState(job, didSucceed(result) ? "succeeded" : "failed", successSummary(result).slice(0, 200));
+    await recordCmsJobState(job, didSucceed(result) ? "succeeded" : "failed", successSummary(result).slice(0, 200));
     return result;
   } catch (error) {
-    recordCmsJobState(job, "failed", "The scheduled job failed. Check the hosting scheduler logs.");
+    await recordCmsJobState(job, "failed", "The scheduled job failed. Check the hosting scheduler logs.");
     throw error;
   }
 }
 
-export function getCmsJobRuns(): CmsJobRun[] {
-  const database = ensureCmsJobRunsTable();
-  return database.prepare(`
+export async function getCmsJobRuns(): Promise<CmsJobRun[]> {
+  const database = await ensureCmsJobRunsTable();
+  return await database.prepare(`
     SELECT job_key, status, started_at, finished_at, summary
     FROM cms_job_runs ORDER BY job_key
   `).all() as unknown as CmsJobRun[];

@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   if (!await canEditCms()) return NextResponse.json({ error: "Sign in to manage FAQs." }, { status: 401 });
-  const data = db().prepare("SELECT id, question, answer, position, status, updated_at FROM cms_faqs ORDER BY position, question COLLATE NOCASE").all();
+  const data = await db().prepare("SELECT id, question, answer, position, status, updated_at FROM cms_faqs ORDER BY position, question COLLATE NOCASE").all();
   return NextResponse.json({ data });
 }
 
@@ -24,8 +24,8 @@ export async function POST(request: Request) {
   const status = data.status === "draft" ? "draft" : "published";
   const position = Number.isInteger(data.position) ? Math.max(0, Math.min(Number(data.position), 10000)) : 0;
   const id = randomUUID();
-  db().prepare("INSERT INTO cms_faqs (id, question, answer, position, status) VALUES (?, ?, ?, ?, ?)")
+  await db().prepare("INSERT INTO cms_faqs (id, question, answer, position, status) VALUES (?, ?, ?, ?, ?)")
     .run(id, data.question.trim(), data.answer.trim(), position, status);
-  recordCmsAudit(await getCmsUserId(), request, "faq.create", "faq", id, `Created FAQ “${data.question.trim()}”.`);
-  return NextResponse.json({ data: db().prepare("SELECT * FROM cms_faqs WHERE id = ?").get(id) }, { status: 201 });
+  await recordCmsAudit(await getCmsUserId(), request, "faq.create", "faq", id, `Created FAQ “${data.question.trim()}”.`);
+  return NextResponse.json({ data: await db().prepare("SELECT * FROM cms_faqs WHERE id = ?").get(id) }, { status: 201 });
 }

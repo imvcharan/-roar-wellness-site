@@ -11,7 +11,7 @@ const maxUploadBytes = 50 * 1024 * 1024;
 
 export async function GET() {
   if (!await canEditCms()) return NextResponse.json({ error: "Editor access is required." }, { status: 403 });
-  const data = getCmsDatabase().prepare("SELECT id, filename, url, mime_type, size, width, height, created_at FROM cms_media ORDER BY created_at DESC").all();
+  const data = await getCmsDatabase().prepare("SELECT id, filename, url, mime_type, size, width, height, created_at FROM cms_media ORDER BY created_at DESC").all();
   return NextResponse.json({ data });
 }
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   const dimensions = await sharp(output).metadata();
   const url = `/api/media/${id}`;
   try {
-    getCmsDatabase().prepare("INSERT INTO cms_media (id, filename, url, mime_type, size, width, height) VALUES (?, ?, ?, 'image/webp', ?, ?, ?)")
+    await getCmsDatabase().prepare("INSERT INTO cms_media (id, filename, url, mime_type, size, width, height) VALUES (?, ?, ?, 'image/webp', ?, ?, ?)")
       .run(id, filename, url, output.length, dimensions.width, dimensions.height);
   } catch (error) {
     const { unlink } = await import("node:fs/promises");
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     }
     throw error;
   }
-  recordCmsAudit(await getCmsUserId(), request, "media.upload", "media", id, `Uploaded image “${filename}”.`);
+  await recordCmsAudit(await getCmsUserId(), request, "media.upload", "media", id, `Uploaded image “${filename}”.`);
   return NextResponse.json({
     data: { id, filename, url, mime_type: "image/webp", size: output.length, width: dimensions.width, height: dimensions.height },
   }, { status: 201 });

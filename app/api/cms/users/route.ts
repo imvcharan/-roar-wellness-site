@@ -2,7 +2,7 @@ import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { recordCmsAudit } from "@/lib/cms-audit";
-import { getCmsDatabase } from "@/lib/cms-db";
+import { getCmsDatabase, isCmsUniqueViolation } from "@/lib/cms-db";
 import type { CmsRole } from "@/lib/cms-auth";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ function isCmsRole(role: unknown): role is CmsRole {
 
 export async function GET() {
   if (!await isCmsAdmin()) return NextResponse.json({ error: "Administrator access is required." }, { status: 403 });
-  const data = getCmsDatabase()
+  const data = await getCmsDatabase()
     .prepare("SELECT id, email, name, role, created_at FROM cms_users ORDER BY created_at")
     .all();
   return NextResponse.json({ data });
@@ -40,12 +40,12 @@ export async function POST(request: Request) {
   const hash = scryptSync(data.password, salt, 64).toString("hex");
   try {
     const id = randomUUID();
-    getCmsDatabase().prepare("INSERT INTO cms_users (id, email, name, role, password_hash) VALUES (?, ?, ?, ?, ?)")
+    await getCmsDatabase().prepare("INSERT INTO cms_users (id, email, name, role, password_hash) VALUES (?, ?, ?, ?, ?)")
       .run(id, data.email.trim().toLowerCase(), data.name.trim(), data.role, `${salt}:${hash}`);
-    recordCmsAudit(await getCmsUserId(), request, "user.create", "user", id, `Created ${data.role} account “${data.name.trim()}”.`);
+    await recordCmsAudit(await getCmsUserId(), request, "user.create", "user", id, `Created ${data.role} account “${data.name.trim()}”.`);
     return NextResponse.json({ data: { id, email: data.email.trim().toLowerCase(), name: data.name.trim(), role: data.role } }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("UNIQUE constraint failed")) {
+    if (isCmsUniqueViolation(error)) {
       return NextResponse.json({ error: "An account already exists for that email." }, { status: 409 });
     }
     throw error;

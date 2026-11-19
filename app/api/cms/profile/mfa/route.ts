@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { recordCmsAudit } from "@/lib/cms-audit";
 import { getCmsUserId, verifyPassword } from "@/lib/cms-auth";
-import { getCmsDatabase } from "@/lib/cms-db";
+import { getCmsDatabase, withCmsTransaction } from "@/lib/cms-db";
 import {
   consumeTotpRecoveryCode,
   createTotpRecoveryCodes,
@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 export async function GET() {
   const userId = await getCmsUserId();
   if (!userId) return NextResponse.json({ error: "Sign in to manage multi-factor authentication." }, { status: 401 });
-  const user = getCmsDatabase().prepare("SELECT totp_secret_enc FROM cms_users WHERE id = ?").get(userId) as { totp_secret_enc: string | null } | undefined;
+  const user = await getCmsDatabase().prepare("SELECT totp_secret_enc FROM cms_users WHERE id = ?").get(userId) as { totp_secret_enc: string | null } | undefined;
   if (!user) return NextResponse.json({ error: "CMS account not found." }, { status: 404 });
   return NextResponse.json({ data: { enabled: Boolean(user.totp_secret_enc) } });
 }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   }
   const data = body as Record<string, unknown>;
   const database = getCmsDatabase();
-  const user = database.prepare("SELECT email, password_hash, totp_secret_enc, totp_pending_secret_enc, totp_pending_at, totp_last_counter FROM cms_users WHERE id = ?")
+  const user = await database.prepare("SELECT email, password_hash, totp_secret_enc, totp_pending_secret_enc, totp_pending_at, totp_last_counter FROM cms_users WHERE id = ?")
     .get(userId) as {
       email: string; password_hash: string; totp_secret_enc: string | null;
       totp_pending_secret_enc: string | null; totp_pending_at: string | null; totp_last_counter: number;
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   if (data.action === "start") {
     if (user.totp_secret_enc) return NextResponse.json({ error: "Authenticator app verification is already enabled." }, { status: 409 });
     const secret = createTotpSecret();
-    database.prepare(`
+    await database.prepare(`
       UPDATE cms_users SET totp_pending_secret_enc = ?, totp_pending_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE id = ?
     `).run(encryptTotpSecret(secret), userId);
@@ -64,28 +64,23 @@ export async function POST(request: Request) {
     }
     const pendingAt = Date.parse(user.totp_pending_at);
     if (!Number.isFinite(pendingAt) || Date.now() - pendingAt > 10 * 60 * 1000) {
-      database.prepare("UPDATE cms_users SET totp_pending_secret_enc = NULL, totp_pending_at = NULL WHERE id = ?").run(userId);
+      await database.prepare("UPDATE cms_users SET totp_pending_secret_enc = NULL, totp_pending_at = NULL WHERE id = ?").run(userId);
       return NextResponse.json({ error: "Authenticator setup expired. Start again." }, { status: 409 });
     }
     const secret = decryptTotpSecret(user.totp_pending_secret_enc);
     const counter = matchTotpCounter(secret, data.code);
     if (counter === null) return NextResponse.json({ error: "That authenticator code is incorrect or expired." }, { status: 400 });
     const recoveryCodes = createTotpRecoveryCodes();
-    database.exec("BEGIN IMMEDIATE");
-    try {
-      database.prepare(`
+    await withCmsTransaction(async () => {
+      await database.prepare(`
         UPDATE cms_users SET totp_secret_enc = totp_pending_secret_enc,
           totp_pending_secret_enc = NULL, totp_pending_at = NULL, totp_last_counter = ?
         WHERE id = ?
       `).run(Number(counter), userId);
       const addCode = database.prepare("INSERT INTO cms_totp_recovery_codes (code_hash, user_id) VALUES (?, ?)");
-      recoveryCodes.forEach((code) => addCode.run(hashRecoveryCode(code), userId));
-      database.exec("COMMIT");
-    } catch (error) {
-      database.exec("ROLLBACK");
-      throw error;
-    }
-    recordCmsAudit(userId, request, "auth.mfa_enable", "account", userId, "Enabled authenticator-app multi-factor authentication.");
+      for (const code of recoveryCodes) await addCode.run(hashRecoveryCode(code), userId);
+    });
+    await recordCmsAudit(userId, request, "auth.mfa_enable", "account", userId, "Enabled authenticator-app multi-factor authentication.");
     return NextResponse.json({ data: { enabled: true, recoveryCodes } }, { headers: { "Cache-Control": "no-store" } });
   }
 
@@ -97,17 +92,17 @@ export async function POST(request: Request) {
     const secret = decryptTotpSecret(user.totp_secret_enc);
     const counter = matchTotpCounter(secret, data.code);
     const validTotp = counter !== null && Number(counter) > user.totp_last_counter;
-    const validCode = validTotp || consumeTotpRecoveryCode(userId, data.code);
+    const validCode = validTotp || await consumeTotpRecoveryCode(userId, data.code);
     if (!validCode) return NextResponse.json({ error: "Enter a valid authenticator or unused recovery code." }, { status: 400 });
-    database.prepare(`
+    await database.prepare(`
       UPDATE cms_users SET totp_secret_enc = NULL, totp_pending_secret_enc = NULL,
         totp_pending_at = NULL, totp_last_counter = -1 WHERE id = ?
     `).run(userId);
     if (validTotp && counter !== null) {
-      database.prepare("UPDATE cms_users SET totp_last_counter = ? WHERE id = ?").run(Number(counter), userId);
+      await database.prepare("UPDATE cms_users SET totp_last_counter = ? WHERE id = ?").run(Number(counter), userId);
     }
-    database.prepare("DELETE FROM cms_totp_recovery_codes WHERE user_id = ?").run(userId);
-    recordCmsAudit(userId, request, "auth.mfa_disable", "account", userId, "Disabled authenticator-app multi-factor authentication.");
+    await database.prepare("DELETE FROM cms_totp_recovery_codes WHERE user_id = ?").run(userId);
+    await recordCmsAudit(userId, request, "auth.mfa_disable", "account", userId, "Disabled authenticator-app multi-factor authentication.");
     return NextResponse.json({ data: { enabled: false } });
   }
 

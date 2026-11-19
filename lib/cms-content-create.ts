@@ -1,8 +1,8 @@
-import type { DatabaseSync } from "node:sqlite";
+import type { CmsDatabase } from "./cms-db.ts";
 import type { CmsContentInput } from "./cms-validation.ts";
 
-export function insertCmsContent(database: DatabaseSync, id: string, input: CmsContentInput): void {
-  database.prepare(`
+export async function insertCmsContent(database: CmsDatabase, id: string, input: CmsContentInput): Promise<void> {
+  await database.prepare(`
     INSERT INTO content (
       id, title, slug, category_id, excerpt, summary, description, content,
       image_url, image_alt_text, image_position, status, seo_title, seo_description, seo_keywords, seo_robots,

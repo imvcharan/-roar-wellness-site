@@ -42,8 +42,8 @@ const socialLinks: Array<[SocialBrand, string]> = [
   ["Pinterest", "https://in.pinterest.com/roarwellnessrehab/"],
 ];
 
-export function Footer() {
-  const settings = getCmsSettings();
+export async function Footer() {
+  const settings = await getCmsSettings();
   const phone = settings.contactPhone || "+919319977207";
   const email = settings.contactEmail || "help@roarwellness.org";
   const whatsapp = settings.contactWhatsApp || "+919773890499";

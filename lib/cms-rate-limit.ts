@@ -7,17 +7,17 @@ export function getCmsRateLimitKey(bucket: string, identifier: string): string {
   return createHmac("sha256", secret).update(`${bucket}:${identifier}`).digest("hex");
 }
 
-export function consumeCmsRateLimit(
+export async function consumeCmsRateLimit(
   bucket: string,
   identifier: string,
   maximum: number,
   windowSeconds: number,
-): { allowed: boolean; hits: number; retryAfterSeconds: number } {
+): Promise<{ allowed: boolean; hits: number; retryAfterSeconds: number }> {
   const key = getCmsRateLimitKey(bucket, identifier);
   const now = Math.floor(Date.now() / 1000);
   const database = getCmsDatabase();
-  database.prepare("DELETE FROM cms_rate_limits WHERE window_started_at <= ?").run(now - 86400);
-  const result = database.prepare(`
+  await database.prepare("DELETE FROM cms_rate_limits WHERE window_started_at <= ?").run(now - 86400);
+  const result = await database.prepare(`
     INSERT INTO cms_rate_limits (key, hits, window_started_at) VALUES (?, 1, ?)
     ON CONFLICT(key) DO UPDATE SET
       hits = CASE WHEN cms_rate_limits.window_started_at <= ? THEN 1 ELSE cms_rate_limits.hits + 1 END,
@@ -32,7 +32,7 @@ export function consumeCmsRateLimit(
   return { allowed: row.hits <= maximum, hits: row.hits, retryAfterSeconds };
 }
 
-export function clearCmsRateLimit(bucket: string, identifier: string): void {
-  getCmsDatabase().prepare("DELETE FROM cms_rate_limits WHERE key = ?")
+export async function clearCmsRateLimit(bucket: string, identifier: string): Promise<void> {
+  await getCmsDatabase().prepare("DELETE FROM cms_rate_limits WHERE key = ?")
     .run(getCmsRateLimitKey(bucket, identifier));
 }

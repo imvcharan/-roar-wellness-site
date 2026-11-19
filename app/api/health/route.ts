@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   let databaseAvailable = true;
   try {
-    getCmsDatabase().prepare("SELECT 1").get();
+    await getCmsDatabase().prepare("SELECT 1").get();
   } catch (error) {
     console.error("Application health check could not access the CMS database.", error);
     databaseAvailable = false;

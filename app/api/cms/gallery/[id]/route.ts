@@ -31,22 +31,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const database = getCmsDatabase();
-  const existing = database.prepare("SELECT 1 FROM cms_gallery_images WHERE id = ?").get(id);
+  const existing = await database.prepare("SELECT 1 FROM cms_gallery_images WHERE id = ?").get(id);
   if (!existing) return NextResponse.json({ error: "Gallery image not found." }, { status: 404 });
-  database.prepare(
+  await database.prepare(
     "UPDATE cms_gallery_images SET image_url = ?, alt_text = ?, caption = ?, position = ?, is_published = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
   ).run(imageUrl, altText, caption, position, isPublished ? 1 : 0, id);
-  recordCmsAudit(await getCmsUserId(), request, "gallery.update", "gallery", id, `Updated a gallery image.`);
-  return NextResponse.json({ data: database.prepare("SELECT * FROM cms_gallery_images WHERE id = ?").get(id) });
+  await recordCmsAudit(await getCmsUserId(), request, "gallery.update", "gallery", id, `Updated a gallery image.`);
+  return NextResponse.json({ data: await database.prepare("SELECT * FROM cms_gallery_images WHERE id = ?").get(id) });
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!await canEditCms()) return NextResponse.json({ error: "Editor access is required." }, { status: 403 });
   const { id } = await params;
   const database = getCmsDatabase();
-  const existing = database.prepare("SELECT 1 FROM cms_gallery_images WHERE id = ?").get(id);
+  const existing = await database.prepare("SELECT 1 FROM cms_gallery_images WHERE id = ?").get(id);
   if (!existing) return NextResponse.json({ error: "Gallery image not found." }, { status: 404 });
-  database.prepare("DELETE FROM cms_gallery_images WHERE id = ?").run(id);
-  recordCmsAudit(await getCmsUserId(), _request, "gallery.delete", "gallery", id, "Deleted a gallery image.");
+  await database.prepare("DELETE FROM cms_gallery_images WHERE id = ?").run(id);
+  await recordCmsAudit(await getCmsUserId(), _request, "gallery.delete", "gallery", id, "Deleted a gallery image.");
   return NextResponse.json({ success: true });
 }

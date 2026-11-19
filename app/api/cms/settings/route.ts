@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCmsUserId, isCmsAdmin } from "@/lib/cms-auth";
 import { recordCmsAudit } from "@/lib/cms-audit";
-import { getCmsDatabase, getCmsSettings } from "@/lib/cms-db";
+import { getCmsDatabase, getCmsSettings, withCmsTransaction } from "@/lib/cms-db";
 import { isAllowedImageUrl } from "@/lib/cms-validation";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ const editableKeys = new Set([
 ]);
 
 export async function GET() {
-  return NextResponse.json({ data: getCmsSettings() }, {
+  return NextResponse.json({ data: await getCmsSettings() }, {
     headers: { "Cache-Control": "no-store, max-age=0" },
   });
 }
@@ -55,28 +55,24 @@ export async function PUT(request: Request) {
   }
 
   const pairs = Object.entries(values);
-  database.exec("BEGIN IMMEDIATE");
-  try {
-    pairs.forEach(([key, value]) => update.run(key, value as string));
-    updateSection.run(
-      String(values.homepageHeroTitle ?? getCmsSettings().homepageHeroTitle ?? "Roar Wellness"),
-      String(values.homepageHeroEyebrow ?? getCmsSettings().homepageHeroEyebrow ?? "Rehabilitation centre · Delhi"),
-      String(values.homepageHeroDescription ?? getCmsSettings().homepageHeroDescription ?? ""),
+  const currentSettings = await getCmsSettings();
+  await withCmsTransaction(async () => {
+    for (const [key, value] of pairs) await update.run(key, value as string);
+    await updateSection.run(
+      String(values.homepageHeroTitle ?? currentSettings.homepageHeroTitle ?? "Roar Wellness"),
+      String(values.homepageHeroEyebrow ?? currentSettings.homepageHeroEyebrow ?? "Rehabilitation centre · Delhi"),
+      String(values.homepageHeroDescription ?? currentSettings.homepageHeroDescription ?? ""),
       "hero",
     );
-    updateSection.run(
-      String(values.homepageApproachTitle ?? getCmsSettings().homepageApproachTitle ?? "Our Approach"),
-      String(values.homepageApproachEyebrow ?? getCmsSettings().homepageApproachEyebrow ?? "Approach"),
-      String(values.homepageApproachDescription ?? getCmsSettings().homepageApproachDescription ?? ""),
+    await updateSection.run(
+      String(values.homepageApproachTitle ?? currentSettings.homepageApproachTitle ?? "Our Approach"),
+      String(values.homepageApproachEyebrow ?? currentSettings.homepageApproachEyebrow ?? "Approach"),
+      String(values.homepageApproachDescription ?? currentSettings.homepageApproachDescription ?? ""),
       "approach",
     );
-    database.exec("COMMIT");
-  } catch (error) {
-    database.exec("ROLLBACK");
-    throw error;
-  }
+  });
   if (pairs.length) {
-    recordCmsAudit(await getCmsUserId(), request, "settings.update", "settings", null, `Updated site settings: ${pairs.map(([key]) => key).join(", ")}.`);
+    await recordCmsAudit(await getCmsUserId(), request, "settings.update", "settings", null, `Updated site settings: ${pairs.map(([key]) => key).join(", ")}.`);
   }
-  return NextResponse.json({ data: getCmsSettings() });
+  return NextResponse.json({ data: await getCmsSettings() });
 }

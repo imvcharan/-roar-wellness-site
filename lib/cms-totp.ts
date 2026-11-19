@@ -98,9 +98,9 @@ export function hashRecoveryCode(code: string): string {
   return createHash("sha256").update(code.replace(/[\s-]/g, "").toUpperCase()).digest("hex");
 }
 
-export function consumeTotpRecoveryCode(userId: string, code: unknown): boolean {
+export async function consumeTotpRecoveryCode(userId: string, code: unknown): Promise<boolean> {
   if (typeof code !== "string" || !/^[\da-fA-F -]{12,24}$/.test(code)) return false;
-  const result = getCmsDatabase().prepare(
+  const result = await getCmsDatabase().prepare(
     "DELETE FROM cms_totp_recovery_codes WHERE user_id = ? AND code_hash = ?",
   ).run(userId, hashRecoveryCode(code));
   return result.changes === 1;

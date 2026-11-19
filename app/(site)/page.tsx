@@ -5,7 +5,7 @@ import { getCmsSettings } from "@/lib/cms-db";
 const legacyHomeImage = "https://www.roarwellness.org/wp-content/uploads/2025/06/1aa.jpg";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = getCmsSettings();
+  const settings = await getCmsSettings();
   const siteUrl = (settings.siteUrl || "https://www.roarwellness.org").replace(/\/+$/, "");
   const title = settings.seoTitle || settings.siteName || "Luxury Rehabilitation Centre | Drug & Alcohol Rehab Centre Delhi NCR, India";
   const description = settings.seoDescription || settings.siteDescription || "Roar Wellness is the best rehabilitation Centre in Delhi NCR, India. Leading alcohol addiction treatment and luxury rehab facilities. Contact Roar Wellness Center Delhi.";
@@ -32,8 +32,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function Home() {
-  const settings = getCmsSettings();
+export default async function Home() {
+  const settings = await getCmsSettings();
   const siteUrl = (settings.siteUrl || "https://www.roarwellness.org").replace(/\/+$/, "");
   const structuredData = {
     "@context": "https://schema.org",

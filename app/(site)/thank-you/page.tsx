@@ -16,8 +16,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ThankYouPage() {
-  const settings = getCmsSettings();
+export default async function ThankYouPage() {
+  const settings = await getCmsSettings();
   const phone = settings.contactPhone || "+919319977207";
   const phoneHref = phone.replace(/[^\d+]/g, "");
 

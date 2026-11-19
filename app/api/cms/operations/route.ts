@@ -14,7 +14,7 @@ export async function GET() {
   }
 
   const database = getCmsDatabase();
-  const notifications = database.prepare(`
+  const notifications = await database.prepare(`
     SELECT
       SUM(CASE WHEN sent_at IS NULL AND attempts < 8 THEN 1 ELSE 0 END) AS pending,
       SUM(CASE WHEN sent_at IS NULL AND attempts < 8
@@ -22,7 +22,7 @@ export async function GET() {
       SUM(CASE WHEN sent_at IS NULL AND attempts >= 8 THEN 1 ELSE 0 END) AS exhausted
     FROM cms_notification_outbox
   `).get() as { pending: number | null; due: number | null; exhausted: number | null };
-  const publishing = database.prepare(`
+  const publishing = await database.prepare(`
     SELECT
       SUM(CASE WHEN status = 'draft' AND scheduled_publish_at IS NOT NULL THEN 1 ELSE 0 END) AS scheduled,
       SUM(CASE WHEN status = 'draft' AND scheduled_publish_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
@@ -31,7 +31,7 @@ export async function GET() {
         THEN scheduled_publish_at END) AS next_at
     FROM content
   `).get() as { scheduled: number | null; overdue: number | null; next_at: string | null };
-  const jobs = getCmsJobRuns();
+  const jobs = await getCmsJobRuns();
 
   return NextResponse.json({
     data: {
@@ -69,8 +69,8 @@ export async function POST(request: Request) {
   if (!getEnquiryNotificationTransport()) {
     return NextResponse.json({ error: "Configure SMTP before retrying enquiry alerts." }, { status: 503 });
   }
-  const retried = retryExhaustedEnquiryNotifications();
-  recordCmsAudit(
+  const retried = await retryExhaustedEnquiryNotifications();
+  await recordCmsAudit(
     await getCmsUserId(), request, "notification.retry", "notification", null,
     `Requeued ${retried} exhausted enquiry notification${retried === 1 ? "" : "s"}.`,
   );
