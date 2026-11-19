@@ -320,9 +320,10 @@
       transition: transform .24s ease, box-shadow .24s ease;
     }
     .program-card:hover { transform: translateY(-5px); box-shadow: 0 16px 38px rgba(81,72,63,.09); }
-    .card-number { display: inline-grid; width: 38px; height: 38px; margin-bottom: 22px; place-items: center; border-radius: 50%; background: var(--mint); color: #a1806e; font-family: var(--serif); font-size: 16px; }
+    .program-heading, .trust-card-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .card-number { display: inline-grid; width: 38px; height: 38px; flex: 0 0 auto; margin: 0; place-items: center; border-radius: 50%; background: var(--mint); color: #a1806e; font-family: var(--serif); font-size: 16px; }
     .program-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
-    .program-card h3 { font-size: 23px; }
+    .program-card h3 { margin: 0; font-size: 23px; }
 
     .trust-section { overflow: hidden; background: var(--mint); }
     .trust-grid { display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: clamp(40px, 8vw, 100px); }
@@ -331,9 +332,9 @@
     .trust-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .trust-card { min-height: 190px; padding: 25px; border: 1px solid rgba(81,72,63,.1); border-radius: 20px 4px 20px 4px; background: rgba(255,255,255,.76); }
     .trust-card:nth-child(even) { margin-top: 25px; }
-    .trust-card .mini-icon { display: grid; width: 43px; height: 43px; margin-bottom: 18px; place-items: center; border-radius: 50%; background: #ede9dd; color: var(--brand); }
+    .trust-card .mini-icon { display: grid; width: 43px; height: 43px; flex: 0 0 auto; margin: 0; place-items: center; border-radius: 50%; background: #ede9dd; color: var(--brand); }
     .trust-card .mini-icon .icon { width: 20px; height: 20px; }
-    .trust-card h3 { font-size: 21px; }
+    .trust-card h3 { margin: 0; font-size: 21px; }
     .trust-card p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
 
     .services-section { background: var(--paper); }
@@ -486,7 +487,8 @@
       .program-card { min-height: 225px; padding: 20px 17px; }
       .program-card h3 { font-size: 20px; }
       .program-card p { font-size: 13px; }
-      .card-number { width: 33px; height: 33px; margin-bottom: 17px; }
+      .program-heading, .trust-card-heading { gap: 9px; margin-bottom: 14px; }
+      .card-number { width: 33px; height: 33px; }
       .trust-grid { grid-template-columns: 1fr; gap: 30px; }
       .trust-cards { gap: 10px; }
       .trust-card { min-height: 180px; padding: 19px 16px; }
@@ -667,23 +669,31 @@
         </div>
         <div class="program-grid">
           <article class="program-card">
-            <span class="card-number">01</span>
-            <h3>Emotional balance</h3>
+            <div class="program-heading">
+              <span class="card-number">01</span>
+              <h3>Emotional balance</h3>
+            </div>
             <p>Personalized conversations to help you explore what balance and wellbeing mean for you.</p>
           </article>
           <article class="program-card">
-            <span class="card-number">02</span>
-            <h3>Mindfulness & calm</h3>
+            <div class="program-heading">
+              <span class="card-number">02</span>
+              <h3>Mindfulness & calm</h3>
+            </div>
             <p>Gentle mindfulness practices that can encourage awareness, clarity and moments of calm.</p>
           </article>
           <article class="program-card">
-            <span class="card-number">03</span>
-            <h3>Everyday wellbeing</h3>
+            <div class="program-heading">
+              <span class="card-number">03</span>
+              <h3>Everyday wellbeing</h3>
+            </div>
             <p>Explore routines and healthy habits that support a more grounded, intentional daily life.</p>
           </article>
           <article class="program-card">
-            <span class="card-number">04</span>
-            <h3>Confidence & connection</h3>
+            <div class="program-heading">
+              <span class="card-number">04</span>
+              <h3>Confidence & connection</h3>
+            </div>
             <p>Build self-understanding and communication skills for more supportive relationships.</p>
           </article>
         </div>
@@ -701,23 +711,31 @@
         </div>
         <div class="trust-cards">
           <article class="trust-card">
-            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2zm7 12 .9 3.1L23 18l-3.1.9L19 22l-.9-3.1L15 18l3.1-.9L19 14z"/></svg></span>
-            <h3>Personal to you</h3>
+            <div class="trust-card-heading">
+              <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2zm7 12 .9 3.1L23 18l-3.1.9L19 22l-.9-3.1L15 18l3.1-.9L19 14z"/></svg></span>
+              <h3>Personal to you</h3>
+            </div>
             <p>Guidance shaped around your priorities, circumstances and everyday life.</p>
           </article>
           <article class="trust-card">
-            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-8-4.8-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 6.2-8 11-8 11zm0-2.4c1.8-1.2 6-4.4 6-8.6a2.5 2.5 0 0 0-4.7-1.2L12 11l-1.3-2.2A2.5 2.5 0 0 0 6 10c0 4.2 4.2 7.4 6 8.6z"/></svg></span>
-            <h3>Warm, experienced support</h3>
+            <div class="trust-card-heading">
+              <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 21s-8-4.8-8-11a4.5 4.5 0 0 1 8-2.9A4.5 4.5 0 0 1 20 10c0 6.2-8 11-8 11zm0-2.4c1.8-1.2 6-4.4 6-8.6a2.5 2.5 0 0 0-4.7-1.2L12 11l-1.3-2.2A2.5 2.5 0 0 0 6 10c0 4.2 4.2 7.4 6 8.6z"/></svg></span>
+              <h3>Warm, experienced support</h3>
+            </div>
             <p>A compassionate team here to listen and help you explore your next step.</p>
           </article>
           <article class="trust-card">
-            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2 3 6v5c0 5.2 3.8 9.6 9 11 5.2-1.4 9-5.8 9-11V6l-9-4zm0 2.2 7 3.1V11c0 4.1-2.8 7.7-7 9-4.2-1.3-7-4.9-7-9V7.3l7-3.1zm-1 11.2-3-3 1.4-1.4 1.6 1.6 3.6-3.6 1.4 1.4-5 5z"/></svg></span>
-            <h3>Privacy with respect</h3>
+            <div class="trust-card-heading">
+              <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2 3 6v5c0 5.2 3.8 9.6 9 11 5.2-1.4 9-5.8 9-11V6l-9-4zm0 2.2 7 3.1V11c0 4.1-2.8 7.7-7 9-4.2-1.3-7-4.9-7-9V7.3l7-3.1zm-1 11.2-3-3 1.4-1.4 1.6 1.6 3.6-3.6 1.4 1.4-5 5z"/></svg></span>
+              <h3>Privacy with respect</h3>
+            </div>
             <p>Your conversation is approached thoughtfully and without judgement.</p>
           </article>
           <article class="trust-card">
-            <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-3.9-5H11a4 4 0 1 0-4 5 4 4 0 0 0 3.9-3h1.2a4 4 0 0 0 3.9 3zM7 13c-3.3 0-6 1.7-6 4v3h10v-3c0-1 .4-1.9 1.1-2.6A10 10 0 0 0 7 13zm9 0c-.5 0-1.1 0-1.7.1A4.8 4.8 0 0 1 16 17v3h7v-3c0-2.3-3.1-4-7-4z"/></svg></span>
-            <h3>Include your family</h3>
+            <div class="trust-card-heading">
+              <span class="mini-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-3.9-5H11a4 4 0 1 0-4 5 4 4 0 0 0 3.9-3h1.2a4 4 0 0 0 3.9 3zM7 13c-3.3 0-6 1.7-6 4v3h10v-3c0-1 .4-1.9 1.1-2.6A10 10 0 0 0 7 13zm9 0c-.5 0-1.1 0-1.7.1A4.8 4.8 0 0 1 16 17v3h7v-3c0-2.3-3.1-4-7-4z"/></svg></span>
+              <h3>Include your family</h3>
+            </div>
             <p>When you want, guidance can help loved ones build understanding and connection.</p>
           </article>
         </div>
