@@ -91,7 +91,7 @@ Inter is bundled with the application, so production builds do not need to downl
 
 #### SQLite-to-PostgreSQL data transfer
 
-The one-time transfer command reads the SQLite file selected by `CMS_DATABASE_PATH` (default `data/cms.sqlite`) in read-only mode. It copies every user table, column, index, constraint, and row—including CMS accounts, sessions, MFA state, appointment enquiries, analytics, audit history, rate limits, notification jobs, and engagement data—and verifies each table's row count before committing. The destination PostgreSQL `public` schema must be empty; the command refuses to overwrite an existing schema. Media metadata is copied, but uploaded media files remain in `CMS_MEDIA_DIRECTORY` and must remain available at the same path or be transferred separately.
+The one-time transfer command reads the SQLite file selected by `CMS_DATABASE_PATH` (default `data/cms.sqlite`) in read-only mode. It copies every user table, column, index, constraint, and row—including CMS accounts, sessions, MFA state, appointment enquiries, analytics, audit history, rate limits, notification jobs, and engagement data—and verifies each table's row count before committing. The destination PostgreSQL `public` schema must be empty; the command refuses to overwrite an existing schema. Media metadata is copied, but the file bytes are transferred separately.
 
 Before a production transfer, make a verified backup and pause CMS writes so no enquiries or edits arrive during the snapshot. Run the command on a machine that can access both the actual persistent SQLite file and Supabase. Set `DIRECT_URL` (preferred for schema creation) or `DATABASE_URL`, and set `CMS_DATABASE_PATH` if the SQLite file is not at its default path. If the direct endpoint is unreachable from the migration machine, select the session-pooler URL explicitly with `--use-database-url`. The command intentionally requires explicit confirmation:
 
@@ -100,5 +100,13 @@ npm run cms:migrate:postgres -- --apply --confirm-no-writes
 ```
 
 This command transfers data; it does not switch the app's runtime database driver. Keep the application on SQLite until the PostgreSQL runtime conversion, media-file availability, and cutover checks are complete.
+
+To copy uploaded CMS images, every referenced WordPress upload, and image files in `public` into PostgreSQL, run:
+
+```powershell
+npm run cms:assets:postgres -- --apply --use-database-url
+```
+
+The command scans SQLite and bundled application/content sources for legacy upload URLs, stores image bytes and source metadata in `site_media_assets`, downloads legacy uploads through `old.vedicgrace.com`, and verifies the stored byte count and SHA-256 for each asset before committing. It is repeatable and does not delete existing PostgreSQL rows or modify SQLite or public files. It does not change the app's runtime media route or switch the app from SQLite to PostgreSQL; those remain separate cutover work.
 
 The database and uploaded files are not part of the Git repository. Ensure Hostinger keeps their configured paths across deployments and restarts. If the hosting plan does not provide durable storage for both paths, use external persistent database and media storage before relying on the CMS for production content. Use one application instance with SQLite. The app also applies database-backed limits to CMS sign-in attempts per account email and appointment submissions per email; these do not replace edge/platform-level limits, especially for CAPTCHA challenge issuance or distributed abuse. Configure deployment-level rate limiting for `/api/cms/login`, `/api/appointment-captcha`, and `/api/appointment-requests`, plus external uptime/database/storage monitoring. Live Hostinger rate limits, persistent-storage behavior, off-site backups, scheduler, and alerting must be verified in the hosting account; they cannot be confirmed from this repository. The workflow in `.github/workflows/ci.yml` runs tests, a TypeScript check, and a production build on pushes and pull requests to `main`; connect the repository and enable automatic deployment from `main` in Hostinger separately.

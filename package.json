@@ -14,6 +14,7 @@
     "cms:backup:check": "tsx scripts/check-cms-backup.ts",
     "cms:backup:decrypt": "tsx scripts/decrypt-cms-backup.ts",
     "cms:migrate:postgres": "tsx scripts/migrate-cms-sqlite-to-postgres.ts",
+    "cms:assets:postgres": "tsx scripts/import-media-assets-to-postgres.ts",
     "cms:notifications:process": "tsx scripts/process-enquiry-notifications.ts",
     "cms:notifications:retry-exhausted": "tsx scripts/retry-exhausted-enquiry-notifications.ts",
     "cms:sync-wordpress": "node scripts/sync-wordpress-content.mjs"
