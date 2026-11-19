@@ -89,7 +89,7 @@ Inter is bundled with the application, so production builds do not need to downl
 - `CMS_DATABASE_PATH` — optional local SQLite source path used only for the one-time import.
 - `CMS_MEDIA_DIRECTORY` — optional directory on persistent writable storage for uploaded media.
 - `CMS_BACKUP_ENCRYPTION_KEY`, `CMS_BACKUP_S3_BUCKET`, and `CMS_BACKUP_S3_REGION` — required for scheduled encrypted backups; optional `CMS_BACKUP_S3_ENDPOINT`, `CMS_BACKUP_S3_PREFIX`, and `CMS_BACKUP_S3_POINTER_KEY` configure S3-compatible destinations. Configure standard `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` credentials (and session token if applicable) with least-privilege access.
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `ENQUIRY_ALERT_FROM` — required for SMTP-based enquiry alerts. `ENQUIRY_ALERT_TO` defaults to `help@roarwellness.org`; `SMTP_SECURE` and `CMS_PUBLIC_URL` are optional.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASSWORD` — required for SMTP-based enquiry alerts. `ENQUIRY_ALERT_FROM` defaults to `SMTP_USER`; `ENQUIRY_ALERT_TO` defaults to `help@roarwellness.org`. Use `SMTP_SECURE=true` with port 465, or `SMTP_SECURE=false` with port 587. `CMS_PUBLIC_URL` is optional.
 
 #### SQLite-to-PostgreSQL data transfer
 

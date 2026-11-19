@@ -391,6 +391,9 @@
     .request-card .button { width: 100%; margin-top: 16px; cursor: pointer; }
     .form-privacy { margin: 12px 0 0 !important; color: #786f66 !important; font-size: 11px !important; text-align: center; }
     .form-status { min-height: 22px; margin: 10px 0 0 !important; color: #a1806e !important; font-size: 12px !important; text-align: center; }
+    .form-status-success, .form-status-warning { min-height: 0; border-radius: 8px; padding: 12px 14px; font-size: 13px !important; font-weight: 650; }
+    .form-status-success { background: #eaf3ec; color: #315d3b !important; }
+    .form-status-warning { background: #fbf1e4; color: #76572b !important; }
 
     .closing { padding: 70px 0; background: #ede9dd; text-align: center; }
     .closing h2 { max-width: 780px; margin: 0 auto 17px; font-size: clamp(35px, 4vw, 48px); }
@@ -560,14 +563,26 @@
         </div>
         <div class="hero-card" data-hero-carousel role="region" aria-roledescription="carousel" aria-label="Roar Wellness campus and care spaces">
           <div class="hero-slides" aria-live="off">
-            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="1 of 3" aria-hidden="false">
+            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="1 of 7" aria-hidden="false">
               <img class="hero-photo" src="/images/rooted-recovery-campus.webp" alt="Aerial view of the Roar Wellness campus surrounded by greenery" width="1179" height="655" fetchpriority="high" decoding="async">
             </div>
-            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="2 of 3" aria-hidden="true">
+            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="2 of 7" aria-hidden="true">
               <img class="hero-photo" src="/images/rooted-recovery-terrace.webp" alt="Outdoor terrace seating at Roar Wellness among mature trees" width="1600" height="1068" loading="lazy" decoding="async">
             </div>
-            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="3 of 3" aria-hidden="true">
-              <img class="hero-photo" src="/images/recovery-space-02.webp" alt="A quiet shared lounge space at Roar Wellness" width="1600" height="1068" loading="lazy" decoding="async">
+            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="3 of 7" aria-hidden="true">
+              <img class="hero-photo" src="/images/support-room-tv.webp" alt="A private lounge at Roar Wellness with a comfortable armchair and indoor greenery" width="1152" height="768" loading="lazy" decoding="async">
+            </div>
+            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="4 of 7" aria-hidden="true">
+              <img class="hero-photo" src="/images/support-room-lounge.webp" alt="A cozy private room with sofa seating and a sitting area at Roar Wellness" width="1152" height="768" loading="lazy" decoding="async">
+            </div>
+            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="5 of 7" aria-hidden="true">
+              <img class="hero-photo" src="/images/support-bedroom-wide.webp" alt="Wide view of a private bedroom and lounge area at Roar Wellness" width="1152" height="768" loading="lazy" decoding="async">
+            </div>
+            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="6 of 7" aria-hidden="true">
+              <img class="hero-photo" src="/images/support-bedroom-plant.webp" alt="A private bedroom at Roar Wellness with warm lighting and an indoor plant" width="1152" height="768" loading="lazy" decoding="async">
+            </div>
+            <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="7 of 7" aria-hidden="true">
+              <img class="hero-photo" src="/images/recovery-space-02.webp" alt="A shared dining area at Roar Wellness with wooden tables and large windows" width="1600" height="1068" loading="lazy" decoding="async">
             </div>
           </div>
           <button class="hero-slider-toggle" type="button" aria-label="Pause image slideshow" aria-pressed="false" title="Pause image slideshow">
@@ -930,6 +945,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
+        keepalive: true,
         body: JSON.stringify({ eventType, pagePath })
       }).then((response) => {
         if (!response.ok) console.error("Unable to record opted-in landing-page analytics.");
@@ -1090,12 +1106,14 @@
         form.reset();
         challenge = null;
         trackAnalytics("appointment_submit");
-        if (result.data && result.data.emailAlertQueued) {
-          status.textContent = "Thank you. Your request is in our secure inbox, and an email notification has been queued for help@roarwellness.org.";
-        } else {
-          status.textContent = "Your request is safely in our secure inbox, but email alerts are not configured. Please also email help@roarwellness.org or call +91 93199 77207.";
-        }
-        await loadChallenge();
+        const emailAlertConfigured = Boolean(result.data && result.data.emailAlertConfigured);
+        status.classList.add(emailAlertConfigured ? "form-status-success" : "form-status-warning");
+        status.textContent = emailAlertConfigured
+          ? "Your request has been received. Taking you to the confirmation page…"
+          : "Your request was saved and queued, but email alerts are not configured yet. Please call us if you need a prompt response.";
+        window.setTimeout(() => {
+          window.location.assign(emailAlertConfigured ? "/thank-you" : "/thank-you?email-alert=unavailable");
+        }, 700);
       } catch (error) {
         status.textContent = "We couldn’t connect to the request service. Please email help@roarwellness.org or call +91 93199 77207.";
       } finally {

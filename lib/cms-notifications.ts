@@ -9,12 +9,16 @@ export interface NotificationTransport {
 
 let cachedTransport: Transporter | undefined;
 
+function getEnquiryAlertFrom(): string | null {
+  return process.env.ENQUIRY_ALERT_FROM?.trim() || process.env.SMTP_USER?.trim() || null;
+}
+
 export function getEnquiryNotificationTransport(): NotificationTransport | null {
   const host = process.env.SMTP_HOST?.trim();
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER?.trim();
   const pass = process.env.SMTP_PASSWORD;
-  const from = process.env.ENQUIRY_ALERT_FROM?.trim();
+  const from = getEnquiryAlertFrom();
   const to = process.env.ENQUIRY_ALERT_TO?.trim() || "help@roarwellness.org";
   if (!host || !Number.isInteger(port) || port < 1 || port > 65535 || !user || !pass || !from) return null;
 
@@ -31,11 +35,11 @@ export function getEnquiryNotificationTransport(): NotificationTransport | null 
 }
 
 export async function enqueueEnquiryNotification(enquiryId: string): Promise<boolean> {
-  if (!getEnquiryNotificationTransport()) return false;
+  const configured = Boolean(getEnquiryNotificationTransport());
   await getCmsDatabase().prepare(
     "INSERT OR IGNORE INTO cms_notification_outbox (enquiry_id) VALUES (?)",
   ).run(enquiryId);
-  return true;
+  return configured;
 }
 
 export async function retryExhaustedEnquiryNotifications(): Promise<number> {
@@ -47,7 +51,8 @@ export async function retryExhaustedEnquiryNotifications(): Promise<number> {
 
 export async function processPendingEnquiryNotifications(limit = 10): Promise<{ sent: number; failed: number; exhausted: number }> {
   const transport = getEnquiryNotificationTransport();
-  if (!transport) throw new Error("SMTP notification settings are incomplete.");
+  const from = getEnquiryAlertFrom();
+  if (!transport || !from) throw new Error("SMTP notification settings are incomplete.");
   const database = getCmsDatabase();
   const rows = await database.prepare(`SELECT o.enquiry_id, o.attempts, e.created_at
     FROM cms_notification_outbox o
@@ -70,7 +75,7 @@ export async function processPendingEnquiryNotifications(limit = 10): Promise<{ 
     try {
       const baseUrl = (process.env.CMS_PUBLIC_URL?.trim() || "https://www.roarwellness.org").replace(/\/+$/, "");
       await transport.sendMail(buildEnquiryNotification(
-        row.created_at, baseUrl, process.env.ENQUIRY_ALERT_FROM!.trim(),
+        row.created_at, baseUrl, from,
         process.env.ENQUIRY_ALERT_TO?.trim() || "help@roarwellness.org",
       ));
       await database.prepare(`UPDATE cms_notification_outbox

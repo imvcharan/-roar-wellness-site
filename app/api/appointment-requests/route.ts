@@ -37,23 +37,23 @@ export async function POST(request: Request) {
 
   const database = getCmsDatabase();
   const id = randomUUID();
-  let notificationQueued = false;
+  let notificationConfigured = false;
   await withCmsTransaction(async () => {
     await database.prepare("DELETE FROM cms_enquiries WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-12 months')").run();
     await database.prepare("INSERT INTO cms_enquiries (id, name, email, phone, source) VALUES (?, ?, ?, ?, ?)")
       .run(id, data.name, data.email, data.phone, data.source);
-    notificationQueued = await enqueueEnquiryNotification(id);
+    notificationConfigured = await enqueueEnquiryNotification(id);
   });
-  if (notificationQueued) {
+  if (notificationConfigured) {
     try {
       await processPendingEnquiryNotifications(1);
     } catch (error) {
       console.error("Enquiry was saved, but notification delivery could not start; it remains queued for retry.", error);
     }
   } else {
-    console.warn("Enquiry notification is not configured; administrators will need to monitor the CMS inbox.");
+    console.warn("Enquiry was saved and its notification queued, but SMTP is not configured; administrators must configure SMTP and run the notification processor.");
   }
   return NextResponse.json({
-    data: { received: true, emailAlertQueued: notificationQueued },
+    data: { received: true, emailAlertQueued: true, emailAlertConfigured: notificationConfigured },
   }, { status: 201, headers: noStore });
 }
