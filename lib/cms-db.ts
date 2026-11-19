@@ -135,7 +135,7 @@ function getPool(): Pool {
     if (!connectionString) throw new Error("DATABASE_URL must be configured for the PostgreSQL CMS.");
     globalCms.roarCmsPool = new Pool({
       connectionString,
-      max: 10,
+      max: 2,
       connectionTimeoutMillis: 15_000,
       idleTimeoutMillis: 30_000,
     });
