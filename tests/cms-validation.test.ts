@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { CmsContentValidationError, isReservedCmsRootSlug, parseCmsContentInput, parseHomepageSection } from "../lib/cms-validation.ts";
+import { toPublicBlogContent, type CmsContent } from "../lib/cms-db.ts";
+import { CmsContentValidationError, isReservedCmsRootSlug, normalizeCmsBlogHtml, parseCmsContentInput, parseHomepageSection } from "../lib/cms-validation.ts";
 
 const baseContent = {
   title: "Recovery services",
@@ -105,6 +106,51 @@ describe("CMS image alt text", () => {
       ...baseContent,
       content: '<p><img src="/images/recovery-at-your-pace.webp" alt=""></p>',
     }).content || "", /<img\b[^>]*\balt=""/);
+  });
+});
+
+describe("CMS blog links", () => {
+  it("normalizes existing blog links to same-tab anchors", () => {
+    const markup = '<p><a href="https://example.org/article" target="_blank" rel="noopener noreferrer" class="article-link">Read more</a></p>';
+    assert.equal(normalizeCmsBlogHtml(markup), '<p><a href="https://example.org/article" class="article-link">Read more</a></p>');
+    assert.equal(
+      normalizeCmsBlogHtml('<a href="https://example.org/sponsored" target="_blank" rel="noopener noreferrer sponsored">Sponsored link</a>'),
+      '<a href="https://example.org/sponsored" rel="sponsored">Sponsored link</a>',
+    );
+    const content: CmsContent = {
+      id: "blog-id",
+      title: "Blog post",
+      slug: "blog-post",
+      category_id: "blog-category",
+      category_name: "Blog",
+      category_slug: "blog",
+      excerpt: null,
+      summary: null,
+      description: markup,
+      content: markup,
+      image_url: null,
+      image_alt_text: null,
+      image_position: "50% 50%",
+      status: "published",
+      seo_title: null,
+      seo_description: null,
+      seo_keywords: null,
+      seo_robots: null,
+      seo_canonical_url: null,
+      seo_og_title: null,
+      seo_og_description: null,
+      seo_og_image: null,
+      seo_twitter_title: null,
+      seo_twitter_description: null,
+      seo_twitter_image: null,
+      scheduled_publish_at: null,
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
+      published_at: "2026-01-01T00:00:00.000Z",
+    };
+    const publicContent = toPublicBlogContent(content);
+    assert.equal(publicContent.description, '<p><a href="https://example.org/article" class="article-link">Read more</a></p>');
+    assert.equal(publicContent.content, '<p><a href="https://example.org/article" class="article-link">Read more</a></p>');
   });
 });
 

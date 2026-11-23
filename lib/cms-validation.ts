@@ -77,7 +77,12 @@ function optionalText(value: unknown, label: string, maxLength: number, field: k
   return value.trim() || null;
 }
 
-function sanitizeRichText(value: string | null, requireImageAlt: boolean, field: "description" | "content"): string | null {
+function sanitizeRichText(
+  value: string | null,
+  requireImageAlt: boolean,
+  field: "description" | "content",
+  sameTabLinks = false,
+): string | null {
   if (!value) return null;
   const sanitized = sanitizeHtml(value, {
     allowedTags: [
@@ -92,7 +97,18 @@ function sanitizeRichText(value: string | null, requireImageAlt: boolean, field:
     },
     allowedSchemes: ["http", "https", "mailto", "tel"],
     transformTags: {
-      a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, true),
+      a: sameTabLinks
+        ? (tagName, attributes) => {
+            const { target: _target, ...remainingAttributes } = attributes;
+            const rel = attributes.rel
+              ?.split(/\s+/)
+              .filter((value) => value && !["noopener", "noreferrer"].includes(value.toLowerCase()))
+              .join(" ");
+            if (rel) remainingAttributes.rel = rel;
+            else delete remainingAttributes.rel;
+            return { tagName, attribs: remainingAttributes };
+          }
+        : sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }, true),
     },
   });
   if (requireImageAlt) {
@@ -106,6 +122,10 @@ function sanitizeRichText(value: string | null, requireImageAlt: boolean, field:
     }
   }
   return sanitized;
+}
+
+export function normalizeCmsBlogHtml(value: string | null): string | null {
+  return sanitizeRichText(value, false, "content", true);
 }
 
 export function isAllowedImageUrl(value: string): boolean {

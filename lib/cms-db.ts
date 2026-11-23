@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
 import { getCmsContentImage } from "@/lib/cms-content-image";
+import { normalizeCmsBlogHtml } from "@/lib/cms-validation";
 
 export interface CmsCategory {
   id: string;
@@ -303,6 +304,8 @@ export function toPublicBlogContent(item: CmsContent) {
   const imageUrl = item.image_url || getCmsContentImage(item.content);
   return {
     ...toPublicContent(item),
+    description: normalizeCmsBlogHtml(item.description),
+    content: normalizeCmsBlogHtml(item.content),
     image_url: imageUrl,
     featured_image_url: imageUrl,
   };
