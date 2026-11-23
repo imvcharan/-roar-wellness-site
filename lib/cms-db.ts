@@ -1,7 +1,10 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { Pool, types, type PoolClient, type QueryResultRow } from "pg";
 import { getCmsContentImage } from "@/lib/cms-content-image";
+import { getCmsMediaFilePath, isCmsMediaId } from "@/lib/cms-media-storage";
 import { normalizeCmsBlogHtml } from "@/lib/cms-validation";
 
 export interface CmsCategory {
@@ -300,8 +303,37 @@ export function toPublicContent(item: CmsContent) {
   };
 }
 
+function hasLocalCmsMediaFile(imageUrl: string): boolean {
+  let pathname: string;
+  try {
+    pathname = new URL(imageUrl, "https://cms.local").pathname;
+  } catch {
+    return true;
+  }
+
+  const mediaId = pathname.match(/^\/api\/media\/([0-9a-f-]+)$/i)?.[1];
+  if (mediaId && isCmsMediaId(mediaId)) return existsSync(getCmsMediaFilePath(mediaId));
+
+  const legacyMediaId = pathname.match(/^\/uploads\/([0-9a-f-]+)\.webp$/i)?.[1];
+  if (legacyMediaId && isCmsMediaId(legacyMediaId)) {
+    return existsSync(join(process.cwd(), "public", "uploads", `${legacyMediaId}.webp`));
+  }
+
+  return true;
+}
+
+function getLocalBlogImage(slug: string): string | null {
+  if (!/^[a-z0-9-]+$/i.test(slug)) return null;
+  const imagePath = `/images/blog/${slug}.webp`;
+  return existsSync(join(process.cwd(), "public", imagePath.slice(1))) ? imagePath : null;
+}
+
 export function toPublicBlogContent(item: CmsContent) {
-  const imageUrl = item.image_url || getCmsContentImage(item.content);
+  const sourceImage = item.image_url || getCmsContentImage(item.content);
+  const localFallback = getLocalBlogImage(item.slug);
+  const imageUrl = sourceImage && hasLocalCmsMediaFile(sourceImage)
+    ? sourceImage
+    : localFallback || sourceImage;
   return {
     ...toPublicContent(item),
     description: normalizeCmsBlogHtml(item.description),

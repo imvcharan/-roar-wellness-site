@@ -109,8 +109,8 @@ describe("CMS image alt text", () => {
   });
 });
 
-describe("CMS blog links", () => {
-  it("normalizes existing blog links to same-tab anchors", () => {
+describe("CMS public blog content", () => {
+  it("normalizes links and uses a local featured image when uploaded media is missing", () => {
     const markup = '<p><a href="https://example.org/article" target="_blank" rel="noopener noreferrer" class="article-link">Read more</a></p>';
     assert.equal(normalizeCmsBlogHtml(markup), '<p><a href="https://example.org/article" class="article-link">Read more</a></p>');
     assert.equal(
@@ -120,7 +120,7 @@ describe("CMS blog links", () => {
     const content: CmsContent = {
       id: "blog-id",
       title: "Blog post",
-      slug: "blog-post",
+      slug: "alcohol-rehabilitation-centre-in-chattarpur-delhi-a-recovery-guide",
       category_id: "blog-category",
       category_name: "Blog",
       category_slug: "blog",
@@ -128,7 +128,7 @@ describe("CMS blog links", () => {
       summary: null,
       description: markup,
       content: markup,
-      image_url: null,
+      image_url: "/api/media/00000000-0000-0000-0000-000000000001",
       image_alt_text: null,
       image_position: "50% 50%",
       status: "published",
@@ -149,6 +149,8 @@ describe("CMS blog links", () => {
       published_at: "2026-01-01T00:00:00.000Z",
     };
     const publicContent = toPublicBlogContent(content);
+    assert.equal(publicContent.image_url, "/images/blog/alcohol-rehabilitation-centre-in-chattarpur-delhi-a-recovery-guide.webp");
+    assert.equal(publicContent.featured_image_url, "/images/blog/alcohol-rehabilitation-centre-in-chattarpur-delhi-a-recovery-guide.webp");
     assert.equal(publicContent.description, '<p><a href="https://example.org/article" class="article-link">Read more</a></p>');
     assert.equal(publicContent.content, '<p><a href="https://example.org/article" class="article-link">Read more</a></p>');
   });
