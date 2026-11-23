@@ -2739,15 +2739,14 @@
   .blog-story-card { display: grid; min-width: 0; grid-template-columns: minmax(8rem, .58fr) minmax(0, 1fr); overflow: hidden; border-radius: .85rem; background: #ede9dd; transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s ease; }
   .blog-story-card:hover { transform: translateY(-.35rem); box-shadow: 0 20px 42px rgb(81 72 63 / .14); }
   .blog-story-card:focus-within { box-shadow: 0 0 0 3px rgb(161 128 110 / .45), 0 16px 36px rgb(81 72 63 / .1); }
-  .blog-story-image { position: relative; display: block; min-width: 0; min-height: 100%; aspect-ratio: 1 / .88; overflow: hidden; background: linear-gradient(145deg, #d9d2c2, #b8ab99); }
-  .blog-featured-grid .blog-story-image { width: 100%; min-height: 0; align-self: center; aspect-ratio: 16 / 9; }
-  .blog-featured-grid .blog-story-image img { position: absolute; inset: 0; min-height: 0; }
-  .blog-story-image img { display: block; width: 100%; height: 100%; min-height: 100%; object-fit: contain; transition: filter .4s ease; }
+  .blog-story-image { position: relative; display: block; min-width: 0; overflow: hidden; background: linear-gradient(145deg, #d9d2c2, #b8ab99); }
+  .blog-featured-grid .blog-story-image { width: 100%; min-height: 0; align-self: center; }
+  .blog-story-image img { display: block; width: 100%; height: auto; min-height: 0; aspect-ratio: auto 3 / 2; object-fit: contain; transition: filter .4s ease; }
   .blog-story-card:hover .blog-story-image img { filter: saturate(1.05); }
-  .blog-story-image-placeholder { display: grid; place-items: center; background: linear-gradient(145deg, #e8e0d3, #f6f1e8 55%, #c9b9a6); }
+  .blog-story-image-placeholder { display: grid; min-height: 12rem; place-items: center; background: linear-gradient(145deg, #e8e0d3, #f6f1e8 55%, #c9b9a6); }
   .blog-story-image-mark { color: rgb(81 72 63 / .65); font-family: var(--font-serif); font-size: 1.3rem; font-style: italic; line-height: 1.15; text-align: center; }
   .blog-story-image-unavailable-mark { display: none; }
-  .blog-story-image.image-unavailable { display: grid; place-items: center; background: linear-gradient(145deg, #e8e0d3, #f6f1e8 55%, #c9b9a6); }
+  .blog-story-image.image-unavailable { display: grid; min-height: 12rem; place-items: center; background: linear-gradient(145deg, #e8e0d3, #f6f1e8 55%, #c9b9a6); }
   .blog-story-image.image-unavailable .blog-story-image-unavailable-mark { display: block; }
   .blog-story-image-action { position: absolute; right: .8rem; bottom: .8rem; display: grid; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: 50%; background: rgb(255 252 245 / .92); color: #51483f; opacity: 0; transform: translate(-.25rem, .25rem); transition: opacity .25s ease, transform .25s ease; }
   .blog-story-card:hover .blog-story-image-action, .blog-story-card:focus-within .blog-story-image-action { opacity: 1; transform: translate(0); }
@@ -2769,8 +2768,7 @@
   .blog-category-filters button:focus-visible { outline: 3px solid #51483f; outline-offset: 3px; }
   .blog-story-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
   .blog-story-grid .blog-story-card { display: flex; min-height: 0; flex-direction: column; }
-  .blog-story-grid .blog-story-image { min-height: 0; aspect-ratio: 16 / 10; }
-  .blog-story-grid .blog-story-image img { position: absolute; inset: 0; }
+  .blog-story-grid .blog-story-image { min-height: 0; }
   .blog-story-grid .blog-story-copy { min-height: 15rem; flex: 1; justify-content: flex-start; padding: 1.35rem; }
   .blog-story-grid .blog-story-meta { margin: 0 0 .85rem; }
   .blog-story-grid .blog-story-copy h2 { font-size: clamp(1.2rem, 1.8vw, 1.65rem); }
@@ -2826,12 +2824,12 @@
     .blog-section-heading > p { max-width: 26rem; }
     .blog-featured-grid { gap: .75rem; }
     .blog-featured-grid .blog-story-card { grid-template-columns: minmax(0, 1fr); }
-    .blog-featured-grid .blog-story-image { min-height: 0; aspect-ratio: 16 / 10; }
+    .blog-featured-grid .blog-story-image { min-height: 0; }
     .blog-featured-grid .blog-story-copy { min-height: 11.5rem; padding: 1.2rem; }
     .blog-story-grid { gap: .7rem; }
     .blog-story-grid { grid-template-columns: minmax(0, 1fr); }
     .blog-story-grid .blog-story-card { min-height: 0; }
-    .blog-story-grid .blog-story-image { min-height: 0; aspect-ratio: 16 / 10; }
+    .blog-story-grid .blog-story-image { min-height: 0; }
     .blog-story-grid .blog-story-copy { min-height: 0; padding: 1.2rem; }
     .blog-story-grid .blog-story-copy h2 { font-size: 1.2rem; }
     .blog-story-grid .blog-story-summary { display: -webkit-box; }
